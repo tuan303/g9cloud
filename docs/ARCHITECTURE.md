@@ -13,7 +13,7 @@ Tài liệu cho lập trình viên (và các agent xây dựng giao diện). Đ�
 
 ## Luồng nghiệp vụ (theo tài liệu mockup của quán)
 
-1. **Đăng nhập** (`/welcome`): nút lớn “Đăng nhập bằng email trường” + “Tiếp tục với tư cách khách”. Hồ sơ tối giản: Tên, Số điện thoại (tuỳ chọn Mã HS/NV). Chọn **Nhận tại quầy** hoặc **Giao tận nơi** (nếu giao thì nhập địa chỉ: lớp/phòng).
+1. **Đăng nhập** (`/welcome`): nút lớn “Đăng nhập bằng Microsoft 365” (SSO qua Firebase Auth, `signInCustomerWithMicrosoft` trong `services/firebase.ts`; bản offline mô phỏng bằng ô email) + “Tiếp tục với tư cách khách”. Hồ sơ tối giản: Tên, Số điện thoại (tuỳ chọn Mã HS/NV). Chọn **Nhận tại quầy** hoặc **Giao tận nơi** (nếu giao thì nhập địa chỉ: lớp/phòng).
 2. **Thực đơn** (`/`): tab danh mục Cà phê / Nước uống / Bánh ngọt; thẻ món = ảnh + tên + giá; nút **“Đặt hàng bằng QR”** màu xanh lá (leaf).
 3. **Giỏ hàng** (`/cart`) → tạo đơn (`repo.createOrder`) → **Thanh toán QR** (`/order/:id/pay`): tóm tắt đơn (món, SL, tổng), mã QR lớn ở giữa, hướng dẫn “Quét tại quầy POS để thanh toán”. Khi thu ngân quét & xác nhận → đơn chuyển `received` → hiện “✅ Đơn hàng đã nhận”.
 4. **Trạng thái đơn** (`/order/:id`): Đã nhận → Đang chuẩn bị → Sẵn sàng (nhận tại quầy) / Đang giao (giao tận nơi) → Hoàn thành. Thông báo thời gian thực: “Đơn hàng sẵn sàng”, “Đang giao hàng” (banner trượt xuống + mục Thông báo).

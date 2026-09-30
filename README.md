@@ -41,7 +41,7 @@ Các lệnh khác:
 
 **Khách hàng** (theo tài liệu mockup của quán):
 
-1. **Đăng nhập**: một chạm bằng email trường, hoặc chế độ khách. Hồ sơ tối giản gồm tên, số điện thoại và mã học sinh/nhân viên. Khách chọn **nhận tại quầy** hoặc **giao tận nơi** (ghi lớp/phòng).
+1. **Đăng nhập**: một chạm bằng **Microsoft 365 của trường (SSO)**, hoặc chế độ khách. Cấu hình SSO xem [docs/M365_SSO.md](docs/M365_SSO.md). Hồ sơ tối giản gồm tên, số điện thoại và mã học sinh/nhân viên. Khách chọn **nhận tại quầy** hoặc **giao tận nơi** (ghi lớp/phòng).
 2. **Thực đơn**: tab Cà phê / Nước uống / Bánh ngọt, tìm kiếm không dấu, thẻ món có ảnh, tên và giá. Mỗi món có tuỳ chọn size, nóng/đá, độ ngọt, lượng đá, topping và ghi chú. Nút **“Đặt hàng bằng QR”** màu xanh lá.
 3. **Giỏ hàng**: sửa món, đổi số lượng, chọn hình thức nhận, thông tin người nhận, ghi chú.
 4. **Thanh toán QR**: tóm tắt đơn, mã QR lớn ở giữa màn hình, hướng dẫn *“Quét tại quầy POS để thanh toán”* và đồng hồ hết hạn. Khi thu ngân quét xong, màn hình hiện ✅ **“Đơn hàng đã nhận”**.
@@ -77,6 +77,7 @@ firestore.rules          ← quy tắc bảo mật Firestore (triển khai sau k
 firebase.json            ← cấu hình Firebase Hosting + Rules
 docs/
   FIREBASE.md            ← trạng thái kết nối, các bước bật bảo mật, deploy
+  M365_SSO.md            ← đăng nhập SSO bằng Microsoft 365 của trường (Entra ID + Firebase)
   ARCHITECTURE.md        ← kiến trúc & quy ước code
   BRAND.md               ← bảng màu trích từ ảnh quán, logo, font
   ZALO_MINI_APP.md       ← hướng dẫn đưa lên Zalo Mini App
@@ -85,7 +86,7 @@ docs/
 ## Giới hạn của bản thử nghiệm
 
 - **Firestore đang ở test mode (mở hoàn toàn)** và Firebase Authentication chưa bật. Làm theo [docs/FIREBASE.md › Bật bảo mật](docs/FIREBASE.md#2-bật-bảo-mật-nên-làm-trước-khi-dùng-thật) trước khi dùng thật.
-- Đăng nhập email trường đang **giả lập**, chưa gửi mã xác thực hay SSO. Nếu trường dùng Google Workspace, có thể chuyển sang đăng nhập Google qua Firebase Auth.
+- Đăng nhập **Microsoft 365** cần quản trị M365 của trường đăng ký app trên Entra ID và bật nhà cung cấp Microsoft trong Firebase ([docs/M365_SSO.md](docs/M365_SSO.md)). Bản xem thử offline chỉ mô phỏng bước này.
 - PIN quản trị `9999` chỉ là tạm thời. Sau khi bật Authentication, chuyển sang tài khoản nhân viên Firebase (`admin.auth = 'firebase'`).
 - Thực đơn, giá và 7 ngày đơn hàng mẫu (để biểu đồ có số liệu) là **dữ liệu demo**. Có thể xoá ở trang Tổng quan.
 

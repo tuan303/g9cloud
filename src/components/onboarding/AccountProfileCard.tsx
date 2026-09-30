@@ -8,6 +8,7 @@ import { Avatar } from './Avatar';
 import { GUEST_NAME, formatPhoneDisplay } from './helpers';
 
 const PROVIDER: Record<AuthProvider, { label: string; icon: LucideIcon }> = {
+  microsoft: { label: 'Microsoft 365', icon: GraduationCap },
   school_email: { label: 'Email trường', icon: GraduationCap },
   zalo: { label: 'Zalo', icon: MessageCircle },
   guest: { label: 'Khách', icon: UserRound },

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { ChevronRight, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
-type Tone = 'primary' | 'outline' | 'zalo';
+type Tone = 'primary' | 'outline' | 'zalo' | 'microsoft';
 
 const TONES: Record<Tone, { root: string; tile: string; sub: string }> = {
   primary: {
@@ -14,6 +14,12 @@ const TONES: Record<Tone, { root: string; tile: string; sub: string }> = {
     root: 'bg-white/70 text-espresso ring-1 ring-inset ring-bronze-300 hover:bg-white',
     tile: 'bg-bronze-100 text-bronze-700',
     sub: 'text-stone',
+  },
+  // Nút chính (nền espresso) với ô trắng chứa logo Microsoft
+  microsoft: {
+    root: 'bg-espresso text-cream shadow-lift hover:bg-espresso-700',
+    tile: 'bg-white',
+    sub: 'text-cream/70',
   },
   // Màu nhận diện Zalo — chỉ hiện khi chạy trong Zalo Mini App
   zalo: {

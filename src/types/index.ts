@@ -78,7 +78,8 @@ export interface CartLine {
 
 // ───────────────────────── Customer ─────────────────────────
 
-export type AuthProvider = 'school_email' | 'guest' | 'zalo';
+/** microsoft = SSO Microsoft 365 của trường · school_email = email nhập tay (chỉ bản demo offline) */
+export type AuthProvider = 'microsoft' | 'school_email' | 'guest' | 'zalo';
 
 export interface CustomerInfo {
   id: string;

@@ -4,6 +4,7 @@ import type { MenuItem, Order } from '@/types';
 import { useCart } from './cart';
 import { toast } from './ui';
 import { useSession } from './session';
+import { BACKEND } from '@/config/firebase';
 import { isStaffActive, startStaffAuth, useStaffAuth } from './staff-auth';
 
 interface DataState {
@@ -61,6 +62,17 @@ export async function startDataSync() {
   useSession.subscribe(applyViewer);
   useStaffAuth.subscribe(applyViewer);
   void startStaffAuth();
+  if (BACKEND === 'firebase') {
+    // Bỏ dở đăng nhập Microsoft (đóng tab giữa chừng...) → quay về phiên khách mới
+    void import('@/services/firebase')
+      .then((m) => m.reconcileCustomerAuth(useSession.getState().user))
+      .then((r) => {
+        if (r !== 'stale-app-session') return;
+        useSession.getState().logout();
+        toast('Phiên đăng nhập Microsoft 365 đã hết — vui lòng đăng nhập lại.', 'info');
+      })
+      .catch(() => undefined);
+  }
 
   await repo.whenReady?.();
   await Promise.all([refreshMenu(), refreshOrders()]);

@@ -42,10 +42,12 @@ export async function recheckStaff() {
   const user = currentStaffUser();
   if (!user) return useStaffAuth.setState({ status: 'signed_out' });
   useStaffAuth.setState({ status: 'loading' });
+  const stillCurrent = () => currentStaffUser()?.uid === user.uid;
   try {
-    useStaffAuth.setState({ status: (await checkStaff(user)) ? 'staff' : 'not_staff', message: undefined });
+    const isStaff = await checkStaff(user);
+    if (stillCurrent()) useStaffAuth.setState({ status: isStaff ? 'staff' : 'not_staff', message: undefined });
   } catch (err) {
-    useStaffAuth.setState({ status: 'error', message: firebaseErrorMessage(err) });
+    if (stillCurrent()) useStaffAuth.setState({ status: 'error', message: firebaseErrorMessage(err) });
   }
 }
 

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { ArrowRight, Check, ChevronRight, GraduationCap, KeyRound, LogOut } from 'lucide-react';
 import { Button, ConfirmDialog, Logo, SectionTitle } from '@/components/ui';
@@ -9,10 +9,14 @@ import {
   AccountProfileCard,
   NotificationSettings,
   ProfileEditSheet,
+  reportSsoError,
 } from '@/components/onboarding';
 import { useDataReady, useMyActiveOrders, useMyOrders } from '@/hooks/data';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useSession } from '@/store/session';
+import { MICROSOFT_SSO } from '@/config/app';
+import { checkAuthConfigured, completeMicrosoftRedirect, signInCustomerWithMicrosoft } from '@/services/firebase';
+import { BACKEND } from '@/config/firebase';
 import { toast } from '@/store/ui';
 
 type Leave = 'logout' | 'upgrade';
@@ -23,6 +27,33 @@ export default function AccountPage() {
 
   const user = useSession((s) => s.user);
   const logout = useSession((s) => s.logout);
+  const login = useSession((s) => s.login);
+  const [upgrading, setUpgrading] = useState(false);
+  useEffect(() => {
+    if (!MICROSOFT_SSO || !user?.isGuest) return;
+    void checkAuthConfigured();
+    // Quay về từ trang đăng nhập Microsoft (popup bị chặn khi bấm "Đăng nhập ngay") → hoàn tất chuyển tài khoản
+    let alive = true;
+    completeMicrosoftRedirect()
+      .then((profile) => {
+        const guest = useSession.getState().user;
+        if (!alive || !profile || !guest?.isGuest) return;
+        login({
+          id: `ms_${profile.uid}`,
+          name: profile.name,
+          email: profile.email,
+          phone: guest.phone,
+          studentId: guest.studentId,
+          isGuest: false,
+          authProvider: 'microsoft',
+        });
+        toast('Đã chuyển sang tài khoản Microsoft 365', 'success');
+      })
+      .catch(reportSsoError);
+    return () => {
+      alive = false;
+    };
+  }, [user?.isGuest, login]);
   const fulfillment = useSession((s) => s.fulfillment);
   const deliveryAddress = useSession((s) => s.deliveryAddress);
   const setFulfillment = useSession((s) => s.setFulfillment);
@@ -52,7 +83,33 @@ export default function AccountPage() {
     if (kind === 'logout') toast('Đã đăng xuất. Hẹn gặp lại bạn!');
   };
 
-  const startUpgrade = () => (activeOrders.length ? setConfirm('upgrade') : leave('upgrade'));
+  /**
+   * Khách → tài khoản Microsoft 365: mở đăng nhập Microsoft ngay (không đăng xuất trước).
+   * Huỷ / lỗi thì vẫn là khách, giữ nguyên tên và số điện thoại.
+   */
+  const upgradeWithMicrosoft = async () => {
+    setConfirm(null);
+    setUpgrading(true);
+    try {
+      const profile = await signInCustomerWithMicrosoft();
+      login({
+        id: `ms_${profile.uid}`,
+        name: profile.name,
+        email: profile.email,
+        phone: user.phone,
+        studentId: user.studentId,
+        isGuest: false,
+        authProvider: 'microsoft',
+      });
+      toast('Đã chuyển sang tài khoản Microsoft 365', 'success');
+    } catch (err) {
+      reportSsoError(err);
+    } finally {
+      setUpgrading(false);
+    }
+  };
+  const upgrade = () => (MICROSOFT_SSO ? void upgradeWithMicrosoft() : leave('upgrade'));
+  const startUpgrade = () => (activeOrders.length ? setConfirm('upgrade') : upgrade());
 
   const addressError =
     fulfillment === 'delivery' && addressTouched && !deliveryAddress.trim()
@@ -82,7 +139,7 @@ export default function AccountPage() {
             loading={!ready}
           />
 
-          {user.isGuest && (
+          {user.isGuest && (MICROSOFT_SSO || BACKEND === 'local') && (
             <section className="relative overflow-hidden rounded-3xl bg-gold-soft p-4 ring-1 ring-inset ring-gold/50">
               <div aria-hidden className="absolute -right-8 -top-10 h-32 w-32 rounded-full bg-gold/35 blur-2xl" />
               <div className="relative flex gap-3">
@@ -91,14 +148,14 @@ export default function AccountPage() {
                 </span>
                 <div className="min-w-0">
                   <h2 className="font-display text-[15px] font-bold leading-snug text-espresso">
-                    Đăng nhập bằng email trường để lưu lịch sử đơn
+                    Đăng nhập Microsoft 365 của trường để lưu lịch sử đơn
                   </h2>
                   <p className="mt-1 text-[13px] leading-snug text-bronze-800">
-                    Xem lại đơn cũ và gọi lại món quen chỉ với vài chạm.
+                    Dùng tài khoản email trường — xem lại đơn cũ trên mọi thiết bị, gọi lại món quen chỉ với vài chạm.
                   </p>
                 </div>
               </div>
-              <Button block className="relative mt-3.5" rightIcon={<ArrowRight className="h-4 w-4" aria-hidden />} onClick={startUpgrade}>
+              <Button block className="relative mt-3.5" rightIcon={<ArrowRight className="h-4 w-4" aria-hidden />} loading={upgrading} onClick={startUpgrade}>
                 Đăng nhập ngay
               </Button>
             </section>
@@ -192,7 +249,7 @@ export default function AccountPage() {
 
       <ConfirmDialog
         open={confirm === 'upgrade'}
-        title="Chuyển sang email trường?"
+        title="Chuyển sang tài khoản Microsoft 365?"
         confirmText="Tiếp tục"
         cancelText="Để sau"
         description={
@@ -201,7 +258,7 @@ export default function AccountPage() {
             {activeNote}
           </>
         }
-        onConfirm={() => leave('upgrade')}
+        onConfirm={upgrade}
         onCancel={closeConfirm}
       />
     </div>

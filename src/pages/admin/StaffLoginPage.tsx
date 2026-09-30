@@ -1,14 +1,25 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Lock, LogOut, Mail, RefreshCw, ShieldAlert } from 'lucide-react';
 import counterPhoto from '@/assets/photos/counter-sm.webp';
 import { Button, Input, Logo } from '@/components/ui';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { firebaseErrorMessage, staffSignIn, staffSignOut } from '@/services/firebase';
+import {
+  checkAuthConfigured,
+  completeStaffMicrosoftRedirect,
+  firebaseErrorMessage,
+  staffSignIn,
+  staffSignInWithMicrosoft,
+  staffSignOut,
+} from '@/services/firebase';
+import { APP_CONFIG } from '@/config/app';
+import { MicrosoftLogo } from '@/components/onboarding';
 import { recheckStaff, useStaffAuth } from '@/store/staff-auth';
 
+const SILENT = ['auth/popup-closed-by-user', 'auth/cancelled-popup-request', 'auth/user-cancelled'];
+
 /**
- * Đăng nhập nhân viên bằng tài khoản Firebase (email + mật khẩu).
+ * Đăng nhập nhân viên bằng Microsoft 365 của trường hoặc tài khoản Firebase (email + mật khẩu).
  * Chỉ dùng khi APP_CONFIG.admin.auth = 'firebase'. Quyền nhân viên = có tài liệu staff/{uid} trong Firestore.
  */
 export default function StaffLoginPage() {
@@ -22,6 +33,27 @@ export default function StaffLoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [msBusy, setMsBusy] = useState(false);
+  const [msError, setMsError] = useState('');
+  useEffect(() => {
+    void checkAuthConfigured();
+    // Quay về từ trang đăng nhập Microsoft (khi popup bị chặn): báo lỗi nếu có (VD tài khoản ngoài trường)
+    completeStaffMicrosoftRedirect().catch((err) => {
+      if (!SILENT.includes((err as { code?: string })?.code ?? '')) setMsError(firebaseErrorMessage(err));
+    });
+  }, []);
+
+  const signInMicrosoft = async () => {
+    setMsBusy(true);
+    setMsError('');
+    try {
+      await staffSignInWithMicrosoft();
+    } catch (err) {
+      if (!SILENT.includes((err as { code?: string })?.code ?? '')) setMsError(firebaseErrorMessage(err));
+    } finally {
+      setMsBusy(false);
+    }
+  };
 
   if (status === 'staff') return <Navigate to={target} replace />;
 
@@ -99,6 +131,31 @@ export default function StaffLoginPage() {
           </div>
         ) : (
           <form onSubmit={submit} noValidate className="mt-8 space-y-4 rounded-3xl bg-cream p-5 text-espresso shadow-lift">
+            {APP_CONFIG.auth.microsoft.enabled && (
+              <>
+                <Button
+                  variant="outline"
+                  block
+                  size="lg"
+                  className="bg-white"
+                  leftIcon={<MicrosoftLogo className="h-5 w-5" />}
+                  loading={msBusy}
+                  onClick={() => void signInMicrosoft()}
+                >
+                  Đăng nhập bằng Microsoft 365
+                </Button>
+                {msError && (
+                  <p role="alert" className="rounded-xl bg-rattan-soft px-3 py-2 text-[13px] leading-snug text-rattan-dark">
+                    {msError}
+                  </p>
+                )}
+                <div aria-hidden className="flex items-center gap-3 text-xs font-medium text-stone">
+                  <span className="h-px flex-1 bg-bronze-200" />
+                  hoặc email &amp; mật khẩu
+                  <span className="h-px flex-1 bg-bronze-200" />
+                </div>
+              </>
+            )}
             <Input
               label="Email"
               type="email"

@@ -47,8 +47,8 @@
 ## 3. Đăng nhập: khuyến nghị
 
 - **Bản Zalo**: dùng **“Đăng nhập bằng Zalo”** (`getUserInfo` lấy tên và avatar, `getPhoneNumber` lấy số điện thoại qua máy chủ). Nút này đã có sẵn trên màn hình chào khi chạy trong Zalo.
-- **Đăng nhập bằng email trường** chỉ nên giữ nếu Mini App được đăng ký là **app nội bộ của trường** và mở qua mã QR hoặc lối tắt. Nếu muốn giữ, cần xác nhận với Zalo khi đăng ký.
-- **Bản web/PWA** (ví dụ mở từ cổng thông tin trường): giữ đăng nhập bằng email trường. Nên làm SSO Google Workspace hoặc Microsoft 365 tuỳ hệ thống email của trường.
+- **Đăng nhập Microsoft 365 của trường (SSO)** chỉ nên giữ nếu Mini App được đăng ký là **app nội bộ của trường** và mở qua mã QR hoặc lối tắt. Nếu muốn giữ, cần xác nhận với Zalo khi đăng ký. Cửa sổ đăng nhập Microsoft dạng popup có thể không mở được trong WebView của Zalo, khi đó app tự chuyển sang dạng chuyển trang.
+- **Bản web/PWA** (ví dụ mở từ cổng thông tin trường): dùng SSO Microsoft 365 (đã làm, xem [M365_SSO.md](M365_SSO.md)).
 
 ## 4. Backend cần có cho production
 

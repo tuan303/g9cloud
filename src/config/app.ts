@@ -26,6 +26,19 @@ export const APP_CONFIG = {
      */
     schoolEmailDomains: [] as string[],
     allowGuest: true,
+    /**
+     * Đăng nhập một chạm (SSO) bằng tài khoản Microsoft 365 của trường — qua Firebase Authentication.
+     * Cần đăng ký app trên Microsoft Entra ID + bật nhà cung cấp Microsoft trong Firebase (docs/M365_SSO.md).
+     */
+    microsoft: {
+      enabled: true,
+      /**
+       * TODO: Directory (tenant) ID của trường (GUID trong Entra admin center › Overview),
+       * hoặc tên miền chính, VD 'tentruong.edu.vn'. Chỉ tài khoản thuộc tenant này mới đăng nhập được.
+       * Để trống = mọi tài khoản cơ quan/trường học ('organizations') — khi đó nên đặt schoolEmailDomains.
+       */
+      tenant: '',
+    },
   },
 
   fulfillment: {
@@ -80,3 +93,6 @@ export const APP_CONFIG = {
 };
 
 export type AppConfig = typeof APP_CONFIG;
+
+/** SSO Microsoft 365 thật (qua Firebase). Bản demo offline thì mô phỏng bằng ô nhập email. */
+export const MICROSOFT_SSO = BACKEND === 'firebase' && APP_CONFIG.auth.microsoft.enabled;

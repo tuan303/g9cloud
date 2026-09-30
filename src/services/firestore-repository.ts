@@ -21,7 +21,14 @@ import { generateDemoOrders } from '@/data/demo-orders';
 import { startOfDay } from '@/lib/format';
 import { parseOrderQrPayload } from '@/lib/qr';
 import type { CreateOrderInput, MenuItem, Order, OrderStatus } from '@/types';
-import { customerFirebase, ensureCustomerAuth, firebaseErrorMessage, staffFirebase } from './firebase';
+import {
+  currentCustomerUid,
+  customerFirebase,
+  ensureCustomerAuth,
+  firebaseErrorMessage,
+  onCustomerAuthChanged,
+  staffFirebase,
+} from './firebase';
 import {
   applyCancel,
   applyConfirmPayment,
@@ -102,6 +109,8 @@ export class FirestoreRepository implements DataRepository {
   private customerUid: string | null = null;
   /** Đã có kết quả đăng nhập ẩn danh lần đầu (thành công hay không) */
   private authResolved = false;
+  /** Vừa đăng xuất, đang chờ phiên khách mới — tạm không truy vấn đơn */
+  private authPending = false;
   private authReady: Promise<string | null>;
   private readonly menuReady: Promise<void>;
   private ordersReady: Promise<void>;
@@ -112,6 +121,15 @@ export class FirestoreRepository implements DataRepository {
   constructor() {
     this.ordersReady = new Promise<void>((r) => (this.resolveOrdersReady = r));
     this.authReady = this.refreshAuth();
+    // Khách đăng nhập / đăng xuất Microsoft 365 → uid đổi → tải lại đơn theo uid mới
+    onCustomerAuthChanged((user) => {
+      const uid = user?.uid ?? null;
+      if (uid === this.customerUid) return;
+      // null khi vừa đăng xuất — bỏ truy vấn cũ, chờ phiên ẩn danh mới (không rơi về truy vấn theo mã khách)
+      this.authPending = uid === null && this.customerUid !== null;
+      this.customerUid = uid;
+      if (this.authResolved) this.resubscribeOrders();
+    });
 
     let resolveMenu: () => void = () => undefined;
     this.menuReady = new Promise<void>((r) => (resolveMenu = r));
@@ -122,7 +140,7 @@ export class FirestoreRepository implements DataRepository {
       window.setInterval(() => void this.expireStaleOrders(), 60_000);
       // Mạng có lại: thử đăng nhập ẩn danh lại (nếu trước đó thất bại vì mất mạng)
       window.addEventListener('online', () => {
-        if (!this.customerUid) this.authReady = this.refreshAuth();
+        if (!currentCustomerUid()) this.authReady = this.refreshAuth();
       });
     }
   }
@@ -132,6 +150,7 @@ export class FirestoreRepository implements DataRepository {
   private refreshAuth() {
     return ensureCustomerAuth().then((uid) => {
       this.authResolved = true;
+      this.authPending = false;
       if (uid) this.customerUid = uid;
       this.resubscribeOrders();
       return uid;
@@ -228,7 +247,7 @@ export class FirestoreRepository implements DataRepository {
       const since = startOfDay(Date.now()) - STAFF_WINDOW_DAYS * 86_400_000;
       key = `staff:${db === customerFirebase().db ? 'c' : 's'}:${since}`;
       q = query(collection(db, 'orders'), where('createdAt', '>=', since));
-    } else if (!this.authResolved) {
+    } else if (!this.authResolved || this.authPending) {
       key = 'waiting-auth'; // khách: đợi đăng nhập ẩn danh xong mới biết truy vấn theo uid hay mã khách
     } else if (this.customerUid) {
       key = `uid:${this.customerUid}`;
@@ -430,7 +449,8 @@ export class FirestoreRepository implements DataRepository {
 
   async createOrder(input: CreateOrderInput) {
     await this.menuReady;
-    let customerUid = this.customerUid ?? (await this.authReady);
+    await this.authReady;
+    let customerUid = currentCustomerUid();
     if (!customerUid) {
       // Thử đăng nhập ẩn danh lại (lần trước có thể mất mạng)
       this.authReady = this.refreshAuth();

@@ -3,7 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { useSession } from '@/store/session';
 import { useIsStaff } from '@/store/staff-auth';
 
-/** Yêu cầu đã đăng nhập (email trường hoặc khách) */
+/** Yêu cầu đã đăng nhập (Microsoft 365 của trường hoặc khách) */
 export function RequireUser() {
   const user = useSession((s) => s.user);
   const location = useLocation();

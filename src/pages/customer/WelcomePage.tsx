@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { ArrowRight, BadgeCheck, FlaskConical, Info, Mail, MessageCircle, ShieldCheck, Store, UserRound } from 'lucide-react';
-import { APP_CONFIG } from '@/config/app';
+import { ArrowRight, BadgeCheck, FlaskConical, Info, MessageCircle, ShieldCheck, Store, UserRound } from 'lucide-react';
+import { APP_CONFIG, MICROSOFT_SSO } from '@/config/app';
+import { BACKEND } from '@/config/firebase';
 import { Button } from '@/components/ui';
 import { FulfillmentPicker } from '@/components/customer/FulfillmentPicker';
 import {
@@ -10,6 +11,7 @@ import {
   GUEST_NAME,
   LOGIN_RULES,
   MethodButton,
+  MicrosoftLogo,
   ProfileFields,
   StepHeader,
   WelcomeHero,
@@ -17,12 +19,20 @@ import {
   focusFirstInvalid,
   formatPhoneDisplay,
   redirectTarget,
+  reportSsoError,
   toProfileData,
   useProfileForm,
 } from '@/components/onboarding';
 import { useAction } from '@/hooks/useAction';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { platform, type PlatformProfile } from '@/platform';
+import {
+  checkAuthConfigured,
+  completeMicrosoftRedirect,
+  signInCustomerWithMicrosoft,
+  signOutCustomer,
+  type MicrosoftProfile,
+} from '@/services/firebase';
 import { useSession } from '@/store/session';
 import { toast } from '@/store/ui';
 import type { AuthProvider, FulfillmentType } from '@/types';
@@ -34,8 +44,14 @@ const { pickup, delivery } = APP_CONFIG.fulfillment;
 const HAS_FULFILLMENT_STEP = delivery.enabled;
 const STEP_LABELS = HAS_FULFILLMENT_STEP ? ['Đăng nhập', 'Nhận món'] : ['Đăng nhập'];
 const IS_ZALO = platform.name === 'zalo';
+/** Hiện nút Microsoft 365: SSO thật (Firebase) hoặc mô phỏng ở bản demo offline */
+const SHOW_MICROSOFT = MICROSOFT_SSO || BACKEND === 'local';
 
 const PROFILE_COPY: Record<AuthProvider, { title: string; description: string }> = {
+  microsoft: {
+    title: 'Xác nhận thông tin',
+    description: 'Đã đăng nhập bằng tài khoản Microsoft 365 của trường. Thêm số điện thoại để quán liên hệ khi cần.',
+  },
   school_email: {
     title: 'Đăng nhập bằng email trường',
     description: 'Lần sau đăng nhập lại bằng cùng email là xem được các đơn đã đặt.',
@@ -70,6 +86,8 @@ export default function WelcomePage() {
   const [stage, setStage] = useState<Stage>('method');
   const [method, setMethod] = useState<AuthProvider>('school_email');
   const [zaloProfile, setZaloProfile] = useState<PlatformProfile | null>(null);
+  const [msProfile, setMsProfile] = useState<MicrosoftProfile | null>(null);
+  const [ssoLoading, setSsoLoading] = useState(false);
   const form = useProfileForm(EMPTY_PROFILE);
   const [fulfillment, setFulfillment] = useState<FulfillmentType>(() => initialFulfillment(savedFulfillment));
   const [address, setAddress] = useState(savedAddress);
@@ -87,6 +105,31 @@ export default function WelcomePage() {
     headingRef.current?.focus({ preventScroll: true });
   }, [stage]);
 
+  // Đăng nhập Microsoft 365 xong: điền sẵn email (không sửa) + tên, sang bước thông tin
+  const applyMicrosoft = (profile: MicrosoftProfile) => {
+    setMsProfile(profile);
+    form.setValues((v) => ({ ...v, email: profile.email, name: v.name.trim() ? v.name : profile.name }));
+    setMethod('microsoft');
+    form.resetErrors();
+    setStage('profile');
+  };
+
+  // Quay về từ trang đăng nhập Microsoft (khi trình duyệt chặn cửa sổ bật lên)
+  useEffect(() => {
+    if (!MICROSOFT_SSO) return;
+    let alive = true;
+    void checkAuthConfigured(); // kiểm tra sớm để lúc bấm nút có sẵn kết quả
+    completeMicrosoftRedirect()
+      .then((profile) => {
+        if (alive && profile) applyMicrosoft(profile);
+      })
+      .catch(reportSsoError);
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [fetchZaloProfile, zaloLoading] = useAction(async () => {
     const profile = await platform.getProfile();
     if (!profile) throw new Error('Chưa lấy được thông tin Zalo. Bạn thử lại hoặc chọn cách khác nhé.');
@@ -102,6 +145,31 @@ export default function WelcomePage() {
     setMethod(m);
     form.resetErrors();
     setStage('profile');
+  };
+
+  const startMicrosoft = async () => {
+    // Bản demo offline (không có Firebase): mô phỏng bằng ô nhập email trường
+    if (!MICROSOFT_SSO) return choose('school_email');
+    setSsoLoading(true);
+    // Cửa sổ đăng nhập không phản hồi quá 2 phút (bị ẩn / trình duyệt nhúng) → mở lại nút để thử lại
+    const watchdog = window.setTimeout(() => setSsoLoading(false), 120_000);
+    try {
+      applyMicrosoft(await signInCustomerWithMicrosoft());
+    } catch (err) {
+      reportSsoError(err);
+    } finally {
+      window.clearTimeout(watchdog);
+      setSsoLoading(false);
+    }
+  };
+
+  const backToMethods = () => {
+    // Đổi ý khi đã đăng nhập Microsoft → thoát tài khoản đó
+    if (method === 'microsoft') {
+      setMsProfile(null);
+      void signOutCustomer();
+    }
+    setStage('method');
   };
 
   const chooseZalo = async () => {
@@ -122,6 +190,22 @@ export default function WelcomePage() {
     const data = toProfileData(form.values, rules);
     let name: string;
     switch (method) {
+      case 'microsoft':
+        if (!msProfile) {
+          setStage('method');
+          return;
+        }
+        // id theo uid Firebase của tài khoản Microsoft → đăng nhập trên máy nào cũng thấy lịch sử đơn
+        name = login({
+          id: `ms_${msProfile.uid}`,
+          name: data.name,
+          email: msProfile.email,
+          phone: data.phone,
+          studentId: data.studentId,
+          isGuest: false,
+          authProvider: 'microsoft',
+        }).name;
+        break;
       case 'school_email':
         // id cố định theo email → đăng nhập lại vẫn thấy lịch sử đơn cũ
         name = login({
@@ -180,7 +264,7 @@ export default function WelcomePage() {
   const draft = toProfileData(form.values, rules);
   const whoName = draft.name || GUEST_NAME;
   const whoDetail =
-    method === 'school_email'
+    method === 'school_email' || method === 'microsoft'
       ? draft.email
       : [method === 'zalo' ? 'Tài khoản Zalo' : 'Khách', draft.phone && formatPhoneDisplay(draft.phone)].filter(Boolean).join(' · ');
 
@@ -203,12 +287,16 @@ export default function WelcomePage() {
               <p className={lead}>Chưa đến một phút là xong.</p>
 
               <div className="mt-5 space-y-3">
-                <MethodButton
-                  icon={<Mail className="h-5 w-5" />}
-                  title="Đăng nhập bằng email trường"
-                  description="Lưu lịch sử đơn, gọi lại món quen"
-                  onClick={() => choose('school_email')}
-                />
+                {SHOW_MICROSOFT && (
+                  <MethodButton
+                    tone="microsoft"
+                    icon={<MicrosoftLogo className="h-6 w-6" />}
+                    title="Đăng nhập bằng Microsoft 365"
+                    description="Dùng tài khoản email trường · lưu lịch sử đơn trên mọi máy"
+                    loading={ssoLoading}
+                    onClick={startMicrosoft}
+                  />
+                )}
                 {IS_ZALO && (
                   <MethodButton
                     tone="zalo"
@@ -257,11 +345,24 @@ export default function WelcomePage() {
           {/* ───────── Bước 1b: thông tin cá nhân ───────── */}
           {stage === 'profile' && (
             <>
-              <StepHeader step={1} labels={STEP_LABELS} onBack={() => setStage('method')} />
+              <StepHeader step={1} labels={STEP_LABELS} onBack={backToMethods} />
               <h2 ref={headingRef} tabIndex={-1} className={heading}>
                 {PROFILE_COPY[method].title}
               </h2>
               <p className={lead}>{PROFILE_COPY[method].description}</p>
+
+              {method === 'microsoft' && msProfile && (
+                <div className="mt-4 flex items-center gap-3 rounded-2xl bg-white p-3 shadow-card ring-1 ring-bronze-200/50">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-bronze-50 ring-1 ring-bronze-200">
+                    <MicrosoftLogo className="h-5 w-5" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-espresso">{msProfile.name}</p>
+                    <p className="truncate text-xs text-leaf-dark">Đã xác thực · {msProfile.email}</p>
+                  </div>
+                  <BadgeCheck className="h-5 w-5 shrink-0 text-leaf" aria-hidden />
+                </div>
+              )}
 
               {method === 'zalo' && zaloProfile && (
                 <div className="mt-4 flex items-center gap-3 rounded-2xl bg-white p-3 shadow-card ring-1 ring-bronze-200/50">
@@ -290,7 +391,7 @@ export default function WelcomePage() {
                 {method === 'school_email' && (
                   <p className="mt-4 flex items-center gap-2 rounded-xl bg-bronze-100/70 px-3 py-2 text-xs text-bronze-700">
                     <FlaskConical className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                    Bản thử nghiệm: chưa gửi mã xác thực
+                    Bản xem thử offline: mô phỏng đăng nhập Microsoft 365 bằng email
                   </p>
                 )}
                 <div className="mt-auto pb-2 pt-6">

@@ -9,6 +9,7 @@ App đã kết nối với project **`g9cloud-22931`**. Dữ liệu thực đơn
 | Cloud Firestore | ✅ Đã tạo. Đã có thực đơn mẫu (23 món). Đã thử đặt đơn → thu ngân xác nhận → khách nhận thông báo thời gian thực (đơn thử đã được xoá) | — |
 | Security Rules | ⚠️ **Đang ở chế độ thử nghiệm (test mode)**: bất kỳ ai có cấu hình web đều đọc, ghi và xoá được toàn bộ dữ liệu. Test mode còn **tự hết hạn** sau 30 ngày kể từ lúc tạo, khi đó app ngừng hoạt động | Làm các bước ở mục 2 |
 | Authentication | ❌ Chưa bật (`CONFIGURATION_NOT_FOUND`) | Làm mục 2, bước 1 |
+| SSO Microsoft 365 | Code đã sẵn sàng, chờ đăng ký app trên Entra ID | Làm theo [M365_SSO.md](M365_SSO.md) |
 | Đăng nhập nhân viên | Đang dùng PIN `9999` trên máy (`APP_CONFIG.admin.auth = 'pin'`) | Chuyển sang tài khoản Firebase (mục 2) |
 
 Khi chưa bật Authentication, app vẫn chạy: khách đặt hàng bình thường, đơn được lọc theo mã khách. Chỉ nên dùng như vậy để thử nghiệm.
@@ -29,8 +30,9 @@ Khi chưa bật Authentication, app vẫn chạy: khách đặt hàng bình thư
 
 1. **Bật Authentication**: Firebase Console › Build › Authentication › *Get started*, rồi bật:
    - **Anonymous**: mỗi điện thoại khách có một tài khoản ẩn danh, dùng để chỉ cho xem đơn của chính mình.
-   - **Email/Password**: tài khoản cho nhân viên.
-2. **Tạo tài khoản nhân viên**: Authentication › Users › *Add user* (email + mật khẩu). Sau đó sao chép **User UID**.
+   - **Microsoft**: SSO bằng tài khoản Microsoft 365 của trường cho khách và nhân viên (xem [M365_SSO.md](M365_SSO.md)).
+   - **Email/Password** (tuỳ chọn): tài khoản cho nhân viên không có email trường.
+2. **Tạo tài khoản nhân viên**: để nhân viên đăng nhập trang quản trị bằng **Microsoft 365** một lần (hoặc tạo user email + mật khẩu trong Authentication › Users). Màn hình sẽ báo “chưa có quyền” kèm **UID**; sao chép UID đó (cũng xem được ở Authentication › Users).
 3. **Cấp quyền nhân viên**: Firestore › *Start collection* `staff`:
    - Document ID = **User UID** vừa sao chép.
    - Thêm trường `name` (string) và `role` = `staff` hoặc `admin`.

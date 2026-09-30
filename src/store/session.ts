@@ -4,6 +4,7 @@ import { persistStorage } from './persist-storage';
 import type { CustomerInfo, FulfillmentType } from '@/types';
 import { uid } from '@/lib/id';
 import { useNotifications } from './notifications';
+import { BACKEND } from '@/config/firebase';
 
 interface SessionState {
   user: CustomerInfo | null;
@@ -43,7 +44,12 @@ export const useSession = create<SessionState>()(
         const u = get().user;
         if (u) set({ user: { ...u, ...patch } });
       },
-      logout: () => set({ user: null }),
+      logout: () => {
+        set({ user: null });
+        // Máy dùng chung: đổi sang phiên Firebase khách mới (thoát Microsoft 365 nếu có) —
+        // người sau không xem được đơn của người trước
+        if (BACKEND === 'firebase') void import('@/services/firebase').then((m) => m.signOutCustomer()).catch(() => undefined);
+      },
       setFulfillment: (fulfillment, address) =>
         set((s) => ({ fulfillment, deliveryAddress: address ?? s.deliveryAddress })),
       setDeliveryAddress: (deliveryAddress) => set({ deliveryAddress }),

@@ -34,6 +34,8 @@ const FIELDS: ProfileField[] = ['email', 'name', 'phone', 'studentId'];
 
 /** Quy tắc theo cách đăng nhập ở màn hình chào */
 export const LOGIN_RULES: Record<AuthProvider, ProfileRules> = {
+  // SSO Microsoft 365: email lấy từ tài khoản trường (không sửa), tên điền sẵn
+  microsoft: { email: 'readonly', name: 'required', phone: 'required', studentId: 'optional' },
   school_email: { email: 'required', name: 'required', phone: 'required', studentId: 'optional' },
   zalo: { email: 'hidden', name: 'required', phone: 'required', studentId: 'optional' },
   // Khách: tên + SĐT tuỳ chọn ở đây, sẽ được hỏi lại lúc thanh toán
@@ -60,7 +62,7 @@ const DOMAIN_LIST = DOMAINS.map((d) => `@${d}`).join(', ');
 export const schoolDomainHint = DOMAINS.length ? `Chỉ nhận email trường (${DOMAIN_LIST})` : undefined;
 export const schoolEmailPlaceholder = `ten.ban@${DOMAINS[0] ?? 'truong.edu.vn'}`;
 
-function matchesSchoolDomain(email: string): boolean {
+export function matchesSchoolDomain(email: string): boolean {
   if (!DOMAINS.length) return true;
   const domain = email.slice(email.lastIndexOf('@') + 1).toLowerCase();
   // Nhận cả tên miền con, VD hs.truong.edu.vn
@@ -98,7 +100,7 @@ export function validateField(field: ProfileField, raw: string, rules: ProfileRu
 /** Chuẩn hoá: gọn khoảng trắng, email chữ thường, SĐT dạng 0xxxxxxxxx, mã in hoa */
 export function toProfileData(values: ProfileValues, rules: ProfileRules): ProfileData {
   const name = values.name.trim().replace(/\s+/g, ' ');
-  const email = rules.email === 'required' ? values.email.trim().toLowerCase() : undefined;
+  const email = rules.email !== 'hidden' && values.email.trim() ? values.email.trim().toLowerCase() : undefined;
   const phone = values.phone.trim() ? normalizePhone(values.phone.trim()) : undefined;
   const studentId = rules.studentId !== 'hidden' && values.studentId.trim() ? values.studentId.trim().toUpperCase() : undefined;
   return { name, email, phone, studentId };
