@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320">
+<defs>
+<path id="muffin-d" d="M58,200Q56.2,190.1 61.4,180.6Q60.7,170.5 66.8,162.1Q66.4,151.2 72.3,143.4Q75.2,133.9 83.8,128.5Q87.7,119.4 96.4,115.3Q101,105.7 109.4,102Q115.3,92.6 124.1,89.7Q132.2,84.2 141.9,85.4Q150.7,81.1 160,83.9Q169,83.4 177.4,89.9Q187,87.9 195,92.6Q204,94.5 210.2,102.8Q219,105.8 224.1,114.7Q232.4,119.2 236,128.7Q244.1,134.4 246.6,144.1Q255.8,150.5 258.7,159.8Q264.1,168.9 262.8,179.7Q265.9,189.7 262,200Q258,222 160,224Q62,222 58,200Z"/>
+<clipPath id="muffin-dc"><use href="#muffin-d"/></clipPath>
+<g id="muffin-w"><path d="M-11,-2L-7,-9L1,-10L9,-6L12,1L7,8L-2,9L-9,6Z" fill="#8C6A45"/><path d="M-11,-2L-7,-9L1,-10L4,-4L-2,1L-9,2Z" fill="#B08A5E"/><path d="M-3,-6Q1,-2 -1,3M4,-3Q7,1 4,6" fill="none" stroke="#5A4128" stroke-width="1.5" stroke-linecap="round"/></g>
+</defs>
+<ellipse cx="160" cy="288" rx="106" ry="12" fill="#2A2218" opacity=".12"/>
+<path d="M32,272L262,282L288,230V232.5L262,284.5L32,274.5Z" fill="#A8885C"/>
+<path d="M58,220L288,230L262,282L32,272Z" fill="#C7AB82"/>
+<path d="M58,220L124,222.9L96,274.8L32,272Z" fill="#DECCAF" opacity=".45"/>
+<path d="M176,225.1L150,277.1" fill="none" stroke="#A8885C" stroke-width="1.2" opacity=".5"/>
+<ellipse cx="176" cy="266" rx="74" ry="14" fill="#86694A" opacity=".35"/>
+<path d="M84,196L104,262A56,12 0 0 0 216,262L236,196Z" fill="#B26A40"/>
+<path d="M84.8,198.4L104.6,263.7L106.3,265.4L87.1,200.8ZM90.8,203L109,267L112.9,268.5L96,205.2ZM102.5,207.1L117.6,269.8L123.3,271.1L110.2,208.8ZM118.8,210.3L129.7,272.1L136.7,272.9L128.4,211.5ZM138.5,212.3L144.2,273.5L152,273.9L149.1,212.8Z" fill="#C98B4A" opacity=".55"/>
+<path d="M159.9,213L159.9,274L167.9,273.9L170.7,212.8ZM181.3,212.3L175.7,273.5L183.2,272.9L191.5,211.5ZM201,210.3L190.2,272.1L196.6,271.1L209.7,208.9ZM217.4,207.1L202.3,269.9L207.1,268.5L223.9,205.2ZM229.1,203.1L210.9,267L213.7,265.4L232.9,200.8ZM235.2,198.4L215.4,263.7L216,262L236,196Z" fill="#8C4F2E" opacity=".45"/>
+<path d="M211.8,208.4L198.2,270.8A56,12 0 0 0 216,262L236,196Z" fill="#8C4F2E" opacity=".4"/>
+<path d="M84,196L104,262L107.8,266.3L89.2,202.2Z" fill="#DECCAF" opacity=".35"/>
+<ellipse cx="166" cy="212" rx="74" ry="12" fill="#6B3A20" opacity=".45"/>
+<use href="#muffin-d" fill="#B98A5C"/>
+<g clip-path="url(#muffin-dc)"><ellipse cx="130" cy="216" rx="96" ry="130" fill="#D2A878"/><ellipse cx="130" cy="134" rx="70" ry="44" fill="#DEB985"/><ellipse cx="112" cy="112" rx="28" ry="12" fill="#EBCF95" transform="rotate(-14 110 110)"/><path d="M58,204Q160,242 262,204" fill="none" stroke="#A8885C" stroke-width="6" opacity=".35"/></g>
+<g fill="#B98A5C" opacity=".55"><ellipse cx="118" cy="130" rx="7" ry="3"/><ellipse cx="190" cy="118" rx="9" ry="3"/><ellipse cx="226" cy="158" rx="9" ry="3"/><ellipse cx="146" cy="176" rx="7" ry="3"/><ellipse cx="90" cy="174" rx="7" ry="3"/><ellipse cx="186" cy="184" rx="11" ry="3"/></g>
+<g transform="translate(156 104) rotate(-8)"><ellipse rx="19" ry="9" fill="#C7AB82" transform="translate(1 3)"/><ellipse rx="19" ry="9" fill="#F5E6C4"/><ellipse rx="11" ry="5" fill="#EBCF95"/><g fill="#86694A"><circle cx="-3" cy="-1" r="1.2"/><circle cx="3" cy="-1" r="1.2"/><circle cx="0" cy="2" r="1.2"/></g></g>
+<use href="#muffin-w" transform="translate(116 124) rotate(-20) scale(1.1)"/>
+<use href="#muffin-w" transform="translate(200 116) rotate(15) scale(1.15)"/>
+<use href="#muffin-w" transform="translate(124 160) rotate(10) scale(1)"/>
+<use href="#muffin-w" transform="translate(222 150) rotate(-30) scale(1)"/>
+<use href="#muffin-w" transform="translate(172 146) rotate(5) scale(1.2)"/>
+<use href="#muffin-w" transform="translate(86 152) rotate(30) scale(0.9)"/>
+<use href="#muffin-w" transform="translate(160 178) rotate(60) scale(0.9)"/>
+</svg>

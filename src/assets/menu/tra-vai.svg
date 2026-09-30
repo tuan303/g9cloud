@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320">
+<defs>
+<linearGradient id="tra-vai-liq" x1="0" y1="94" x2="0" y2="284" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#CF9540"/><stop offset=".5" stop-color="#E2B464"/><stop offset="1" stop-color="#F1D79E"/></linearGradient><g id="tra-vai-lyc"><ellipse rx="14" ry="15.5" fill="#E2D5C3"/><ellipse cx="-1.5" cy="-1.6" rx="12.6" ry="14" fill="#F4ECE2"/><path d="M-6,9C-2,2 -2,-6 -6,-11M3,12C6,4 6,-4 2,-12" fill="none" stroke="#E2D5C3" stroke-width="1.1"/><ellipse cx="-5" cy="-7" rx="4.6" ry="3" transform="rotate(-40 -5 -7)" fill="#fff"/></g><clipPath id="tra-vai-shell"><path d="M-17,2L-13,-3L-9,2.5L-5,-2.5L-1,3L3,-2.5L7,3L11,-2.5L14.5,2.5L17,0A17,17 0 0 1 -17,2Z"/></clipPath><g id="tra-vai-leaf"><path d="M0,0C9,-7 11,-21 0,-32C-11,-21 -9,-7 0,0Z" fill="#8BA24A"/><path d="M0,0C9,-7 11,-21 0,-32Z" fill="#6F9B4E"/><path d="M0,-2V-27M0,-10L-5,-15M0,-18L-4,-22M0,-10L5,-15M0,-18L4,-22" fill="none" stroke="#C3D58F" stroke-width="1.2" stroke-linecap="round" opacity=".8"/></g>
+<linearGradient id="tra-vai-glass" x1="84" y1="0" x2="236" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".1" stop-color="#fff" stop-opacity=".22"/><stop offset=".38" stop-color="#fff" stop-opacity=".05"/><stop offset=".66" stop-color="#fff" stop-opacity="0"/><stop offset=".9" stop-color="#2A2218" stop-opacity=".1"/><stop offset="1" stop-color="#2A2218" stop-opacity=".22"/></linearGradient>
+<clipPath id="tra-vai-cup"><path d="M84,60A76,17 0 0 1 236,60L216,272A56,12 0 0 1 104,272Z"/></clipPath>
+<clipPath id="tra-vai-bandc"><path d="M97.2,200A62.8,13.7 0 0 0 222.8,200L221.1,218A61.1,13.3 0 0 1 98.9,218Z"/></clipPath>
+<g id="tra-vai-ice"><rect x="-17" y="-17" width="34" height="34" rx="8" fill="#FFFDF8" opacity=".42"/><rect x="-14" y="-14" width="25" height="25" rx="6" fill="#fff" opacity=".22"/><path d="M13,-4V7Q13,13 7,13H-4" fill="none" stroke="#86694A" stroke-width="2.4" stroke-linecap="round" opacity=".22"/><path d="M-11,1V-7Q-11,-11 -7,-11H3" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" opacity=".9"/></g>
+</defs>
+<ellipse cx="160" cy="288" rx="90" ry="12" fill="#2A2218" opacity=".12"/>
+<ellipse cx="160" cy="284" rx="60" ry="6" fill="#2A2218" opacity=".1"/>
+<path d="M84,60A76,17 0 0 1 236,60L216,272A56,12 0 0 1 104,272Z" fill="#FFFDF8" opacity=".4"/>
+<path d="M84,60A76,17 0 0 1 236,60" fill="none" stroke="#FFFDF8" stroke-width="3"/>
+<path d="M87.2,94A72.8,16.2 0 0 1 232.8,94L216,272A56,12 0 0 1 104,272Z" fill="url(#tra-vai-liq)"/>
+<g clip-path="url(#tra-vai-cup)">
+<g opacity=".86"><use href="#tra-vai-lyc" transform="translate(130 250)"/><use href="#tra-vai-lyc" transform="translate(186 248) scale(0.95)"/><use href="#tra-vai-lyc" transform="translate(158 236) scale(0.9)"/><use href="#tra-vai-lyc" transform="translate(196 168) scale(0.9)"/><use href="#tra-vai-lyc" transform="translate(124 176) scale(0.85)"/></g>
+<g opacity=".7"><use href="#tra-vai-ice" transform="translate(162 188) rotate(20) scale(0.9)"/><use href="#tra-vai-ice" transform="translate(200 142) rotate(-12) scale(0.85)"/></g>
+</g>
+<ellipse cx="160" cy="94" rx="72.8" ry="16.2" fill="#C48A38"/>
+<ellipse cx="146" cy="91" rx="50" ry="9.5" fill="#D6A150"/>
+<path d="M87.2,94A72.8,16.2 0 0 0 232.8,94" fill="none" stroke="#fff" stroke-width="1.6" opacity=".4"/>
+<g clip-path="url(#tra-vai-cup)">
+<use href="#tra-vai-ice" transform="translate(126 104) rotate(-14) scale(0.95)"/>
+<use href="#tra-vai-ice" transform="translate(170 122) rotate(8) scale(0.9)"/>
+</g>
+<use href="#tra-vai-leaf" transform="translate(142 96) rotate(-34) scale(0.9)"/><use href="#tra-vai-leaf" transform="translate(150 96) rotate(6)"/><use href="#tra-vai-leaf" transform="translate(157 97) rotate(42) scale(0.85)"/>
+<path d="M186,98L211,28" stroke="#D9AE63" stroke-width="10" stroke-linecap="round"/>
+<path d="M183.5,95.1L208.5,28.6" stroke="#F5E6C4" stroke-width="2.6" stroke-linecap="round"/>
+<g clip-path="url(#tra-vai-cup)"><use href="#tra-vai-ice" transform="translate(198 110) rotate(18)"/></g>
+<path d="M84,60A76,17 0 0 0 236,60L216,272A56,12 0 0 1 104,272Z" fill="url(#tra-vai-glass)"/>
+<path d="M95,80H101L113,256H109Z" fill="#fff" opacity=".55"/>
+<path d="M225,96H228.5L214,252H212Z" fill="#fff" opacity=".3"/>
+<path d="M103.4,266A56.6,12.1 0 0 0 216.6,266L216,272A56,12 0 0 1 104,272Z" fill="#fff" opacity=".45"/>
+<path d="M84,60A76,17 0 0 0 236,60" fill="none" stroke="#FFFDF8" stroke-width="3.2"/>
+<path d="M97.2,200A62.8,13.7 0 0 0 222.8,200L221.1,218A61.1,13.3 0 0 1 98.9,218Z" fill="#3A2E20"/>
+<g clip-path="url(#tra-vai-bandc)"><rect x="190" y="196" width="40" height="40" fill="#2A2218"/><path d="M104,196H110L112,236H106Z" fill="#6B5239"/></g>
+<path d="M97.2,200A62.8,13.7 0 0 0 222.8,200M98.9,218A61.1,13.3 0 0 0 221.1,218" fill="none" stroke="#86694A" stroke-width="1.2"/>
+<path d="M98.1,209A61.9,13.5 0 0 0 221.9,209" fill="none" stroke="#D9AE63" stroke-width="1.6"/>
+<g transform="translate(97 44) rotate(-20) scale(1.14)"><circle r="16.6" fill="#E2D5C3"/><circle cx="-1.4" cy="-1.6" r="15" fill="#F4ECE2"/><ellipse cx="-6" cy="-9" rx="5.4" ry="3.2" transform="rotate(-10 -6 -9)" fill="#fff"/><path d="M-17,2L-13,-3L-9,2.5L-5,-2.5L-1,3L3,-2.5L7,3L11,-2.5L14.5,2.5L17,0A17,17 0 0 1 -17,2Z" fill="#C2463B"/><g clip-path="url(#tra-vai-shell)"><ellipse cx="22" cy="14" rx="14" ry="20" fill="#9E3530"/><g fill="#8E2E2A" opacity=".6"><circle cx="-11.4" cy="7.6" r="1.7"/><circle cx="-5.4" cy="11.1" r="1.7"/><circle cx="1.6" cy="8.6" r="1.7"/><circle cx="8.6" cy="11.1" r="1.7"/><circle cx="13.6" cy="6.6" r="1.7"/><circle cx="-8.4" cy="16.1" r="1.7"/><circle cx="-1.4" cy="15.1" r="1.7"/><circle cx="5.6" cy="16.1" r="1.7"/><circle cx="-2.4" cy="6.1" r="1.7"/><circle cx="5.6" cy="5.6" r="1.7"/></g><g fill="#E27C6C"><circle cx="-12.7" cy="6.3" r=".9"/><circle cx="-6.7" cy="9.8" r=".9"/><circle cx="0.30000000000000004" cy="7.3" r=".9"/><circle cx="7.3" cy="9.8" r=".9"/><circle cx="12.3" cy="5.3" r=".9"/><circle cx="-9.7" cy="14.8" r=".9"/><circle cx="-2.7" cy="13.8" r=".9"/><circle cx="4.3" cy="14.8" r=".9"/><circle cx="-3.7" cy="4.8" r=".9"/><circle cx="4.3" cy="4.3" r=".9"/></g></g><path d="M-17,2L-13,-3L-9,2.5L-5,-2.5L-1,3L3,-2.5L7,3L11,-2.5L14.5,2.5L17,0" fill="none" stroke="#F3B8A8" stroke-width="1.2" stroke-linejoin="round"/></g>
+<g clip-path="url(#tra-vai-cup)" opacity=".22"><circle fill="#fff" cx="97" cy="44" r="19"/></g>
+<path d="M84,60A76,17 0 0 0 114,73.5" fill="none" stroke="#FFFDF8" stroke-width="3.2"/>
+</svg>

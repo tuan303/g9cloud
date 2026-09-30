@@ -1,0 +1,109 @@
+rules_version = '2';
+
+// Quy tắc bảo mật Firestore cho Cloud 9 (production).
+// YÊU CẦU trước khi triển khai (xem docs/FIREBASE.md):
+//   1. Bật Authentication › Anonymous (khách) và Email/Password (nhân viên).
+//   2. Tạo tài khoản nhân viên + tài liệu staff/{uid} trong Firestore.
+//   3. Đặt APP_CONFIG.admin.auth = 'firebase' trong src/config/app.ts.
+// Triển khai: firebase deploy --only firestore:rules  (hoặc dán vào Console › Firestore › Rules)
+// Khi đổi cấu trúc đơn hàng, cập nhật validNewOrder cho khớp buildOrder (src/services/order-logic.ts).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isStaff() {
+      return signedIn() && exists(/databases/$(database)/documents/staff/$(request.auth.uid));
+    }
+
+    function optionalString(data, field, max) {
+      return !(field in data) || (data[field] is string && data[field].size() <= max);
+    }
+
+    // Đơn mới do khách tạo (khớp với buildOrder trong src/services/order-logic.ts)
+    function validNewOrder(d) {
+      return d.keys().hasOnly(['code', 'customer', 'customerUid', 'fulfillment', 'deliveryAddress', 'note',
+                               'items', 'itemCount', 'subtotal', 'deliveryFee', 'discount', 'total',
+                               'paymentMethod', 'paymentStatus', 'status', 'createdAt', 'updatedAt', 'statusHistory'])
+        && d.customerUid == request.auth.uid
+        && d.status == 'pending_payment'
+        && d.paymentStatus == 'unpaid'
+        && d.code is string && d.code.matches('C9-[0-9]{3,4}')
+        && d.fulfillment in ['pickup', 'delivery']
+        && d.paymentMethod in ['qr_pos', 'vietqr']
+        && d.items is list && d.items.size() > 0 && d.items.size() <= 30
+        && d.itemCount is int && d.itemCount > 0
+        && d.subtotal is int && d.subtotal >= 0
+        && d.deliveryFee is int && d.deliveryFee >= 0
+        && d.discount == 0
+        && d.total == d.subtotal + d.deliveryFee
+        && d.createdAt is int
+        && d.createdAt > request.time.toMillis() - 3600000
+        && d.createdAt < request.time.toMillis() + 3600000
+        && d.updatedAt == d.createdAt
+        && d.statusHistory is list && d.statusHistory.size() == 1
+        && d.statusHistory[0].status == 'pending_payment'
+        && d.customer is map
+        && d.customer.name is string && d.customer.name.size() <= 100
+        && optionalString(d, 'note', 300)
+        && optionalString(d, 'deliveryAddress', 200);
+    }
+
+    // Thực đơn: ai cũng xem được, chỉ nhân viên sửa
+    match /menu/{itemId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    // Danh sách nhân viên: tạo/sửa trong Firebase Console (Admin), app chỉ đọc hồ sơ của chính mình
+    match /staff/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isStaff());
+      allow write: if false;
+    }
+
+    // Bộ đếm mã đơn theo ngày: khách chỉ được tăng đúng 1 đơn vị, không thêm trường lạ
+    match /counters/{day} {
+      allow read: if signedIn();
+      allow create: if isStaff()
+        || (signedIn()
+          && request.resource.data.keys().hasOnly(['seq', 'updatedAt'])
+          && request.resource.data.seq == 1);
+      allow update: if isStaff()
+        || (signedIn()
+          && request.resource.data.keys().hasOnly(['seq', 'updatedAt'])
+          && request.resource.data.seq == resource.data.seq + 1);
+    }
+
+    // Cờ hệ thống (VD meta/menuSeed — đã khởi tạo thực đơn mẫu)
+    match /meta/{id} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    match /orders/{orderId} {
+      // Khách chỉ đọc đơn của mình; nhân viên đọc tất cả
+      allow read: if isStaff()
+        || (signedIn() && resource.data.customerUid == request.auth.uid);
+
+      // Khách tạo đơn mới: của chính mình, đang chờ thanh toán, đúng cấu trúc, số liệu nhất quán.
+      // (Giá từng món được thu ngân đối chiếu lại với thực đơn trước khi xác nhận thu tiền.)
+      allow create: if isStaff() || (signedIn() && validNewOrder(request.resource.data));
+
+      // Nhân viên cập nhật mọi thứ. Khách chỉ được HUỶ đơn của mình khi chưa thanh toán.
+      allow update: if isStaff()
+        || (signedIn()
+          && resource.data.customerUid == request.auth.uid
+          && resource.data.status == 'pending_payment'
+          && request.resource.data.status == 'cancelled'
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['status', 'cancelReason', 'updatedAt', 'statusHistory'])
+          && request.resource.data.cancelReason is string
+          && request.resource.data.cancelReason.size() <= 200
+          && request.resource.data.statusHistory.size() == resource.data.statusHistory.size() + 1);
+
+      allow delete: if isStaff();
+    }
+  }
+}

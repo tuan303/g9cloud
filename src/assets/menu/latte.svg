@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320">
+<defs>
+<clipPath id="latte-body"><path d="M54,88C54,160 84,222 116,240Q148,254 180,240C212,222 242,160 242,88A94,24 0 0 1 54,88Z"/></clipPath>
+<clipPath id="latte-hdl"><path d="M236,112C270,98 300,116 294,148C288,178 260,192 224,190L228,178C256,178 280,168 282,146C284,122 262,114 239,126Z"/></clipPath>
+</defs>
+<ellipse cx="160" cy="288" rx="110" ry="12" fill="#2A2218" opacity=".12"/>
+<ellipse cx="160" cy="260" rx="124" ry="25" fill="#DECCAF"/>
+<ellipse cx="160" cy="255" rx="124" ry="25" fill="#F6F2EA"/>
+<path d="M36,255A124,25 0 0 0 120,279A124,25 0 0 1 36,255Z" fill="#FFFDF8"/>
+<ellipse cx="160" cy="252" rx="78" ry="15" fill="#E9DFCF"/>
+<ellipse cx="170" cy="250" rx="62" ry="10" fill="#DECCAF"/>
+<path d="M236,112C270,98 300,116 294,148C288,178 260,192 224,190L228,178C256,178 280,168 282,146C284,122 262,114 239,126Z" fill="#F6F2EA"/>
+<g clip-path="url(#latte-hdl)"><path d="M280,108C298,130 296,168 270,184L262,194H300V108Z" fill="#E9DFCF"/><path d="M224,186C254,188 280,172 288,146H300V200H220Z" fill="#DECCAF"/></g>
+<path d="M116,238L119,248A29,6 0 0 0 177,248L180,238Z" fill="#E9DFCF"/>
+<path d="M54,88C54,160 84,222 116,240Q148,254 180,240C212,222 242,160 242,88A94,24 0 0 1 54,88Z" fill="#F6F2EA"/>
+<g clip-path="url(#latte-body)">
+<ellipse cx="264" cy="168" rx="80" ry="112" fill="#E9DFCF"/>
+<ellipse cx="284" cy="168" rx="60" ry="112" fill="#DECCAF"/>
+<ellipse cx="148" cy="252" rx="70" ry="16" fill="#DECCAF" opacity=".7"/>
+<path d="M70,104C70,150 84,190 104,214C90,186 80,150 80,104Z" fill="#FFFDF8"/>
+<path d="M54.4,104A93.6,23.4 0 0 0 241.6,104" fill="none" stroke="#D9AE63" stroke-width="2"/>
+</g>
+<ellipse cx="148" cy="88" rx="94" ry="24" fill="#FFFDF8"/>
+<ellipse cx="148" cy="89.5" rx="88" ry="21" fill="#E9DFCF"/>
+<path d="M60,89.5A88,21 0 0 1 236,89.5A88,17 0 0 0 60,89.5Z" fill="#DECCAF"/>
+<ellipse cx="148" cy="92" rx="84" ry="18" fill="#A36F40"/>
+<ellipse cx="146" cy="92" rx="78" ry="16" fill="#B98A5C"/>
+<ellipse cx="140" cy="90" rx="58" ry="11" fill="#C39668"/>
+<g transform="translate(148 93) scale(1 .22)" fill="#FFFDF8">
+<path d="M-60,22C-42,62 42,62 60,22C44,38 -44,38 -60,22Z"/>
+<path d="M-50,-2C-32,34 32,34 50,-2C34,14 -34,14 -50,-2Z"/>
+<path d="M0,8C-16,-8 -46,-16 -46,-40C-46,-60 -20,-66 0,-48C20,-66 46,-60 46,-40C46,-16 16,-8 0,8Z"/>
+<rect x="-1.6" y="-44" width="3.2" height="92" rx="1.6"/>
+</g>
+<g fill="none" stroke-linecap="round" stroke-width="6"><path d="M128,62C116,52 136,44 124,30M170,60C158,48 180,40 168,24" stroke="#C7AB82" opacity=".22" transform="translate(2 2)"/><path d="M128,62C116,52 136,44 124,30M170,60C158,48 180,40 168,24" stroke="#FFFDF8" opacity=".9"/></g>
+</svg>

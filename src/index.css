@@ -1,0 +1,74 @@
+@import '@fontsource/be-vietnam-pro/latin-400.css';
+@import '@fontsource/be-vietnam-pro/vietnamese-400.css';
+@import '@fontsource/be-vietnam-pro/latin-500.css';
+@import '@fontsource/be-vietnam-pro/vietnamese-500.css';
+@import '@fontsource/be-vietnam-pro/latin-600.css';
+@import '@fontsource/be-vietnam-pro/vietnamese-600.css';
+@import '@fontsource/be-vietnam-pro/latin-700.css';
+@import '@fontsource/be-vietnam-pro/vietnamese-700.css';
+@import '@fontsource/montserrat/latin-600.css';
+@import '@fontsource/montserrat/vietnamese-600.css';
+@import '@fontsource/montserrat/latin-700.css';
+@import '@fontsource/montserrat/vietnamese-700.css';
+@import '@fontsource/montserrat/latin-800.css';
+@import '@fontsource/montserrat/vietnamese-800.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+    --tabbar-h: 68px;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-espresso-900 font-sans text-espresso antialiased;
+    overscroll-behavior-y: none;
+  }
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  input,
+  textarea,
+  select {
+    font-size: 16px; /* tránh iOS tự phóng to khi focus */
+  }
+  ::selection {
+    @apply bg-gold/40;
+  }
+}
+
+@layer utilities {
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .safe-bottom {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+  }
+  /* Chừa chỗ cho thanh tab dưới cùng */
+  .pb-tabbar {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tabbar-h) + 16px);
+  }
+  .bottom-tabbar {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tabbar-h) + 8px);
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+}

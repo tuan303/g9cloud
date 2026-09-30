@@ -1,0 +1,151 @@
+import { useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Coffee, ReceiptText } from 'lucide-react';
+import { Button, EmptyState, Segmented, Skeleton } from '@/components/ui';
+import { LiveIndicator, OrderCard, TabPageHeader, useReorder } from '@/components/tracking';
+import { useDataReady, useMyActiveOrders, useMyOrders } from '@/hooks/data';
+import { useNow } from '@/hooks/useNow';
+import { usePageTitle } from '@/hooks/usePageTitle';
+import { formatDayMonth, isSameDay, startOfDay } from '@/lib/format';
+import { isActiveOrder } from '@/lib/order-status';
+import type { Order } from '@/types';
+
+type Tab = 'active' | 'history';
+
+const WEEKDAYS = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
+
+function dayLabel(ts: number, now: number): string {
+  if (isSameDay(ts, now)) return 'Hôm nay';
+  if (isSameDay(ts, now - 86_400_000)) return 'Hôm qua';
+  return `${WEEKDAYS[new Date(ts).getDay()]}, ${formatDayMonth(ts)}`;
+}
+
+/** Gom đơn theo ngày (danh sách đã sắp mới nhất trước) */
+function groupByDay(orders: Order[], now: number) {
+  const groups: { key: number; label: string; orders: Order[] }[] = [];
+  for (const o of orders) {
+    const key = startOfDay(o.createdAt);
+    let g = groups[groups.length - 1];
+    if (!g || g.key !== key) {
+      g = { key, label: dayLabel(o.createdAt, now), orders: [] };
+      groups.push(g);
+    }
+    g.orders.push(o);
+  }
+  return groups;
+}
+
+function ListSkeleton() {
+  return (
+    <div className="space-y-3" aria-busy="true" aria-label="Đang tải đơn hàng">
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="rounded-3xl bg-white p-4 shadow-card ring-1 ring-bronze-200/50">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-11 w-11" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-24 rounded-lg" />
+              <Skeleton className="h-3 w-32 rounded-lg" />
+            </div>
+            <Skeleton className="h-6 w-20 rounded-full" />
+          </div>
+          <Skeleton className="mt-4 h-4 w-3/4 rounded-lg" />
+          <Skeleton className="mt-3 h-1.5 w-full rounded-full" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function OrdersPage() {
+  usePageTitle('Đơn hàng');
+  const navigate = useNavigate();
+  const ready = useDataReady();
+  const mine = useMyOrders();
+  const active = useMyActiveOrders();
+  const history = useMemo(() => mine.filter((o) => !isActiveOrder(o)), [mine]);
+  const reorder = useReorder();
+  const now = useNow(30_000);
+
+  // Tab lưu trên URL để quay lại từ chi tiết đơn vẫn giữ đúng tab
+  const [params, setParams] = useSearchParams();
+  const param = params.get('tab');
+  const tab: Tab = param === 'active' || param === 'history' ? param : active.length || !history.length ? 'active' : 'history';
+  const setTab = (t: Tab) => setParams({ tab: t }, { replace: true });
+
+  const groups = useMemo(() => groupByDay(history, now), [history, now]);
+  const goMenu = () => navigate('/');
+
+  return (
+    <div className="min-h-full">
+      <TabPageHeader
+        title="Đơn hàng"
+        subtitle={active.length ? `Bạn có ${active.length} đơn đang xử lý` : 'Theo dõi và đặt lại món yêu thích'}
+      >
+        <Segmented<Tab>
+          ariaLabel="Lọc đơn hàng"
+          value={tab}
+          onChange={setTab}
+          options={[
+            { value: 'active', label: 'Đang xử lý', badge: active.length },
+            {
+              value: 'history',
+              label: (
+                <>
+                  Lịch sử
+                  {history.length > 0 && <span className="font-display tabular-nums opacity-70">{history.length}</span>}
+                </>
+              ),
+            },
+          ]}
+        />
+      </TabPageHeader>
+
+      <div role="tabpanel" aria-label={tab === 'active' ? 'Đơn đang xử lý' : 'Lịch sử đơn hàng'} className="px-4 pt-4">
+        {!ready ? (
+          <ListSkeleton />
+        ) : tab === 'active' ? (
+          active.length ? (
+            <div className="space-y-3">
+              {active.map((o) => (
+                <OrderCard key={o.id} order={o} now={now} />
+              ))}
+              <div className="flex flex-col items-center gap-2 pt-3 text-center">
+                <LiveIndicator />
+                <p className="max-w-[17rem] text-xs leading-relaxed text-stone">
+                  Trạng thái tự cập nhật — bạn sẽ nhận thông báo ngay khi món sẵn sàng.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <EmptyState
+              icon={<Coffee className="h-9 w-9" />}
+              title="Chưa có đơn đang xử lý"
+              description="Chọn món yêu thích — Cloud 9 sẽ pha ngay cho bạn."
+              action={<Button onClick={goMenu}>Xem thực đơn</Button>}
+            />
+          )
+        ) : history.length ? (
+          <div className="space-y-5">
+            {groups.map((g) => (
+              <section key={g.key} aria-label={g.label}>
+                <h2 className="mb-2 px-1 text-xs font-bold uppercase tracking-[0.14em] text-bronze-600">{g.label}</h2>
+                <div className="space-y-3">
+                  {g.orders.map((o) => (
+                    <OrderCard key={o.id} order={o} now={now} onReorder={reorder} />
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            icon={<ReceiptText className="h-9 w-9" />}
+            title="Chưa có lịch sử đơn hàng"
+            description="Đơn đã hoàn thành hoặc đã huỷ sẽ nằm ở đây để bạn đặt lại nhanh."
+            action={<Button onClick={goMenu}>Đặt món ngay</Button>}
+          />
+        )}
+      </div>
+    </div>
+  );
+}

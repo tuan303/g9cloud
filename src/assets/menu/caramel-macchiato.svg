@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320">
+<defs>
+<linearGradient id="caramel-macchiato-liq" x1="0" y1="94" x2="0" y2="284" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#F6F2EA"/><stop offset=".07" stop-color="#EFE3CC"/><stop offset=".13" stop-color="#A8774A"/><stop offset=".26" stop-color="#5C3A1E"/><stop offset=".42" stop-color="#8C5E36"/><stop offset=".54" stop-color="#D2A878"/><stop offset=".66" stop-color="#EFE3CC"/><stop offset="1" stop-color="#F8F1E4"/></linearGradient><clipPath id="caramel-macchiato-top"><ellipse cx="160" cy="94" rx="66" ry="13.6"/></clipPath>
+<linearGradient id="caramel-macchiato-glass" x1="84" y1="0" x2="236" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".1" stop-color="#fff" stop-opacity=".22"/><stop offset=".38" stop-color="#fff" stop-opacity=".05"/><stop offset=".66" stop-color="#fff" stop-opacity="0"/><stop offset=".9" stop-color="#2A2218" stop-opacity=".1"/><stop offset="1" stop-color="#2A2218" stop-opacity=".22"/></linearGradient>
+<clipPath id="caramel-macchiato-cup"><path d="M84,60A76,17 0 0 1 236,60L216,272A56,12 0 0 1 104,272Z"/></clipPath>
+<clipPath id="caramel-macchiato-bandc"><path d="M97.2,200A62.8,13.7 0 0 0 222.8,200L221.1,218A61.1,13.3 0 0 1 98.9,218Z"/></clipPath>
+<g id="caramel-macchiato-ice"><rect x="-17" y="-17" width="34" height="34" rx="8" fill="#FFFDF8" opacity=".42"/><rect x="-14" y="-14" width="25" height="25" rx="6" fill="#fff" opacity=".22"/><path d="M13,-4V7Q13,13 7,13H-4" fill="none" stroke="#86694A" stroke-width="2.4" stroke-linecap="round" opacity=".22"/><path d="M-11,1V-7Q-11,-11 -7,-11H3" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" opacity=".9"/></g>
+</defs>
+<ellipse cx="160" cy="288" rx="90" ry="12" fill="#2A2218" opacity=".12"/>
+<ellipse cx="160" cy="284" rx="60" ry="6" fill="#2A2218" opacity=".1"/>
+<path d="M84,60A76,17 0 0 1 236,60L216,272A56,12 0 0 1 104,272Z" fill="#FFFDF8" opacity=".4"/>
+<path d="M84,60A76,17 0 0 1 236,60" fill="none" stroke="#FFFDF8" stroke-width="3"/>
+<path d="M100,72C100,84 101,96 100,110M214,74C214,84 213,92 213,100M124,77C124,82 124,86 124,90" fill="none" stroke="#C98B4A" stroke-width="3.2" stroke-linecap="round" opacity=".75"/>
+<path d="M87.2,94A72.8,16.2 0 0 1 232.8,94L216,272A56,12 0 0 1 104,272Z" fill="url(#caramel-macchiato-liq)"/>
+<g clip-path="url(#caramel-macchiato-cup)">
+<path d="M88,150C108,166 124,148 146,162C164,174 178,154 198,166C210,173 222,168 232,158V170C220,182 208,184 196,178C178,168 166,188 146,176C126,164 110,182 89,164Z" fill="#5C3A1E" opacity=".55"/>
+<path d="M90,176C110,188 128,174 150,186C168,196 186,180 206,190C216,195 224,192 230,186V194C220,204 208,206 196,200C180,192 166,206 148,196C128,186 112,198 91,188Z" fill="#B98A5C" opacity=".6"/>
+<g opacity=".6"><use href="#caramel-macchiato-ice" transform="translate(120 168) rotate(-8)"/><use href="#caramel-macchiato-ice" transform="translate(198 160) rotate(14)"/><use href="#caramel-macchiato-ice" transform="translate(158 184) rotate(-22) scale(0.9)"/></g>
+<use href="#caramel-macchiato-ice" transform="translate(124 104) rotate(12)"/><use href="#caramel-macchiato-ice" transform="translate(164 124) rotate(-10) scale(0.9)"/>
+</g>
+<ellipse cx="160" cy="94" rx="72.8" ry="16.2" fill="#FFFDF8"/>
+<ellipse cx="170" cy="96" rx="58" ry="12" fill="#F6F2EA"/>
+<ellipse cx="152" cy="92" rx="52" ry="10" fill="#FFFDF8"/>
+<g clip-path="url(#caramel-macchiato-top)" fill="none" stroke-linecap="round" stroke-width="3">
+<path d="M71,74L137,114M93,74L159,114M115,74L181,114M137,74L203,114M159,74L225,114M181,74L247,114M71,114L137,74M93,114L159,74M115,114L181,74M137,114L203,74M159,114L225,74M181,114L247,74" stroke="#B26A40" opacity=".45" transform="translate(0 1.2)"/>
+<path d="M71,74L137,114M93,74L159,114M115,74L181,114M137,74L203,114M159,74L225,114M181,74L247,114M71,114L137,74M93,114L159,74M115,114L181,74M137,114L203,74M159,114L225,74M181,114L247,74" stroke="#C98B4A"/>
+</g>
+<path d="M186,96L211,28" stroke="#2A2218" stroke-width="10" stroke-linecap="round"/>
+<path d="M183.5,93.1L208.5,28.6" stroke="#56422B" stroke-width="2.6" stroke-linecap="round"/>
+<g clip-path="url(#caramel-macchiato-cup)"><use href="#caramel-macchiato-ice" transform="translate(200 110) rotate(-18)"/></g>
+<path d="M84,60A76,17 0 0 0 236,60L216,272A56,12 0 0 1 104,272Z" fill="url(#caramel-macchiato-glass)"/>
+<path d="M95,80H101L113,256H109Z" fill="#fff" opacity=".55"/>
+<path d="M225,96H228.5L214,252H212Z" fill="#fff" opacity=".3"/>
+<path d="M103.4,266A56.6,12.1 0 0 0 216.6,266L216,272A56,12 0 0 1 104,272Z" fill="#fff" opacity=".45"/>
+<path d="M84,60A76,17 0 0 0 236,60" fill="none" stroke="#FFFDF8" stroke-width="3.2"/>
+<path d="M97.2,200A62.8,13.7 0 0 0 222.8,200L221.1,218A61.1,13.3 0 0 1 98.9,218Z" fill="#3A2E20"/>
+<g clip-path="url(#caramel-macchiato-bandc)"><rect x="190" y="196" width="40" height="40" fill="#2A2218"/><path d="M104,196H110L112,236H106Z" fill="#6B5239"/></g>
+<path d="M97.2,200A62.8,13.7 0 0 0 222.8,200M98.9,218A61.1,13.3 0 0 0 221.1,218" fill="none" stroke="#86694A" stroke-width="1.2"/>
+<path d="M98.1,209A61.9,13.5 0 0 0 221.9,209" fill="none" stroke="#D9AE63" stroke-width="1.6"/>
+</svg>

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320">
+<defs>
+<linearGradient id="sua-chua-viet-quat-liq" x1="0" y1="94" x2="0" y2="284" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFFDF8"/><stop offset=".6" stop-color="#F3ECDF"/><stop offset=".69" stop-color="#A9A3D2"/><stop offset=".76" stop-color="#6D6FB0"/><stop offset=".86" stop-color="#4B4E8C"/><stop offset="1" stop-color="#3A3470"/></linearGradient><g id="sua-chua-viet-quat-berry"><circle r="9.5" fill="#34356A"/><circle cx="-1.2" cy="-1.2" r="8.3" fill="#4B4E8C"/><path d="M-7,-1A7,7 0 0 1 -1,-7.4A8,8 0 0 0 -7,-1Z" fill="#8E90C8"/><ellipse cx="-3.6" cy="-3.8" rx="2.6" ry="1.6" transform="rotate(-40 -3.6 -3.8)" fill="#B6B8E0" opacity=".8"/><path d="M1,-4.5l1.6,1.2l1.9,-.4l-.4,1.9l1.2,1.6l-1.9,.2l-.9,1.7l-.9,-1.7l-1.9,-.2l1.2,-1.6l-.4,-1.9Z" fill="#2A2A55"/></g><g id="sua-chua-viet-quat-leaf"><path d="M0,0C9,-7 11,-21 0,-32C-11,-21 -9,-7 0,0Z" fill="#8BA24A"/><path d="M0,0C9,-7 11,-21 0,-32Z" fill="#6F9B4E"/><path d="M0,-2V-27M0,-10L-5,-15M0,-18L-4,-22M0,-10L5,-15M0,-18L4,-22" fill="none" stroke="#C3D58F" stroke-width="1.2" stroke-linecap="round" opacity=".8"/></g>
+<linearGradient id="sua-chua-viet-quat-glass" x1="84" y1="0" x2="236" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".1" stop-color="#fff" stop-opacity=".22"/><stop offset=".38" stop-color="#fff" stop-opacity=".05"/><stop offset=".66" stop-color="#fff" stop-opacity="0"/><stop offset=".9" stop-color="#2A2218" stop-opacity=".1"/><stop offset="1" stop-color="#2A2218" stop-opacity=".22"/></linearGradient>
+<clipPath id="sua-chua-viet-quat-cup"><path d="M84,60A76,17 0 0 1 236,60L216,272A56,12 0 0 1 104,272Z"/></clipPath>
+<clipPath id="sua-chua-viet-quat-bandc"><path d="M97.2,200A62.8,13.7 0 0 0 222.8,200L221.1,218A61.1,13.3 0 0 1 98.9,218Z"/></clipPath>
+</defs>
+<ellipse cx="160" cy="288" rx="90" ry="12" fill="#2A2218" opacity=".12"/>
+<ellipse cx="160" cy="284" rx="60" ry="6" fill="#2A2218" opacity=".1"/>
+<path d="M84,60A76,17 0 0 1 236,60L216,272A56,12 0 0 1 104,272Z" fill="#FFFDF8" opacity=".4"/>
+<path d="M84,60A76,17 0 0 1 236,60" fill="none" stroke="#FFFDF8" stroke-width="3"/>
+<path d="M87.2,94A72.8,16.2 0 0 1 232.8,94L216,272A56,12 0 0 1 104,272Z" fill="url(#sua-chua-viet-quat-liq)"/>
+<g clip-path="url(#sua-chua-viet-quat-cup)">
+<path d="M86,214C104,206 122,218 142,210C160,204 176,216 196,208C210,202 222,208 234,204V232H86Z" fill="#A9A3D2" opacity=".45"/>
+<g fill="#6D6FB0" opacity=".85"><path d="M87.2,94A72.8,16.2 0 0 0 232.8,94V102C226,106 220,104 214,108C200,114 186,112 170,116C156,119 140,116 126,113C112,110 100,108 94,104C90,102 88,101 87.2,102Z"/><path d="M92,105.5Q96,105.5 96,110.5V131.5A5,5 0 0 0 106,131.5V110.5Q106,105.5 110,105.5ZM114.5,110.1Q118.5,110.1 118.5,115.1V168.1A5.5,5.5 0 0 0 129.5,168.1V115.1Q129.5,110.1 133.5,110.1ZM139,112.0Q143,112.0 143,117.0V144.0A5,5 0 0 0 153,144.0V117.0Q153,112.0 157,112.0ZM160.5,112.0Q164.5,112.0 164.5,117.0V186.0A5.5,5.5 0 0 0 175.5,186.0V117.0Q175.5,112.0 179.5,112.0ZM185,110.3Q189,110.3 189,115.3V150.3A5,5 0 0 0 199,150.3V115.3Q199,110.3 203,110.3ZM205.5,106.9Q209.5,106.9 209.5,111.9V166.9A4.5,4.5 0 0 0 218.5,166.9V111.9Q218.5,106.9 222.5,106.9Z"/></g>
+<path d="M98.4,113.5V130.5M120.9,118.1V167.1M145.4,120.0V143.0M166.9,120.0V185.0M191.4,118.3V149.3M211.9,114.9V165.9" fill="none" stroke="#A9A3D2" stroke-width="1.6" stroke-linecap="round" opacity=".8"/>
+</g>
+<ellipse cx="160" cy="94" rx="72.8" ry="16.2" fill="#F3ECDF"/>
+<ellipse cx="154" cy="91" rx="62" ry="12" fill="#FFFDF8"/>
+<path d="M87.2,94A72.8,16.2 0 0 0 232.8,94" fill="none" stroke="#fff" stroke-width="1.6" opacity=".5"/>
+<ellipse cx="152" cy="95" rx="32" ry="7" fill="#4B4E8C"/>
+<ellipse cx="144" cy="93.4" rx="16" ry="2.6" fill="#6D6FB0"/>
+<path d="M188,92L211,28" stroke="#D9AE63" stroke-width="10" stroke-linecap="round"/>
+<path d="M185.5,89.1L208.5,28.6" stroke="#F5E6C4" stroke-width="2.6" stroke-linecap="round"/>
+<use href="#sua-chua-viet-quat-berry" transform="translate(138 87) scale(0.85)"/><use href="#sua-chua-viet-quat-berry" transform="translate(155 87) scale(0.9)"/><use href="#sua-chua-viet-quat-berry" transform="translate(171 89) scale(0.82)"/><use href="#sua-chua-viet-quat-berry" transform="translate(124 95) scale(0.92)"/><use href="#sua-chua-viet-quat-berry" transform="translate(142 99)"/><use href="#sua-chua-viet-quat-berry" transform="translate(161 100) scale(1.02)"/><use href="#sua-chua-viet-quat-berry" transform="translate(179 96) scale(0.92)"/>
+<use href="#sua-chua-viet-quat-leaf" transform="translate(112 99) rotate(-64) scale(0.82)"/><use href="#sua-chua-viet-quat-leaf" transform="translate(116 96) rotate(-28) scale(0.74)"/>
+<path d="M84,60A76,17 0 0 0 236,60L216,272A56,12 0 0 1 104,272Z" fill="url(#sua-chua-viet-quat-glass)"/>
+<path d="M95,80H101L113,256H109Z" fill="#fff" opacity=".55"/>
+<path d="M225,96H228.5L214,252H212Z" fill="#fff" opacity=".3"/>
+<path d="M103.4,266A56.6,12.1 0 0 0 216.6,266L216,272A56,12 0 0 1 104,272Z" fill="#fff" opacity=".45"/>
+<path d="M84,60A76,17 0 0 0 236,60" fill="none" stroke="#FFFDF8" stroke-width="3.2"/>
+<path d="M97.2,200A62.8,13.7 0 0 0 222.8,200L221.1,218A61.1,13.3 0 0 1 98.9,218Z" fill="#3A2E20"/>
+<g clip-path="url(#sua-chua-viet-quat-bandc)"><rect x="190" y="196" width="40" height="40" fill="#2A2218"/><path d="M104,196H110L112,236H106Z" fill="#6B5239"/></g>
+<path d="M97.2,200A62.8,13.7 0 0 0 222.8,200M98.9,218A61.1,13.3 0 0 0 221.1,218" fill="none" stroke="#86694A" stroke-width="1.2"/>
+<path d="M98.1,209A61.9,13.5 0 0 0 221.9,209" fill="none" stroke="#D9AE63" stroke-width="1.6"/>
+</svg>

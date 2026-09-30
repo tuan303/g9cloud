@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320">
+<defs>
+<linearGradient id="ca-phe-muoi-liq" x1="0" y1="94" x2="0" y2="284" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2E1B0F"/><stop offset=".6" stop-color="#3E2413"/><stop offset="1" stop-color="#5C3A1E"/></linearGradient>
+<linearGradient id="ca-phe-muoi-glass" x1="84" y1="0" x2="236" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".1" stop-color="#fff" stop-opacity=".22"/><stop offset=".38" stop-color="#fff" stop-opacity=".05"/><stop offset=".66" stop-color="#fff" stop-opacity="0"/><stop offset=".9" stop-color="#2A2218" stop-opacity=".1"/><stop offset="1" stop-color="#2A2218" stop-opacity=".22"/></linearGradient>
+<clipPath id="ca-phe-muoi-cup"><path d="M84,60A76,17 0 0 1 236,60L216,272A56,12 0 0 1 104,272Z"/></clipPath>
+<clipPath id="ca-phe-muoi-bandc"><path d="M97.2,200A62.8,13.7 0 0 0 222.8,200L221.1,218A61.1,13.3 0 0 1 98.9,218Z"/></clipPath>
+<g id="ca-phe-muoi-ice"><rect x="-17" y="-17" width="34" height="34" rx="8" fill="#FFFDF8" opacity=".42"/><rect x="-14" y="-14" width="25" height="25" rx="6" fill="#fff" opacity=".22"/><path d="M13,-4V7Q13,13 7,13H-4" fill="none" stroke="#86694A" stroke-width="2.4" stroke-linecap="round" opacity=".22"/><path d="M-11,1V-7Q-11,-11 -7,-11H3" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" opacity=".9"/></g>
+</defs>
+<ellipse cx="160" cy="288" rx="90" ry="12" fill="#2A2218" opacity=".12"/>
+<ellipse cx="160" cy="284" rx="60" ry="6" fill="#2A2218" opacity=".1"/>
+<path d="M84,60A76,17 0 0 1 236,60L216,272A56,12 0 0 1 104,272Z" fill="#FFFDF8" opacity=".4"/>
+<path d="M84,60A76,17 0 0 1 236,60" fill="none" stroke="#FFFDF8" stroke-width="3"/>
+<path d="M87.2,94A72.8,16.2 0 0 1 232.8,94L216,272A56,12 0 0 1 104,272Z" fill="url(#ca-phe-muoi-liq)"/>
+<g clip-path="url(#ca-phe-muoi-cup)">
+<g opacity=".7"><use href="#ca-phe-muoi-ice" transform="translate(120 180) rotate(-10)"/><use href="#ca-phe-muoi-ice" transform="translate(198 172) rotate(12)"/><use href="#ca-phe-muoi-ice" transform="translate(158 196) rotate(20) scale(0.9)"/><use href="#ca-phe-muoi-ice" transform="translate(132 244) rotate(-4) scale(0.85)"/><use href="#ca-phe-muoi-ice" transform="translate(190 246) rotate(8) scale(0.85)"/></g>
+</g>
+<path d="M90.4,128C94,136 102,141 112,142C120,150 130,146 138,148C148,154 156,146 166,149C176,153 186,146 196,147C206,148 214,142 222,138C226,135 228,132 229.6,128L228.6,139C222,150 212,158 198,158C186,160 178,166 166,162C154,160 146,168 134,160C122,158 112,160 100,152C95,148 92,144 91.4,139Z" fill="#F6F2EA" opacity=".35"/>
+<path d="M150,146C152,156 150,166 153,172C156,166 156,156 158,148Z" fill="#F6F2EA" opacity=".5"/>
+<path d="M86.8,90L90.4,128C94,136 102,141 112,142C120,150 130,146 138,148C148,154 156,146 166,149C176,153 186,146 196,147C206,148 214,142 222,138C226,135 228,132 229.6,128L233.2,90A73.2,16.3 0 0 0 86.8,90Z" fill="#F3ECDF"/>
+<ellipse cx="160" cy="90" rx="73.2" ry="16.3" fill="#FFFDF8"/>
+<ellipse cx="166" cy="88" rx="58" ry="11" fill="#F6F2EA"/>
+<ellipse cx="150" cy="86" rx="46" ry="8.5" fill="#FFFDF8"/>
+<g fill="#B9B7B1"><path d="M138,82l2,2l-2,2l-2,-2Z" fill="#8A8A86"/><path d="M150,89l2,2l-2,2l-2,-2Z"/><path d="M166,78l2,2l-2,2l-2,-2Z" fill="#8A8A86"/><path d="M178,86l2,2l-2,2l-2,-2Z"/><path d="M158,84l2,2l-2,2l-2,-2Z" fill="#8A8A86"/><path d="M128,90l2,2l-2,2l-2,-2Z"/><path d="M194,81l2,2l-2,2l-2,-2Z" fill="#8A8A86"/><path d="M186,93l2,2l-2,2l-2,-2Z" fill="#8A8A86"/><path d="M146,76l2,2l-2,2l-2,-2Z"/><path d="M206,88l2,2l-2,2l-2,-2Z"/><path d="M118,84l2,2l-2,2l-2,-2Z" fill="#8A8A86"/></g>
+<path d="M186,92L211,28" stroke="#2A2218" stroke-width="10" stroke-linecap="round"/>
+<path d="M183.5,89L208.5,28.5" stroke="#56422B" stroke-width="2.6" stroke-linecap="round"/>
+<path d="M84,60A76,17 0 0 0 236,60L216,272A56,12 0 0 1 104,272Z" fill="url(#ca-phe-muoi-glass)"/>
+<path d="M95,80H101L113,256H109Z" fill="#fff" opacity=".55"/>
+<path d="M225,96H228.5L214,252H212Z" fill="#fff" opacity=".3"/>
+<path d="M103.4,266A56.6,12.1 0 0 0 216.6,266L216,272A56,12 0 0 1 104,272Z" fill="#fff" opacity=".45"/>
+<path d="M84,60A76,17 0 0 0 236,60" fill="none" stroke="#FFFDF8" stroke-width="3.2"/>
+<path d="M97.2,200A62.8,13.7 0 0 0 222.8,200L221.1,218A61.1,13.3 0 0 1 98.9,218Z" fill="#3A2E20"/>
+<g clip-path="url(#ca-phe-muoi-bandc)"><rect x="190" y="196" width="40" height="40" fill="#2A2218"/><path d="M104,196H110L112,236H106Z" fill="#6B5239"/></g>
+<path d="M97.2,200A62.8,13.7 0 0 0 222.8,200M98.9,218A61.1,13.3 0 0 0 221.1,218" fill="none" stroke="#86694A" stroke-width="1.2"/>
+<path d="M98.1,209A61.9,13.5 0 0 0 221.9,209" fill="none" stroke="#D9AE63" stroke-width="1.6"/>
+</svg>

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320">
+<defs>
+<path id="banh-su-kem-o" d="M-62,-10Q-63.8,-30.8 -54.3,-47.8Q-53.4,-65.1 -44.2,-73.8Q-36.3,-84.9 -23.1,-85.3Q-12.4,-95.4 0,-93.7Q13,-97.4 24.3,-89.2Q34.7,-83.9 40,-67.7Q50.1,-61.2 51.7,-46Q62.6,-29.8 62,-10Q60,4 0,5Q-60,4 -62,-10Z"/>
+<clipPath id="banh-su-kem-c"><use href="#banh-su-kem-o"/></clipPath>
+<g id="banh-su-kem-p"><use href="#banh-su-kem-o" fill="#B26A40"/><g clip-path="url(#banh-su-kem-c)"><ellipse cx="-10" cy="-50" rx="66" ry="56" fill="#C98B4A"/><ellipse cx="-22" cy="-66" rx="36" ry="26" fill="#D9AE63"/><ellipse cx="-30" cy="-74" rx="16" ry="10" fill="#EBCF95"/><path d="M-46,-52L-32,-60L-18,-54L-4,-63L10,-56L26,-64L42,-52M-18,-54L-20,-42M10,-56L12,-44" fill="none" stroke="#9C5A2E" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity=".45"/><path d="M-40,-78Q-24,-96 4,-94Q30,-94 42,-78Q30,-70 18,-76Q6,-68 -8,-76Q-24,-68 -40,-78Z" fill="#FFFDF8" opacity=".9"/></g></g>
+<g id="banh-su-kem-s" fill="#FFFDF8"><circle cx="-30" cy="-66" r="1.6"/><circle cx="-10" cy="-68" r="1.3"/><circle cx="12" cy="-66" r="1.8"/><circle cx="30" cy="-68" r="1.3"/><circle cx="-18" cy="-60" r="1.1"/><circle cx="26" cy="-60" r="1.1"/></g>
+<clipPath id="banh-su-kem-lc"><path d="M-56,-6Q-59.6,-19.3 -51.4,-30Q-48.8,-40.5 -36.3,-44Q-27.7,-52.8 -13,-51.2Q0.2,-57.7 13.3,-52.2Q27.8,-53.3 36.3,-44Q50,-41 53.9,-31.1Q60.8,-19.9 56,-6Q54,2.4 0,3Q-54,2.4 -56,-6Z"/></clipPath>
+</defs>
+<ellipse cx="160" cy="288" rx="106" ry="12" fill="#2A2218" opacity=".12"/>
+<ellipse cx="160" cy="260" rx="124" ry="25" fill="#DECCAF"/>
+<ellipse cx="160" cy="255" rx="124" ry="25" fill="#F6F2EA"/>
+<path d="M36,255A124,25 0 0 0 120,279A124,25 0 0 1 36,255Z" fill="#FFFDF8"/>
+<ellipse cx="160" cy="253" rx="92" ry="17" fill="#E9DFCF"/>
+<ellipse cx="163" cy="255" rx="88" ry="15.4" fill="#F6F2EA"/>
+<ellipse cx="160" cy="255" rx="115" ry="22.6" fill="none" stroke="#D9AE63" stroke-width="1.4"/>
+<ellipse cx="178" cy="252" rx="98" ry="15" fill="#DECCAF"/>
+<use href="#banh-su-kem-p" transform="translate(210 248)"/><use href="#banh-su-kem-s" transform="translate(210 248)"/>
+<use href="#banh-su-kem-p" transform="translate(112 256) scale(1.02)"/><use href="#banh-su-kem-s" transform="translate(112 256) scale(1.02)"/>
+<g transform="translate(160 184)"><ellipse cx="4" cy="6" rx="52" ry="9" fill="#9C5A2E" opacity=".35"/><path d="M-52,-22Q-54,2 -28,6Q0,11 28,6Q54,2 52,-22Z" fill="#B26A40"/><path d="M-52,-22Q-54,0 -28,4Q-4,8 14,4Q22,-8 12,-22Z" fill="#C98B4A"/><path d="M-46,-18Q-48,-4 -32,0Q-26,-8 -30,-18Z" fill="#D9AE63"/><path d="M-56,-20Q-66,-34 -48,-40Q-52,-58 -30,-56Q-26,-74 -6,-68Q6,-84 22,-70Q42,-76 44,-56Q62,-54 56,-36Q66,-24 50,-16Q26,-8 0,-10Q-28,-8 -48,-12Q-62,-12 -56,-20Z" fill="#F7EBCB"/><path d="M22,-70Q42,-76 44,-56Q62,-54 56,-36Q66,-24 50,-16Q26,-8 4,-10Q34,-20 38,-36Q44,-52 22,-70Z" fill="#EBCF95"/><path d="M-26,-12Q-44,-18 -48,-40M-4,-12Q-22,-30 -6,-68M-30,-56Q-34,-40 -18,-26" fill="none" stroke="#EBCF95" stroke-width="2" stroke-linecap="round"/><path d="M-58,-26Q-60,-36 -48,-40M-38,-50Q-34,-58 -26,-58M-12,-60Q-6,-70 4,-70" fill="none" stroke="#FFFDF8" stroke-width="3.4" stroke-linecap="round"/><g fill="#4A2A1A" opacity=".6"><circle cx="-36" cy="-28" r="1.1"/><circle cx="-14" cy="-40" r="1"/><circle cx="6" cy="-26" r="1.2"/><circle cx="24" cy="-46" r="1"/><circle cx="36" cy="-26" r="1.1"/><circle cx="-24" cy="-18" r="1"/><circle cx="12" cy="-56" r="1"/></g></g>
+<g transform="translate(140 126) rotate(-26)"><path d="M-56,-6Q-20,12 56,-6Q20,4 -56,-6Z" fill="#EBCF95"/><path d="M-56,-6Q-59.6,-19.3 -51.4,-30Q-48.8,-40.5 -36.3,-44Q-27.7,-52.8 -13,-51.2Q0.2,-57.7 13.3,-52.2Q27.8,-53.3 36.3,-44Q50,-41 53.9,-31.1Q60.8,-19.9 56,-6Q54,2.4 0,3Q-54,2.4 -56,-6Z" fill="#B26A40"/><g clip-path="url(#banh-su-kem-lc)"><ellipse cx="-10" cy="-26" rx="56" ry="30" fill="#C98B4A"/><ellipse cx="-22" cy="-36" rx="30" ry="14" fill="#D9AE63"/><path d="M-40,-34Q-20,-54 8,-52Q34,-50 44,-34Q30,-28 18,-34Q4,-26 -10,-34Q-26,-26 -40,-34Z" fill="#FFFDF8" opacity=".92"/><path d="M-6,-10Q-30,4 -56,-6" fill="none" stroke="#F5E6C4" stroke-width="5"/></g><g fill="#FFFDF8"><circle cx="-30" cy="-26" r="1.4"/><circle cx="-8" cy="-24" r="1.6"/><circle cx="16" cy="-26" r="1.3"/><circle cx="32" cy="-30" r="1.2"/></g></g>
+<g fill="#FFFDF8" opacity=".9"><circle cx="64" cy="262" r="1.6"/><circle cx="74" cy="268" r="1.2"/><circle cx="254" cy="258" r="1.5"/><circle cx="244" cy="266" r="1.2"/><circle cx="262" cy="264" r="1"/><circle cx="58" cy="252" r="1"/></g>
+</svg>

@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320">
+<defs>
+<g id="banh-mi-hoa-cuc-l"><ellipse rx="26" ry="14" fill="#6E3A20"/><ellipse cx="-1.5" cy="-2" rx="23.5" ry="11.5" fill="#A2582E"/><ellipse cx="-5" cy="-4.5" rx="14" ry="5.5" fill="#C97D42"/><ellipse cx="-8" cy="-6" rx="7" ry="1.8" fill="#F5E6C4" opacity=".6"/></g>
+</defs>
+<ellipse cx="160" cy="288" rx="106" ry="12" fill="#2A2218" opacity=".12"/>
+<path d="M32,272L262,282L288,230V232.5L262,284.5L32,274.5Z" fill="#A8885C"/>
+<path d="M58,220L288,230L262,282L32,272Z" fill="#C7AB82"/>
+<path d="M58,220L124,222.9L96,274.8L32,272Z" fill="#DECCAF" opacity=".45"/>
+<path d="M176,225.1L150,277.1" fill="none" stroke="#A8885C" stroke-width="1.2" opacity=".5"/>
+<path d="M79.4,252.7 215.9,212.2 286.3,233.6 149.8,274.1Z" fill="#86694A" opacity=".35"/>
+<path d="M62.5,177.3 63.2,161.5 70.2,145.6 84.3,137.9 220.8,97.4 239.1,98.9 257.4,108.4 271.4,124.7 278.5,144.8 279.2,161.1 271.4,228.7 134.9,269.2 70.2,249.6Z" fill="#B26A40"/>
+<path d="M134.9,269.2 271.4,228.7 275,165.8 138.5,206.3Z" fill="#C98B4A"/>
+<path d="M138.5,214.3 275,173.8 274.3,185.6 137.8,226.1Z" fill="#D9AE63" opacity=".6"/>
+<path d="M62.5,177.3 63.2,161.5 70.2,145.6 84.3,137.9 220.8,97.4 239.1,98.9 257.4,108.4 271.4,124.7 278.5,144.8 279.2,161.1 275,165.8 138.5,206.3 66.7,184.5Z" fill="#8C4F2E"/>
+<path d="M138.5,208.3L275,167.8" stroke="#8C4F2E" stroke-width="5" opacity=".5"/>
+<use href="#banh-mi-hoa-cuc-l" transform="translate(216.5 105.5) rotate(-52.5)"/>
+<use href="#banh-mi-hoa-cuc-l" transform="translate(197.3 111.2) rotate(-52.5)"/>
+<use href="#banh-mi-hoa-cuc-l" transform="translate(178.1 116.9) rotate(-52.5)"/>
+<use href="#banh-mi-hoa-cuc-l" transform="translate(158.9 122.6) rotate(-52.5)"/>
+<use href="#banh-mi-hoa-cuc-l" transform="translate(139.7 128.3) rotate(-52.5)"/>
+<use href="#banh-mi-hoa-cuc-l" transform="translate(120.6 134) rotate(-52.5)"/>
+<use href="#banh-mi-hoa-cuc-l" transform="translate(101.4 139.7) rotate(-52.5)"/>
+<use href="#banh-mi-hoa-cuc-l" transform="translate(241 137) rotate(19.5)"/>
+<use href="#banh-mi-hoa-cuc-l" transform="translate(221.8 142.7) rotate(19.5)"/>
+<use href="#banh-mi-hoa-cuc-l" transform="translate(202.6 148.4) rotate(19.5)"/>
+<use href="#banh-mi-hoa-cuc-l" transform="translate(183.4 154.1) rotate(19.5)"/>
+<use href="#banh-mi-hoa-cuc-l" transform="translate(164.2 159.8) rotate(19.5)"/>
+<use href="#banh-mi-hoa-cuc-l" transform="translate(145 165.5) rotate(19.5)"/>
+<path d="M70.2,249.6 66.7,184.5 62.5,177.3 63.2,161.5 70.2,145.6 84.3,137.9 102.6,139.4 120.9,149 134.9,165.2 142,185.4 142.7,201.6 138.5,206.3 134.9,269.2Z" fill="#C98B4A"/>
+<path d="M66.7,184.5 62.5,177.3 63.2,161.5 70.2,145.6 84.3,137.9 102.6,139.4 120.9,149 134.9,165.2 142,185.4 142.7,201.6 138.5,206.3Z" fill="#7A4226"/>
+<path d="M73.6,243.6 70.4,185 66.6,178.4 67.2,164.2 73.6,150 86.2,143 102.7,144.4 119.1,153 131.8,167.6 138.1,185.7 138.7,200.3 134.9,204.6 131.8,261.2Z" fill="#F4DFA6"/>
+<path d="M82.6,222.5 80.4,182.2 77.8,177.7 78.2,167.9 82.6,158 91.3,153.2 102.7,154.2 114,160.1 122.7,170.2 127.1,182.7 127.5,192.7 124.9,195.7 122.7,234.7Z" fill="#F9ECC4"/>
+<g fill="#E2C27F"><ellipse cx="119.1" cy="181.7" rx="2.4" ry="1.6" transform="rotate(-38 119.1 181.7)"/><ellipse cx="117.3" cy="248.7" rx="1.8" ry="1.6" transform="rotate(-38 117.3 248.7)"/><ellipse cx="111.8" cy="209.7" rx="3" ry="1.6" transform="rotate(-38 111.8 209.7)"/><ellipse cx="95.5" cy="179" rx="2.4" ry="1.6" transform="rotate(-38 95.5 179)"/><ellipse cx="102" cy="230.2" rx="2.4" ry="1.6" transform="rotate(-38 102 230.2)"/><ellipse cx="125.7" cy="208" rx="1.8" ry="1.6" transform="rotate(-38 125.7 208)"/><ellipse cx="85.3" cy="194.6" rx="3" ry="1.6" transform="rotate(-38 85.3 194.6)"/><ellipse cx="89.4" cy="174.3" rx="3" ry="1.6" transform="rotate(-38 89.4 174.3)"/><ellipse cx="79.4" cy="203.9" rx="1.8" ry="1.6" transform="rotate(-38 79.4 203.9)"/><ellipse cx="94.8" cy="209.8" rx="2.4" ry="1.6" transform="rotate(-38 94.8 209.8)"/><ellipse cx="99.5" cy="238.4" rx="1.8" ry="1.6" transform="rotate(-38 99.5 238.4)"/><ellipse cx="113.9" cy="182.3" rx="1.8" ry="1.6" transform="rotate(-38 113.9 182.3)"/><ellipse cx="128" cy="204.5" rx="1.8" ry="1.6" transform="rotate(-38 128 204.5)"/><ellipse cx="121" cy="174.5" rx="2.4" ry="1.6" transform="rotate(-38 121 174.5)"/><ellipse cx="126.9" cy="176.6" rx="3" ry="1.6" transform="rotate(-38 126.9 176.6)"/><ellipse cx="106.9" cy="165.3" rx="3" ry="1.6" transform="rotate(-38 106.9 165.3)"/></g>
+</svg>
