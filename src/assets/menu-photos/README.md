@@ -7,3 +7,5 @@ Có ảnh của món nào thì app dùng ảnh đó thay cho hình minh hoạ tr
 2. Bỏ ảnh vào thư mục `Ảnh món` nằm cạnh thư mục `cloud9-app`, đặt tên tệp theo tên món
    (VD `Cà phê sữa đá.jpg`, `Croissant bơ Pháp.heic`) hoặc mã món (`ca-phe-sua.jpg`).
 3. Chạy `npm run photos`, rồi build / deploy lại.
+
+> Hiện đang dùng **ảnh demo** từ kho ảnh miễn phí (xem [CREDITS.md](CREDITS.md)). Ảnh thật của quán chạy `npm run photos` sẽ ghi đè đúng tên tệp.

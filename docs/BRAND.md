@@ -35,6 +35,6 @@ Màu của app được lấy mẫu trực tiếp từ 4 ảnh không gian quán
   - `espresso-bar`: làm hero màn hình đăng nhập
   - `interior-wall`: làm nền desktop
   - `counter`: dùng ở trang giới thiệu quán
-- Ảnh món hiện là **minh hoạ vector** vẽ riêng theo cùng bảng màu (`src/assets/menu/*.svg`). Có hai cách dùng **ảnh chụp món thật**:
+- Ảnh món hiện là **ảnh demo** từ kho ảnh miễn phí Unsplash/Pexels (`src/assets/menu-photos/`, nguồn tác giả trong `CREDITS.md`), chọn theo tông ấm của quán; minh hoạ vector (`src/assets/menu/*.svg`) là ảnh dự phòng. Thay bằng **ảnh chụp món thật** của Cloud 9 theo một trong hai cách:
   1. Bỏ ảnh vào thư mục `Ảnh món` (cạnh `cloud9-app`), đặt tên tệp theo tên món (VD `Cà phê sữa đá.jpg`, nhận cả HEIC của iPhone), chạy `npm run photos` rồi build lại. Ảnh được cắt vuông 720px, nén WebP vào `src/assets/menu-photos/` và tự thay minh hoạ cùng mã — kể cả món đã lưu trên Firestore.
   2. Nhân viên chụp / tải ảnh cho từng món ở trang Quản trị › Thực đơn (lưu ngay vào món, không cần build).
