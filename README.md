@@ -47,6 +47,11 @@ Các lệnh khác:
 4. **Thanh toán QR**: tóm tắt đơn, mã QR lớn ở giữa màn hình, hướng dẫn *“Quét tại quầy POS để thanh toán”* và đồng hồ hết hạn. Khi thu ngân quét xong, màn hình hiện ✅ **“Đơn hàng đã nhận”**.
 5. **Theo dõi đơn**: thanh tiến trình *Đã nhận → Đang chuẩn bị → Sẵn sàng / Đang giao → Hoàn thành*. Mỗi lần đổi trạng thái có thông báo thời gian thực (banner trượt xuống và mục Thông báo).
 6. **Lịch sử đơn**, **Thông báo**, **Tài khoản** (sửa hồ sơ, nhận món mặc định, thông tin quán).
+7. **Song ngữ Tiếng Việt / English**: chọn ngay ở màn hình đầu tiên (nút VI | EN), đổi lại được ở trang Tài khoản và trang quản trị. Mặc định theo ngôn ngữ của điện thoại.
+8. **Thẻ tích điểm: mua 20 cốc tặng 1 cốc**:
+   - Áp dụng cho khách đăng nhập Microsoft 365; tính các món cà phê và nước uống.
+   - Điểm được cộng khi thu ngân xác nhận thanh toán.
+   - Khi đủ 20 cốc, khách bật “Dùng 1 cốc miễn phí” ở giỏ hàng; cốc nước đắt nhất trong đơn được miễn phí.
 
 **Quản trị**, dùng trên điện thoại hoặc máy tính bảng tại quầy:
 

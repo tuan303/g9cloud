@@ -8,6 +8,7 @@ import { useDataReady, useOrder, useOrders } from '@/hooks/data';
 import { useAction } from '@/hooks/useAction';
 import { useNow } from '@/hooks/useNow';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useT } from '@/i18n';
 import { parseOrderQrPayload } from '@/lib/qr';
 import { platform } from '@/platform';
 import { repo } from '@/services';
@@ -22,7 +23,8 @@ const RESUME_DELAY_MS = 1_500;
 const REPEAT_MISS_MS = 8_000;
 
 export default function AdminScanPage() {
-  usePageTitle('Quét QR');
+  const { t } = useT();
+  usePageTitle(t('nav.scan'));
   const ready = useDataReady();
   const orders = useOrders();
   const now = useNow(15_000);
@@ -65,10 +67,10 @@ export default function AdminScanPage() {
     lastMiss.current = { raw: text, at: Date.now() };
     if (source === 'camera' && prev && prev.raw === text && Date.now() - prev.at < REPEAT_MISS_MS) return;
     const parsed = parseOrderQrPayload(text);
-    if (parsed.code) toast(`Không tìm thấy đơn ${parsed.code} hôm nay`, 'error');
-    else if (parsed.orderId) toast('Không tìm thấy đơn này', 'error');
-    else if (source === 'manual') toast('Mã chưa đúng — nhập dạng C9-027 hoặc 27', 'error');
-    else toast('Mã QR này không phải mã đơn Cloud 9', 'error');
+    if (parsed.code) toast(t('adminScan.miss.codeToday', { code: parsed.code }), 'error');
+    else if (parsed.orderId) toast(t('adminScan.miss.order'), 'error');
+    else if (source === 'manual') toast(t('adminScan.miss.badInput'), 'error');
+    else toast(t('adminScan.miss.notOurs'), 'error');
   };
 
   const lookup = async (raw: string, source: LookupSource) => {
@@ -97,13 +99,13 @@ export default function AdminScanPage() {
   return (
     <div className="px-4 pb-6 pt-5 md:px-6 md:pt-8 lg:px-8">
       <header className="mb-5">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-bronze-600">Quầy thu ngân</p>
-        <h1 className="mt-1 font-display text-2xl font-extrabold tracking-tight text-espresso md:text-3xl">Quét mã &amp; thu tiền</h1>
-        <p className="mt-1 max-w-prose text-sm text-stone">Quét mã QR trên điện thoại của khách, kiểm tra đơn rồi xác nhận đã thu tiền.</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-bronze-600">{t('adminScan.eyebrow')}</p>
+        <h1 className="mt-1 font-display text-2xl font-extrabold tracking-tight text-espresso md:text-3xl">{t('adminScan.title')}</h1>
+        <p className="mt-1 max-w-prose text-sm text-stone">{t('adminScan.intro')}</p>
       </header>
 
       <div className="grid gap-6 md:grid-cols-2 md:items-start md:gap-5 lg:gap-8">
-        <section aria-label="Quét mã đơn" className="space-y-4 md:sticky md:top-6">
+        <section aria-label={t('adminScan.scanSection')} className="space-y-4 md:sticky md:top-6">
           <QrScanner
             active={scanning}
             onActiveChange={setScanning}
@@ -112,11 +114,11 @@ export default function AdminScanPage() {
           />
 
           <Card className="p-4">
-            <form onSubmit={submitManual} className="flex items-end gap-2" role="search" aria-label="Tìm đơn theo mã">
+            <form onSubmit={submitManual} className="flex items-end gap-2" role="search" aria-label={t('adminScan.manual.aria')}>
               <div className="min-w-0 flex-1">
                 <Input
-                  label="Nhập mã đơn"
-                  placeholder="VD: C9-027 hoặc 27"
+                  label={t('adminScan.manual.label')}
+                  placeholder={t('adminScan.manual.placeholder')}
                   icon={<Keyboard className="h-5 w-5" />}
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
@@ -128,7 +130,7 @@ export default function AdminScanPage() {
                 />
               </div>
               <Button type="submit" className="h-12 shrink-0 px-5" loading={finding} disabled={!code.trim()} leftIcon={<Search className="h-4 w-4" />}>
-                Tìm
+                {t('adminScan.manual.submit')}
               </Button>
             </form>
           </Card>

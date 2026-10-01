@@ -1,5 +1,7 @@
 import { OPTION_PRESETS, SEED_MENU } from '@/data/menu';
+import { getLocale, translate, type MessageKey } from '@/i18n';
 import { formatPrice } from '@/lib/format';
+import { choiceName } from '@/lib/i18n-data';
 import type { CategoryId, MenuItem, MenuTag, OptionGroup } from '@/types';
 
 // ───────── Giới hạn & hằng số ─────────
@@ -9,6 +11,7 @@ export const PRICE_MAX_DIGITS = 8;
 export const NAME_MAX = 60;
 export const NAME_EN_MAX = 60;
 export const DESCRIPTION_MAX = 160;
+export const DESCRIPTION_EN_MAX = 160;
 export const TAG_ORDER: MenuTag[] = ['bestseller', 'new', 'signature'];
 
 /** Nhóm tuỳ chọn gợi ý sẵn khi thêm món mới (chỉ áp dụng khi quản trị chưa tự chỉnh) */
@@ -24,8 +27,8 @@ const DEFAULT_PRESETS: Record<CategoryId, string[]> = {
 export function foldText(input: string): string {
   return input
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[đĐ]/g, 'd')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\u0111\u0110]/g, 'd') // đ / Đ
     .toLowerCase();
 }
 
@@ -40,18 +43,18 @@ export function searchableText(item: MenuItem): string {
 
 // ───────── Giá ─────────
 
-const thousands = new Intl.NumberFormat('vi-VN');
+const thousands = { vi: new Intl.NumberFormat('vi-VN'), en: new Intl.NumberFormat('en-US') };
 
-/** "35000" → "35.000" (chuỗi chỉ gồm chữ số) */
+/** "35000" → "35.000" (tiếng Anh: "35,000") — chuỗi chỉ gồm chữ số */
 export function formatDigits(digits: string): string {
-  return digits ? thousands.format(Number(digits)) : '';
+  return digits ? thousands[getLocale()].format(Number(digits)) : '';
 }
 
 // ───────── Minh hoạ có sẵn ─────────
 
-/** Tên món mẫu + danh mục cho từng minh hoạ "@menu/<key>" (để gắn nhãn & sắp theo danh mục) */
-export const ILLUSTRATION_META: Map<string, { name: string; categoryId: CategoryId }> = new Map(
-  SEED_MENU.filter((m) => m.image.startsWith('@menu/')).map((m) => [m.image, { name: m.name, categoryId: m.categoryId }]),
+/** Tên món mẫu (Việt + Anh — hiển thị qua itemName) + danh mục cho từng minh hoạ "@menu/<key>" (để gắn nhãn & sắp theo danh mục) */
+export const ILLUSTRATION_META: Map<string, { name: string; nameEn?: string; categoryId: CategoryId }> = new Map(
+  SEED_MENU.filter((m) => m.image.startsWith('@menu/')).map((m) => [m.image, { name: m.name, nameEn: m.nameEn, categoryId: m.categoryId }]),
 );
 
 // ───────── Nhóm tuỳ chọn ─────────
@@ -114,15 +117,38 @@ export function toggleOptionKey(selected: string[], key: string, entries: Option
   return [...rest, key];
 }
 
-/** "Chọn 1 · bắt buộc" / "Tối đa 2" */
+/** "Chọn 1 · bắt buộc" / "Tối đa 2" (theo ngôn ngữ đang chọn) */
 export function optionRuleLabel(group: OptionGroup): string {
-  if (group.type === 'single') return group.required ? 'Chọn 1 · bắt buộc' : 'Chọn 1';
-  return group.max ? `Tối đa ${group.max}` : 'Chọn nhiều';
+  if (group.type === 'single') return translate(group.required ? 'adminMenu.options.singleRequired' : 'adminMenu.options.single');
+  return group.max ? translate('adminMenu.options.maxCount', { count: group.max }) : translate('adminMenu.options.multi');
 }
 
-/** "Vừa (M) · Lớn (L) +7.000đ" */
+/** "Vừa (M) · Lớn (L) +7.000đ" (tên lựa chọn theo ngôn ngữ đang chọn) */
 export function optionChoicesSummary(group: OptionGroup): string {
-  return group.choices.map((c) => (c.priceDelta ? `${c.name} +${formatPrice(c.priceDelta)}` : c.name)).join(' · ');
+  return group.choices
+    .map((c) => (c.priceDelta ? `${choiceName(c)} +${formatPrice(c.priceDelta)}` : choiceName(c)))
+    .join(' · ');
+}
+
+/** Khoá bản dịch cho nhãn từng nhóm tuỳ chọn mẫu (OPTION_PRESETS[i].label chỉ có tiếng Việt) */
+const PRESET_LABEL_KEYS: Record<string, MessageKey> = {
+  size: 'adminMenu.presets.size',
+  temp: 'adminMenu.presets.temp',
+  sugar: 'adminMenu.presets.sugar',
+  ice: 'adminMenu.presets.ice',
+  coffeeExtras: 'adminMenu.presets.coffeeExtras',
+  teaExtras: 'adminMenu.presets.teaExtras',
+  warm: 'adminMenu.presets.warm',
+};
+
+/** Nhãn của nhóm tuỳ chọn mẫu theo ngôn ngữ đang chọn, VD "Kích cỡ M / L (+7.000đ)"; mẫu chưa có bản dịch → nhãn gốc */
+export function presetLabel(key: string): string | undefined {
+  const preset = OPTION_PRESETS.find((p) => p.key === key);
+  if (!preset) return undefined;
+  const msg = PRESET_LABEL_KEYS[key];
+  if (!msg) return preset.label;
+  const surcharge = Math.max(0, ...preset.group.choices.map((c) => c.priceDelta));
+  return translate(msg, { price: formatPrice(surcharge) });
 }
 
 // ───────── Biểu mẫu ─────────
@@ -134,6 +160,8 @@ export interface MenuForm {
   /** Chỉ gồm chữ số (VD "35000"); rỗng = chưa nhập */
   price: string;
   description: string;
+  /** Mô tả tiếng Anh (không bắt buộc) */
+  descriptionEn: string;
   tags: MenuTag[];
   image: string;
   /** Khoá OptionEntry đang chọn */
@@ -152,6 +180,7 @@ export function createInitialForm(item: MenuItem | null, defaultCategory: Catego
         categoryId: defaultCategory,
         price: '',
         description: '',
+        descriptionEn: '',
         tags: [],
         image: '',
         options: defaultPresetKeys(defaultCategory),
@@ -168,6 +197,7 @@ export function createInitialForm(item: MenuItem | null, defaultCategory: Catego
       categoryId: item.categoryId,
       price: String(Math.max(0, Math.round(item.price || 0))),
       description: item.description ?? '',
+      descriptionEn: item.descriptionEn ?? '',
       tags: TAG_ORDER.filter((t) => item.tags?.includes(t)),
       image: item.image ?? '',
       options: [...presetKeys, ...customGroups.map((_, i) => customKey(i))],
@@ -180,10 +210,10 @@ export function createInitialForm(item: MenuItem | null, defaultCategory: Catego
 export function validateMenuForm(form: MenuForm): MenuFormErrors {
   const errors: MenuFormErrors = {};
   const name = form.name.trim();
-  if (!name) errors.name = 'Vui lòng nhập tên món';
-  else if (name.length > NAME_MAX) errors.name = `Tên món tối đa ${NAME_MAX} ký tự`;
-  if (!form.price) errors.price = 'Vui lòng nhập giá bán';
-  else if (Number(form.price) > PRICE_MAX) errors.price = `Giá tối đa ${formatPrice(PRICE_MAX)}`;
+  if (!name) errors.name = translate('adminMenu.validation.nameRequired');
+  else if (name.length > NAME_MAX) errors.name = translate('adminMenu.validation.nameTooLong', { max: NAME_MAX });
+  if (!form.price) errors.price = translate('adminMenu.validation.priceRequired');
+  else if (Number(form.price) > PRICE_MAX) errors.price = translate('adminMenu.validation.priceTooHigh', { price: formatPrice(PRICE_MAX) });
   return errors;
 }
 
@@ -196,6 +226,7 @@ export function isSameForm(a: MenuForm, b: MenuForm): boolean {
     a.categoryId === b.categoryId &&
     a.price === b.price &&
     a.description === b.description &&
+    a.descriptionEn === b.descriptionEn &&
     a.image === b.image &&
     a.available === b.available &&
     sameSet(a.tags, b.tags) &&
@@ -221,6 +252,7 @@ export function toMenuItem(form: MenuForm, initial: MenuItem | null, entries: Op
   const optionGroups = [...selected].sort((a, b) => rank(a) - rank(b));
   const tags = TAG_ORDER.filter((t) => form.tags.includes(t));
   const nameEn = form.nameEn.trim().replace(/\s+/g, ' ');
+  const descriptionEn = form.descriptionEn.trim();
   return {
     ...(initial ?? {}),
     id: initial?.id ?? '',
@@ -228,6 +260,7 @@ export function toMenuItem(form: MenuForm, initial: MenuItem | null, entries: Op
     name: form.name.trim().replace(/\s+/g, ' '),
     nameEn: nameEn || undefined,
     description: form.description.trim(),
+    descriptionEn: descriptionEn || undefined,
     price: Number(form.price),
     image: form.image,
     available: form.available,

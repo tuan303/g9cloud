@@ -1,3 +1,4 @@
+import { useT } from '@/i18n';
 import { useNavigate } from 'react-router-dom';
 import { Bell, Bike, CheckCircle2, ChefHat, CircleX, PartyPopper, ShoppingBag, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
@@ -17,6 +18,7 @@ const BANNER_ICON: Record<NonNullable<Banner['icon']>, { icon: typeof Bell; clas
 export function Toaster() {
   const { toasts, banner, hideBanner, dismissToast } = useUi();
   const navigate = useNavigate();
+  const { t } = useT();
   const b = banner?.icon ? BANNER_ICON[banner.icon] : BANNER_ICON.info;
   const BIcon = b.icon;
 
@@ -47,7 +49,7 @@ export function Toaster() {
                 <span className="mt-0.5 block text-[13px] leading-snug text-cream/80">{banner.body}</span>
               </span>
             </button>
-            <button type="button" aria-label="Đóng thông báo" onClick={hideBanner} className="rounded-full p-1.5 text-cream/60 hover:bg-white/10">
+            <button type="button" aria-label={t('ui.closeNotification')} onClick={hideBanner} className="rounded-full p-1.5 text-cream/60 hover:bg-white/10">
               <X className="h-4 w-4" />
             </button>
           </div>

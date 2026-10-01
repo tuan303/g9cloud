@@ -2,8 +2,10 @@ import { useCallback, useState } from 'react';
 import { Pencil, SlidersHorizontal, Trash2 } from 'lucide-react';
 import { CATEGORIES } from '@/data/menu';
 import { useAction } from '@/hooks/useAction';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 import { formatPrice } from '@/lib/format';
+import { itemName } from '@/lib/i18n-data';
 import { repo } from '@/services';
 import { toast } from '@/store/ui';
 import { MenuImage, Skeleton, TagBadge } from '@/components/ui';
@@ -29,6 +31,7 @@ export function MenuItemRow({
   onEdit: (item: MenuItem) => void;
   onDelete: (item: MenuItem) => void;
 }) {
+  const { t, locale } = useT();
   // Hiển thị lạc quan trong lúc chờ repo; lỗi → quay về giá trị thật từ store
   const [pending, setPending] = useState<boolean | null>(null);
   const setAvailability = useCallback(
@@ -44,12 +47,15 @@ export function MenuItemRow({
   const category = CATEGORIES.find((c) => c.id === item.categoryId);
   const groupCount = item.optionGroups?.length ?? 0;
   const tags = item.tags ?? [];
+  const name = itemName(item);
+  // Dòng phụ cho quản trị: tên còn lại (tiếng Việt → hiện tên Anh; tiếng Anh → hiện tên Việt nếu khác)
+  const otherName = locale === 'en' ? (item.nameEn && item.nameEn !== item.name ? item.name : undefined) : item.nameEn;
 
   const toggle = async (next: boolean) => {
     setPending(next);
     const ok = await runToggle(next);
     setPending(null);
-    if (ok) toast(next ? `Đã mở bán lại ${item.name}` : `${item.name} đã chuyển sang Tạm hết`, next ? 'success' : 'default');
+    if (ok) toast(t(next ? 'adminMenu.row.reopened' : 'adminMenu.row.markedSoldOut', { name }), next ? 'success' : 'default');
   };
 
   return (
@@ -65,14 +71,14 @@ export function MenuItemRow({
       <div className="flex cursor-pointer items-start gap-3" onClick={() => onEdit(item)}>
         <MenuImage
           image={item.image}
-          alt={item.name}
+          alt={name}
           categoryId={item.categoryId}
           className={cn('h-16 w-16 shrink-0 transition', !available && 'opacity-60 grayscale')}
         />
         <div className="min-w-0 flex-1 pt-0.5">
           <div className="flex items-start gap-2">
             <h3 className={cn('line-clamp-2 min-w-0 flex-1 font-semibold leading-snug', available ? 'text-espresso' : 'text-bronze-700')}>
-              {item.name}
+              {name}
             </h3>
             <p className="shrink-0 font-display text-[15px] font-bold tabular-nums text-espresso">{formatPrice(item.price)}</p>
           </div>
@@ -83,7 +89,7 @@ export function MenuItemRow({
                 {category.name}
               </>
             )}
-            {item.nameEn && <span className="text-stone-light"> · {item.nameEn}</span>}
+            {otherName && <span className="text-stone-light"> · {otherName}</span>}
           </p>
           {(tags.length > 0 || groupCount > 0) && (
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
@@ -93,7 +99,7 @@ export function MenuItemRow({
               {groupCount > 0 && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-bronze-50 px-2 py-[1px] text-[11px] font-medium text-bronze-700 ring-1 ring-inset ring-bronze-200">
                   <SlidersHorizontal className="h-3 w-3" aria-hidden />
-                  {groupCount} nhóm tuỳ chọn
+                  {t('adminMenu.row.optionGroups', { count: groupCount })}
                 </span>
               )}
             </div>
@@ -102,25 +108,25 @@ export function MenuItemRow({
       </div>
 
       <div className="mt-2.5 flex items-center gap-1 border-t border-bronze-100 pt-2">
-        <AvailabilitySwitch checked={available} busy={toggling} onChange={toggle} label={`Đang bán: ${item.name}`} />
+        <AvailabilitySwitch checked={available} busy={toggling} onChange={toggle} label={t('adminMenu.row.availableAria', { name })} />
         <div className="ml-auto flex items-center gap-1">
           <button
             type="button"
-            aria-label={`Sửa ${item.name}`}
+            aria-label={t('adminMenu.row.editAria', { name })}
             onClick={() => onEdit(item)}
             className={cn(actionBtn, 'bg-bronze-50 px-3.5 text-espresso ring-1 ring-inset ring-bronze-200 hover:bg-bronze-100')}
           >
             <Pencil className="h-4 w-4" aria-hidden />
-            Sửa
+            {t('common.edit')}
           </button>
           <button
             type="button"
-            aria-label={`Xoá ${item.name}`}
+            aria-label={t('adminMenu.row.deleteAria', { name })}
             onClick={() => onDelete(item)}
             className={cn(actionBtn, 'px-3 text-rattan-dark hover:bg-rattan-soft')}
           >
             <Trash2 className="h-4 w-4" aria-hidden />
-            Xoá
+            {t('common.delete')}
           </button>
         </div>
       </div>

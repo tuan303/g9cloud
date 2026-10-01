@@ -1,3 +1,4 @@
+import { getLocale } from '@/i18n';
 import type { CartLine, MenuItem, OptionGroup, SelectedOption } from '@/types';
 
 /** Lựa chọn mặc định cho từng nhóm tuỳ chọn của món */
@@ -21,9 +22,13 @@ export function toSelectedOptions(groups: OptionGroup[] | undefined, selections:
     out.push({
       groupId: g.id,
       groupName: g.name,
+      groupNameEn: g.nameEn,
       choiceIds: choices.map((c) => c.id),
       // Dùng nhãn tóm tắt (VD "50% đường"); bỏ lựa chọn có summary rỗng
       choiceNames: choices.map((c) => c.summary ?? c.name).filter(Boolean),
+      choiceNamesEn: choices
+        .map((c) => (c.summaryEn ?? (c.summary === '' ? '' : (c.nameEn ?? c.summary ?? c.name))))
+        .filter(Boolean),
       priceDelta: choices.reduce((s, c) => s + c.priceDelta, 0),
     });
   }
@@ -42,9 +47,10 @@ export function missingRequiredGroup(groups: OptionGroup[] | undefined, selectio
   return null;
 }
 
-/** "Uống đá · Size L · 70% đường · Thêm shot espresso" */
+/** "Uống đá · Size L · 70% đường · Thêm shot espresso" (tiếng Anh: "Iced · Size L · 70% sugar · …") */
 export function optionsSummary(options: SelectedOption[]): string {
-  return options.flatMap((o) => o.choiceNames).join(' · ');
+  const en = getLocale() === 'en';
+  return options.flatMap((o) => (en && o.choiceNamesEn?.length ? o.choiceNamesEn : o.choiceNames)).join(' · ');
 }
 
 /** Khoá so sánh 2 dòng giỏ hàng có cùng món + tuỳ chọn + ghi chú để gộp số lượng */
@@ -82,6 +88,7 @@ export function rebuildLine<L extends CartLine>(line: L, item: MenuItem): L | nu
   return {
     ...line,
     name: item.name,
+    nameEn: item.nameEn,
     categoryId: item.categoryId,
     image: lineImageRef(item),
     basePrice: item.price,

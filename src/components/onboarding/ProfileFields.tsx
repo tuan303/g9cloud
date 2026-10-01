@@ -1,6 +1,7 @@
 import type { ChangeEvent } from 'react';
 import { IdCard, Mail, Phone, UserRound } from 'lucide-react';
 import { Input } from '@/components/ui';
+import { useT } from '@/i18n';
 import {
   schoolDomainHint,
   schoolEmailPlaceholder,
@@ -25,6 +26,7 @@ export function ProfileFields({
   /** Gợi ý dưới ô SĐT (khi chưa có lỗi) */
   phoneHint?: string;
 }) {
+  const { t } = useT();
   const { values, errors, setField, blurField } = form;
   const bind = (field: ProfileField) => ({
     value: values[field],
@@ -38,7 +40,7 @@ export function ProfileFields({
       {rules.email !== 'hidden' && (
         <Input
           {...bind('email')}
-          label="Email trường"
+          label={t('onboarding.fields.emailLabel')}
           required={rules.email === 'required'}
           readOnly={rules.email === 'readonly'}
           type="email"
@@ -47,8 +49,8 @@ export function ProfileFields({
           autoCapitalize="none"
           autoCorrect="off"
           spellCheck={false}
-          placeholder={schoolEmailPlaceholder}
-          hint={rules.email === 'readonly' ? 'Email dùng để đăng nhập nên không đổi được' : schoolDomainHint}
+          placeholder={schoolEmailPlaceholder()}
+          hint={rules.email === 'readonly' ? t('onboarding.fields.emailReadonlyHint') : schoolDomainHint()}
           icon={<Mail className={iconCls} />}
           className="read-only:bg-bronze-50 read-only:text-stone read-only:focus:ring-bronze-300"
         />
@@ -56,40 +58,40 @@ export function ProfileFields({
 
       <Input
         {...bind('name')}
-        label="Họ và tên"
+        label={t('onboarding.fields.nameLabel')}
         required={rules.name === 'required'}
         autoComplete="name"
         autoCapitalize="words"
         maxLength={60}
-        placeholder="VD: Nguyễn Minh An"
-        hint={rules.name === 'optional' ? 'Không bắt buộc' : undefined}
+        placeholder={t('onboarding.fields.namePlaceholder')}
+        hint={rules.name === 'optional' ? t('common.optional') : undefined}
         icon={<UserRound className={iconCls} />}
       />
 
       <Input
         {...bind('phone')}
-        label="Số điện thoại"
+        label={t('onboarding.fields.phoneLabel')}
         required={rules.phone === 'required'}
         type="tel"
         inputMode="tel"
         autoComplete="tel"
         maxLength={16}
         placeholder="0912 345 678"
-        hint={phoneHint ?? (rules.phone === 'optional' ? 'Không bắt buộc' : 'Để quán gọi bạn khi món sẵn sàng')}
+        hint={phoneHint ?? (rules.phone === 'optional' ? t('common.optional') : t('onboarding.fields.phoneHint'))}
         icon={<Phone className={iconCls} />}
       />
 
       {rules.studentId !== 'hidden' && (
         <Input
           {...bind('studentId')}
-          label="Mã học sinh / nhân viên"
+          label={t('onboarding.fields.studentIdLabel')}
           autoComplete="off"
           autoCapitalize="characters"
           autoCorrect="off"
           spellCheck={false}
           maxLength={20}
-          placeholder="VD: HS2025-0123"
-          hint="Không bắt buộc"
+          placeholder={t('onboarding.fields.studentIdPlaceholder')}
+          hint={t('common.optional')}
           icon={<IdCard className={iconCls} />}
         />
       )}

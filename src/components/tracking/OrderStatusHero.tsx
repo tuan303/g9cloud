@@ -3,6 +3,7 @@ import heroPhoto from '@/assets/photos/espresso-bar-sm.webp';
 import { APP_CONFIG } from '@/config/app';
 import { Logo } from '@/components/ui';
 import { useNow } from '@/hooks/useNow';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 import { isActiveOrder, STATUS_META } from '@/lib/order-status';
 import type { Order, OrderStatus } from '@/types';
@@ -45,6 +46,7 @@ function StatusIcon({ status }: { status: OrderStatus }) {
 
 /** Đếm ngược hiệu lực mã QR khi đơn chờ thanh toán */
 function PaymentCountdown({ createdAt }: { createdAt: number }) {
+  const { t } = useT();
   const now = useNow(1000);
   const remaining = createdAt + APP_CONFIG.payment.qrExpiryMinutes * 60_000 - now;
   const secs = Math.max(0, Math.floor(remaining / 1000));
@@ -54,10 +56,10 @@ function PaymentCountdown({ createdAt }: { createdAt: number }) {
       <Hourglass className="h-4 w-4 shrink-0 text-gold" aria-hidden />
       {secs > 0 ? (
         <span>
-          Mã QR còn hiệu lực <span className="font-display font-bold tabular-nums text-gold-light">{mmss}</span>
+          {t('orderStatus.hero.qrValid')} <span className="font-display font-bold tabular-nums text-gold-light">{mmss}</span>
         </span>
       ) : (
-        <span>Mã QR đã hết hạn — đơn sẽ tự huỷ</span>
+        <span>{t('orderStatus.hero.qrExpired')}</span>
       )}
     </div>
   );
@@ -68,13 +70,14 @@ function PaymentCountdown({ createdAt }: { createdAt: number }) {
  * icon lớn, nhãn + mô tả, mã đơn, lời nhắc theo trạng thái và thanh tiến trình ngang.
  */
 export function OrderStatusHero({ order }: { order: Order }) {
+  const { t } = useT();
   const meta = STATUS_META[order.status];
   const active = isActiveOrder(order);
   const cancelled = order.status === 'cancelled';
   const cancel = cancellationInfo(order);
 
   return (
-    <section aria-label="Trạng thái đơn hàng" className="relative isolate overflow-hidden rounded-b-[32px] bg-espresso text-cream shadow-lift">
+    <section aria-label={t('orderStatus.hero.aria')} className="relative isolate overflow-hidden rounded-b-[32px] bg-espresso text-cream shadow-lift">
       <img src={heroPhoto} alt="" aria-hidden className="absolute inset-0 -z-10 h-full w-full object-cover object-[center_30%] opacity-30" />
       <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-b from-espresso via-espresso-900/80 to-espresso-900/95" />
       {/* Nắng chiều hắt qua cửa sổ */}
@@ -102,7 +105,7 @@ export function OrderStatusHero({ order }: { order: Order }) {
           </div>
           {order.status !== 'ready' && (
             <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 ring-1 ring-inset ring-white/10">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-cream/65">Mã đơn</span>
+              <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-cream/65">{t('orderStatus.hero.orderCode')}</span>
               <span className="font-display text-sm font-extrabold tracking-wider text-gold-light">{order.code}</span>
             </p>
           )}
@@ -110,7 +113,7 @@ export function OrderStatusHero({ order }: { order: Order }) {
 
         {order.status === 'ready' && (
           <div className="mt-5 animate-pop-in rounded-3xl bg-gold px-4 py-4 text-center text-espresso shadow-glow">
-            <p className="text-sm font-semibold">Mời bạn đến quầy nhận món — đọc mã</p>
+            <p className="text-sm font-semibold">{t('orderStatus.hero.collect')}</p>
             <p className="mt-0.5 font-display text-[40px] font-extrabold leading-none tracking-[0.06em]">{order.code}</p>
           </div>
         )}
@@ -121,7 +124,7 @@ export function OrderStatusHero({ order }: { order: Order }) {
               <MapPin className="h-5 w-5" aria-hidden />
             </span>
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-cream/60">Đang giao đến</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-cream/60">{t('orderStatus.hero.deliveringTo')}</p>
               <p className="font-semibold leading-snug">{order.deliveryAddress}</p>
             </div>
           </div>
@@ -134,8 +137,8 @@ export function OrderStatusHero({ order }: { order: Order }) {
             <Info className="mt-0.5 h-5 w-5 shrink-0 text-gold" aria-hidden />
             <div className="min-w-0 text-sm">
               <p className="font-semibold text-cream">{cancel.title}</p>
-              {cancel.reason && <p className="mt-0.5 text-cream/75">Lý do: {cancel.reason}</p>}
-              {order.paymentStatus === 'refunded' && <p className="mt-1 text-cream/75">Tiền của đơn đã được hoàn lại.</p>}
+              {cancel.reason && <p className="mt-0.5 text-cream/75">{t('orderStatus.reason', { reason: cancel.reason })}</p>}
+              {order.paymentStatus === 'refunded' && <p className="mt-1 text-cream/75">{t('orderStatus.hero.refunded')}</p>}
             </div>
           </div>
         ) : (

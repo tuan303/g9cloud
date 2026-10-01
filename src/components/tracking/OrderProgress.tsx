@@ -1,4 +1,5 @@
 import { Check } from 'lucide-react';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 import { formatTime } from '@/lib/format';
 import { statusSteps, stepLabel } from '@/lib/order-status';
@@ -30,8 +31,6 @@ export function stepState(index: number, current: number): StepState {
   return index === current ? 'current' : 'todo';
 }
 
-const SR_STATE: Record<StepState, string> = { done: 'đã xong', current: 'đang diễn ra', todo: 'chưa tới' };
-
 /** Thanh tiến trình ngang (như mockup): nút tròn + đường nối + nhãn bước + giờ */
 export function OrderProgress({
   order,
@@ -42,6 +41,7 @@ export function OrderProgress({
   tone?: 'light' | 'dark';
   className?: string;
 }) {
+  const { t } = useT();
   const steps = statusSteps(order.fulfillment);
   const n = steps.length;
   const current = progressIndex(order);
@@ -60,7 +60,7 @@ export function OrderProgress({
         />
       </div>
 
-      <ol aria-label="Tiến trình đơn hàng" className="relative grid" style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}>
+      <ol aria-label={t('orderStatus.progress.aria')} className="relative grid" style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}>
         {steps.map((s, i) => {
           const state = stepState(i, current);
           const Icon = STATUS_VISUAL[s].icon;
@@ -90,7 +90,7 @@ export function OrderProgress({
                 )}
               >
                 {stepLabel(s, order.fulfillment)}
-                <span className="sr-only">: {SR_STATE[state]}</span>
+                <span className="sr-only">: {t(`orderStatus.progress.${state}`)}</span>
               </span>
               <span className={cn('mt-0.5 h-4 text-[11px] tabular-nums', dark ? 'text-cream/60' : 'text-stone')}>{at ? formatTime(at) : ''}</span>
             </li>

@@ -1,3 +1,4 @@
+import { translate } from '@/i18n';
 import {
   collection,
   deleteDoc,
@@ -16,11 +17,11 @@ import {
   type Query,
 } from 'firebase/firestore';
 import { APP_CONFIG } from '@/config/app';
-import { SEED_MENU } from '@/data/menu';
+import { OPTION_PRESETS, SEED_MENU } from '@/data/menu';
 import { generateDemoOrders } from '@/data/demo-orders';
 import { startOfDay } from '@/lib/format';
 import { parseOrderQrPayload } from '@/lib/qr';
-import type { CreateOrderInput, MenuItem, Order, OrderStatus } from '@/types';
+import type { CreateOrderInput, LoyaltyAccount, MenuItem, OptionGroup, Order, OrderStatus } from '@/types';
 import {
   currentCustomerUid,
   customerFirebase,
@@ -39,6 +40,9 @@ import {
   dayKey,
   formatOrderCode,
   isExpired,
+  loyaltyTransition,
+  applyLoyaltyOnPayment,
+  reverseLoyalty,
   pickByShortCode,
 } from './order-logic';
 import { RepoError, type DataRepository, type RepoEvent, type Viewer } from './repository';
@@ -74,6 +78,7 @@ function toMenuItem(id: string, d: DocumentData): MenuItem {
     name: d.name ?? '',
     nameEn: d.nameEn,
     description: d.description ?? '',
+    descriptionEn: d.descriptionEn,
     price: Number(d.price) || 0,
     image: d.image ?? '',
     available: d.available !== false,
@@ -235,6 +240,58 @@ export class FirestoreRepository implements DataRepository {
     } catch (err) {
       console.warn('[Cloud9] Không khởi tạo được thực đơn mẫu', err);
     }
+    void this.addEnglishToMenu();
+  }
+
+  /**
+   * Thực đơn đã tạo trước khi có song ngữ: bổ sung tên/mô tả/tuỳ chọn tiếng Anh cho các món mẫu
+   * (chỉ điền trường còn thiếu — không đổi tên, giá, ảnh quán đã sửa).
+   */
+  private async addEnglishToMenu() {
+    // Chỉ chạy một lần cho cả hệ thống (cờ meta/menuSeed.i18n) — quán xoá bản dịch thì không tự điền lại
+    try {
+      const marker = await getDoc(doc(this.db('staff'), 'meta', 'menuSeed'));
+      if (marker.exists() && marker.data().i18n) return;
+    } catch {
+      return;
+    }
+    const presets = OPTION_PRESETS.map((p) => p.group);
+    const enrichGroup = (g: OptionGroup): OptionGroup => {
+      const ids = g.choices.map((c) => c.id).join(',');
+      const preset = presets.find((p) => p.id === g.id && p.choices.map((c) => c.id).join(',') === ids) ?? presets.find((p) => p.id === g.id);
+      if (!preset) return g;
+      return {
+        ...g,
+        nameEn: g.nameEn ?? preset.nameEn,
+        choices: g.choices.map((c) => {
+          const pc = preset.choices.find((x) => x.id === c.id);
+          return pc ? { ...c, nameEn: c.nameEn ?? pc.nameEn, ...(pc.summaryEn !== undefined ? { summaryEn: c.summaryEn ?? pc.summaryEn } : {}) } : c;
+        }),
+      };
+    };
+    const updates: { id: string; patch: Partial<MenuItem> }[] = [];
+    for (const item of this.menu) {
+      const seed = SEED_MENU.find((s) => s.id === item.id);
+      const patch: Partial<MenuItem> = {};
+      if (seed && !item.nameEn && seed.nameEn) patch.nameEn = seed.nameEn;
+      if (seed && !item.descriptionEn && seed.descriptionEn) patch.descriptionEn = seed.descriptionEn;
+      if (item.optionGroups?.some((g) => !g.nameEn || g.choices.some((c) => !c.nameEn))) {
+        const groups = item.optionGroups.map(enrichGroup);
+        if (JSON.stringify(groups) !== JSON.stringify(item.optionGroups)) patch.optionGroups = groups;
+      }
+      if (Object.keys(patch).length) updates.push({ id: item.id, patch });
+    }
+    try {
+      const db = this.db('staff');
+      const batch = writeBatch(db);
+      for (const u of updates) batch.update(doc(db, 'menu', u.id), JSON.parse(JSON.stringify(u.patch)));
+      batch.set(doc(db, 'meta', 'menuSeed'), { i18n: true }, { merge: true });
+      await batch.commit();
+      if (!updates.length) return;
+      console.info(`[Cloud9] Đã bổ sung tiếng Anh cho ${updates.length} món`);
+    } catch (err) {
+      console.warn('[Cloud9] Không bổ sung được tiếng Anh cho thực đơn', err);
+    }
   }
 
   /** Chọn truy vấn đơn hàng theo người xem (khách: đơn của mình · nhân viên: đơn gần đây) */
@@ -311,17 +368,33 @@ export class FirestoreRepository implements DataRepository {
     );
   }
 
-  /** Đọc - kiểm tra - ghi một đơn trong transaction (an toàn khi nhiều máy thao tác cùng lúc) */
+  /**
+   * Đọc - kiểm tra - ghi một đơn trong transaction (an toàn khi nhiều máy thao tác cùng lúc).
+   * Khi đơn vừa thanh toán / huỷ sau thanh toán: cập nhật thẻ tích điểm loyalty/{mã khách} trong CÙNG transaction.
+   */
   private async mutateOrder(id: string, role: Role, fn: (prev: Order) => Order): Promise<Order> {
     const db = this.db(role);
     const ref = doc(db, 'orders', id);
     try {
       const { prev, next } = await runTransaction(db, async (tx) => {
         const snap = await tx.get(ref);
-        if (!snap.exists()) throw new RepoError('Không tìm thấy đơn hàng', 'not_found');
+        if (!snap.exists()) throw new RepoError(translate('errors.orderNotFound'), 'not_found');
         const prev = toOrder(id, snap.data());
-        const next = fn(prev);
-        if (next !== prev) tx.set(ref, toDoc(next));
+        let next = fn(prev);
+        if (next === prev) return { prev, next };
+        const kind = loyaltyTransition(prev, next);
+        if (kind) {
+          // Mọi lệnh đọc phải trước lệnh ghi trong transaction
+          const lref = doc(db, 'loyalty', prev.customer.id);
+          const lsnap = await tx.get(lref);
+          const current = lsnap.exists() ? (lsnap.data() as LoyaltyAccount) : null;
+          const now = Date.now();
+          let account: LoyaltyAccount | null;
+          if (kind === 'pay') ({ account, order: next } = applyLoyaltyOnPayment(current, next, now));
+          else account = reverseLoyalty(current, next, now);
+          if (account && account !== current) tx.set(lref, { ...account });
+        }
+        tx.set(ref, toDoc(next));
         return { prev, next };
       });
       if (next !== prev) {
@@ -387,8 +460,8 @@ export class FirestoreRepository implements DataRepository {
   }
 
   async saveMenuItem(item: MenuItem) {
-    if (!item.name.trim()) throw new RepoError('Tên món không được để trống', 'validation');
-    if (!(item.price >= 0)) throw new RepoError('Giá không hợp lệ', 'validation');
+    if (!item.name.trim()) throw new RepoError(translate('errors.nameRequired'), 'validation');
+    if (!(item.price >= 0)) throw new RepoError(translate('errors.invalidPrice'), 'validation');
     const db = this.db('staff');
     const isNew = !item.id;
     const ref = isNew ? doc(collection(db, 'menu')) : doc(db, 'menu', item.id);
@@ -498,6 +571,28 @@ export class FirestoreRepository implements DataRepository {
 
   async cancelOrder(orderId: string, reason?: string, by: 'customer' | 'staff' = 'staff') {
     return this.mutateOrder(orderId, by === 'customer' ? 'customer' : 'staff', (prev) => applyCancel(prev, reason, by, Date.now()));
+  }
+
+  // ───────────── Tích điểm ─────────────
+
+  async getLoyalty(customerId: string) {
+    try {
+      const snap = await getDoc(doc(this.db(this.viewer.staff ? 'staff' : 'customer'), 'loyalty', customerId));
+      return snap.exists() ? (snap.data() as LoyaltyAccount) : null;
+    } catch (err) {
+      this.wrap(err);
+    }
+  }
+
+  watchLoyalty(customerId: string, cb: (a: LoyaltyAccount | null) => void) {
+    return onSnapshot(
+      doc(customerFirebase().db, 'loyalty', customerId),
+      (snap) => cb(snap.exists() ? (snap.data() as LoyaltyAccount) : null),
+      (err) => {
+        console.warn('[Cloud9] Không đọc được thẻ tích điểm', err);
+        cb(null);
+      },
+    );
   }
 
   // ───────────── Dữ liệu demo (chỉ nhân viên) ─────────────

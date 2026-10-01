@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { ArrowRight, Check, ChevronRight, GraduationCap, KeyRound, LogOut } from 'lucide-react';
-import { Button, ConfirmDialog, Logo, SectionTitle } from '@/components/ui';
+import { Button, Card, ConfirmDialog, LanguageSwitch, Logo, SectionTitle } from '@/components/ui';
 import { FulfillmentPicker } from '@/components/customer/FulfillmentPicker';
+import { LoyaltyCard } from '@/components/loyalty/LoyaltyCard';
 import {
   APP_VERSION,
   AboutCafeCard,
@@ -13,8 +14,9 @@ import {
 } from '@/components/onboarding';
 import { useDataReady, useMyActiveOrders, useMyOrders } from '@/hooks/data';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useT } from '@/i18n';
 import { useSession } from '@/store/session';
-import { MICROSOFT_SSO } from '@/config/app';
+import { APP_CONFIG, MICROSOFT_SSO } from '@/config/app';
 import { checkAuthConfigured, completeMicrosoftRedirect, signInCustomerWithMicrosoft } from '@/services/firebase';
 import { BACKEND } from '@/config/firebase';
 import { toast } from '@/store/ui';
@@ -22,7 +24,8 @@ import { toast } from '@/store/ui';
 type Leave = 'logout' | 'upgrade';
 
 export default function AccountPage() {
-  usePageTitle('Tài khoản');
+  const { t } = useT();
+  usePageTitle(t('nav.account'));
   const navigate = useNavigate();
 
   const user = useSession((s) => s.user);
@@ -47,13 +50,13 @@ export default function AccountPage() {
           isGuest: false,
           authProvider: 'microsoft',
         });
-        toast('Đã chuyển sang tài khoản Microsoft 365', 'success');
+        toast(t('onboarding.account.upgradedToast'), 'success');
       })
       .catch(reportSsoError);
     return () => {
       alive = false;
     };
-  }, [user?.isGuest, login]);
+  }, [user?.isGuest, login, t]);
   const fulfillment = useSession((s) => s.fulfillment);
   const deliveryAddress = useSession((s) => s.deliveryAddress);
   const setFulfillment = useSession((s) => s.setFulfillment);
@@ -80,7 +83,7 @@ export default function AccountPage() {
     setConfirm(null);
     logout();
     navigate('/welcome', { replace: true, state: kind === 'upgrade' ? { from: '/account' } : undefined });
-    if (kind === 'logout') toast('Đã đăng xuất. Hẹn gặp lại bạn!');
+    if (kind === 'logout') toast(t('onboarding.account.loggedOutToast'));
   };
 
   /**
@@ -101,7 +104,7 @@ export default function AccountPage() {
         isGuest: false,
         authProvider: 'microsoft',
       });
-      toast('Đã chuyển sang tài khoản Microsoft 365', 'success');
+      toast(t('onboarding.account.upgradedToast'), 'success');
     } catch (err) {
       reportSsoError(err);
     } finally {
@@ -110,15 +113,15 @@ export default function AccountPage() {
   };
   const upgrade = () => (MICROSOFT_SSO ? void upgradeWithMicrosoft() : leave('upgrade'));
   const startUpgrade = () => (activeOrders.length ? setConfirm('upgrade') : upgrade());
+  /** Khách nâng cấp được lên Microsoft 365 (SSO thật, hoặc bản demo offline → quay lại /welcome) */
+  const canUpgrade = user.isGuest && (MICROSOFT_SSO || BACKEND === 'local');
 
   const addressError =
-    fulfillment === 'delivery' && addressTouched && !deliveryAddress.trim()
-      ? 'Nhập nơi giao để quán mang món đến đúng chỗ'
-      : undefined;
+    fulfillment === 'delivery' && addressTouched && !deliveryAddress.trim() ? t('onboarding.account.addressError') : undefined;
 
   const activeNote = activeOrders.length > 0 && (
     <p className="mt-2 rounded-xl bg-rattan-soft px-3 py-2 text-[13px] font-medium leading-snug text-rattan-dark">
-      Bạn còn {activeOrders.length} đơn đang xử lý ({activeCodes}) — nhớ mã đơn để nhận món nhé.
+      {t('onboarding.account.activeNote', { count: activeOrders.length, codes: activeCodes })}
     </p>
   );
 
@@ -126,7 +129,7 @@ export default function AccountPage() {
     <div className="safe-top">
       <div className="space-y-7 px-4 pt-4">
         <header className="flex items-center justify-between px-1">
-          <h1 className="font-display text-[26px] font-extrabold tracking-tight text-espresso">Tài khoản</h1>
+          <h1 className="font-display text-[26px] font-extrabold tracking-tight text-espresso">{t('nav.account')}</h1>
           <Logo className="h-6 text-bronze-300" />
         </header>
 
@@ -139,7 +142,11 @@ export default function AccountPage() {
             loading={!ready}
           />
 
-          {user.isGuest && (MICROSOFT_SSO || BACKEND === 'local') && (
+          {/* Thẻ tích điểm; khách vãng lai thấy lời mời đăng nhập Microsoft 365 (thay cho thẻ nâng cấp tài khoản cũ) */}
+          <LoyaltyCard variant="full" onSignIn={canUpgrade ? startUpgrade : undefined} signingIn={upgrading} />
+
+          {/* Tắt tích điểm thì vẫn giữ thẻ mời nâng cấp tài khoản như trước */}
+          {!APP_CONFIG.loyalty.enabled && canUpgrade && (
             <section className="relative overflow-hidden rounded-3xl bg-gold-soft p-4 ring-1 ring-inset ring-gold/50">
               <div aria-hidden className="absolute -right-8 -top-10 h-32 w-32 rounded-full bg-gold/35 blur-2xl" />
               <div className="relative flex gap-3">
@@ -147,16 +154,12 @@ export default function AccountPage() {
                   <GraduationCap className="h-5 w-5" aria-hidden />
                 </span>
                 <div className="min-w-0">
-                  <h2 className="font-display text-[15px] font-bold leading-snug text-espresso">
-                    Đăng nhập Microsoft 365 của trường để lưu lịch sử đơn
-                  </h2>
-                  <p className="mt-1 text-[13px] leading-snug text-bronze-800">
-                    Dùng tài khoản email trường — xem lại đơn cũ trên mọi thiết bị, gọi lại món quen chỉ với vài chạm.
-                  </p>
+                  <h2 className="font-display text-[15px] font-bold leading-snug text-espresso">{t('onboarding.account.upgradeTitle')}</h2>
+                  <p className="mt-1 text-[13px] leading-snug text-bronze-800">{t('onboarding.account.upgradeBody')}</p>
                 </div>
               </div>
               <Button block className="relative mt-3.5" rightIcon={<ArrowRight className="h-4 w-4" aria-hidden />} loading={upgrading} onClick={startUpgrade}>
-                Đăng nhập ngay
+                {t('onboarding.account.upgradeCta')}
               </Button>
             </section>
           )}
@@ -164,11 +167,11 @@ export default function AccountPage() {
 
         <section>
           <SectionTitle
-            title="Nhận món mặc định"
+            title={t('onboarding.account.fulfillmentTitle')}
             action={
               <span className="inline-flex items-center gap-1 text-xs font-medium text-leaf-dark">
                 <Check className="h-3.5 w-3.5" aria-hidden />
-                Tự động lưu
+                {t('onboarding.account.autoSaved')}
               </span>
             }
           />
@@ -182,23 +185,33 @@ export default function AccountPage() {
             }}
             addressError={addressError}
           />
-          <p className="mt-2.5 px-1 text-xs leading-relaxed text-stone">
-            Áp dụng sẵn cho đơn mới — bạn vẫn đổi được trong giỏ hàng.
-          </p>
+          <p className="mt-2.5 px-1 text-xs leading-relaxed text-stone">{t('onboarding.account.fulfillmentHint')}</p>
+        </section>
+
+        {/* Ngôn ngữ — tiêu đề luôn song ngữ để ai cũng tìm ra */}
+        <section>
+          <SectionTitle title={t('onboarding.account.languageTitle')} />
+          <Card className="flex min-h-[68px] items-center gap-3 p-3.5 pl-4">
+            <span className="min-w-0 flex-1">
+              <span className="block font-semibold text-espresso">{t('onboarding.account.languageLabel')}</span>
+              <span className="block text-xs leading-snug text-stone">{t('onboarding.account.languageHint')}</span>
+            </span>
+            <LanguageSwitch tone="light" className="shrink-0" />
+          </Card>
         </section>
 
         <section>
-          <SectionTitle title="Thông báo" />
+          <SectionTitle title={t('onboarding.account.notificationsTitle')} />
           <NotificationSettings />
         </section>
 
         <section>
-          <SectionTitle title="Về Cloud 9" />
+          <SectionTitle title={t('onboarding.account.aboutTitle')} />
           <AboutCafeCard />
         </section>
 
         <section>
-          <SectionTitle title="Dành cho nhân viên quán" />
+          <SectionTitle title={t('onboarding.account.staffTitle')} />
           <Link
             to="/admin/login"
             className="flex min-h-[68px] items-center gap-3.5 rounded-3xl bg-white p-3.5 shadow-card ring-1 ring-bronze-200/50 transition hover:ring-bronze-300 active:scale-[.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
@@ -207,8 +220,8 @@ export default function AccountPage() {
               <KeyRound className="h-5 w-5" aria-hidden />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block font-semibold text-espresso">Trang quản trị quán</span>
-              <span className="block text-xs leading-snug text-stone">Nhận đơn, quét QR thu tiền, cập nhật thực đơn</span>
+              <span className="block font-semibold text-espresso">{t('onboarding.account.adminTitle')}</span>
+              <span className="block text-xs leading-snug text-stone">{t('onboarding.account.adminDesc')}</span>
             </span>
             <ChevronRight className="h-5 w-5 shrink-0 text-bronze-400" aria-hidden />
           </Link>
@@ -216,11 +229,9 @@ export default function AccountPage() {
 
         <div className="space-y-4 pb-2">
           <Button variant="danger" size="lg" block leftIcon={<LogOut className="h-5 w-5" aria-hidden />} onClick={() => setConfirm('logout')}>
-            Đăng xuất
+            {t('onboarding.account.logout')}
           </Button>
-          <p className="text-center text-xs text-stone">
-            Cloud 9 · Phiên bản {APP_VERSION} · Bản thử nghiệm
-          </p>
+          <p className="text-center text-xs text-stone">{t('onboarding.account.version', { version: APP_VERSION })}</p>
         </div>
       </div>
 
@@ -228,17 +239,15 @@ export default function AccountPage() {
 
       <ConfirmDialog
         open={confirm === 'logout'}
-        title="Đăng xuất khỏi Cloud 9?"
+        title={t('onboarding.account.logoutConfirm.title')}
         tone="danger"
-        confirmText="Đăng xuất"
-        cancelText="Ở lại"
+        confirmText={t('onboarding.account.logoutConfirm.confirm')}
+        cancelText={t('onboarding.account.logoutConfirm.cancel')}
         description={
           <>
             <p>
-              Giỏ hàng của bạn vẫn được giữ nguyên.{' '}
-              {user.isGuest
-                ? 'Đơn đặt với tư cách khách sẽ không xem lại được sau khi đăng xuất.'
-                : 'Đăng nhập lại bằng cùng tài khoản để xem lịch sử đơn.'}
+              {t('onboarding.account.logoutConfirm.cartKept')}{' '}
+              {user.isGuest ? t('onboarding.account.logoutConfirm.guest') : t('onboarding.account.logoutConfirm.member')}
             </p>
             {activeNote}
           </>
@@ -249,12 +258,12 @@ export default function AccountPage() {
 
       <ConfirmDialog
         open={confirm === 'upgrade'}
-        title="Chuyển sang tài khoản Microsoft 365?"
-        confirmText="Tiếp tục"
-        cancelText="Để sau"
+        title={t('onboarding.account.upgradeConfirm.title')}
+        confirmText={t('onboarding.account.upgradeConfirm.confirm')}
+        cancelText={t('common.later')}
         description={
           <>
-            <p>Đơn đang xử lý được đặt với tư cách khách nên sẽ không hiện trong tài khoản mới.</p>
+            <p>{t('onboarding.account.upgradeConfirm.body')}</p>
             {activeNote}
           </>
         }

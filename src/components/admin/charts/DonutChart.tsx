@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 import { formatPrice } from '@/lib/format';
 
@@ -29,7 +30,7 @@ export function DonutChart({
   size = 148,
   thickness = 20,
   formatAmount = formatPrice,
-  emptyLabel = 'Chưa có doanh thu',
+  emptyLabel: emptyLabelProp,
   className,
 }: {
   slices: DonutSlice[];
@@ -43,6 +44,8 @@ export function DonutChart({
   emptyLabel?: string;
   className?: string;
 }) {
+  const { t } = useT();
+  const emptyLabel = emptyLabelProp ?? t('adminDashboard.chart.noRevenue');
   const uid = useId();
   const titleId = `${uid}-title`;
   const descId = `${uid}-desc`;
@@ -90,12 +93,12 @@ export function DonutChart({
           ))}
         </svg>
         <div aria-hidden className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-          <span className="font-display text-lg font-extrabold leading-none tabular-nums text-espresso">{total > 0 ? centerValue : '0đ'}</span>
+          <span className="font-display text-lg font-extrabold leading-none tabular-nums text-espresso">{total > 0 ? centerValue : formatAmount(0)}</span>
           {centerLabel && <span className="mt-1 text-[11px] font-medium text-stone">{centerLabel}</span>}
         </div>
       </div>
 
-      <ul className="min-w-[150px] flex-1 space-y-1" aria-label={`Chú giải: ${title}`}>
+      <ul className="min-w-[150px] flex-1 space-y-1" aria-label={t('adminDashboard.chart.legend', { title })}>
         {slices.map((s) => (
           <li key={s.key} className="flex items-start gap-2.5 rounded-2xl px-1 py-1.5">
             <span aria-hidden className={cn('mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full', s.dotClass, s.value <= 0 && 'opacity-40')} />

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Bell, BellOff, BellRing, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Button, Card } from '@/components/ui';
+import { useT } from '@/i18n';
 import { useAction } from '@/hooks/useAction';
 import { platform } from '@/platform';
 import { toast } from '@/store/ui';
@@ -19,54 +20,19 @@ function readNotifyStatus(): NotifyStatus {
   return window.Notification.permission;
 }
 
-const META: Record<
-  NotifyStatus,
-  { icon: LucideIcon; tile: string; title: string; description: string; action?: 'enable' | 'retry' }
-> = {
-  granted: {
-    icon: BellRing,
-    tile: 'bg-leaf-soft text-leaf-dark',
-    title: 'Thông báo đã bật',
-    description: 'Cloud 9 sẽ báo ngay khi món sẵn sàng hoặc đang được giao.',
-  },
-  default: {
-    icon: Bell,
-    tile: 'bg-gold-soft text-bronze-700',
-    title: 'Báo khi món xong',
-    description: 'Nhận thông báo cả khi bạn đang mở ứng dụng khác.',
-    action: 'enable',
-  },
-  unknown: {
-    icon: Bell,
-    tile: 'bg-gold-soft text-bronze-700',
-    title: 'Báo khi món xong',
-    description: 'Nhận thông báo khi món sẵn sàng hoặc đang được giao.',
-    action: 'enable',
-  },
-  dismissed: {
-    icon: Bell,
-    tile: 'bg-gold-soft text-bronze-700',
-    title: 'Bạn chưa cho phép',
-    description: 'Chạm “Bật thông báo” rồi chọn Cho phép khi được hỏi nhé.',
-    action: 'enable',
-  },
-  denied: {
-    icon: BellOff,
-    tile: 'bg-rattan-soft text-rattan-dark',
-    title: 'Thông báo đang bị chặn',
-    description: 'Hãy cho phép thông báo cho Cloud 9 trong phần cài đặt, rồi thử lại.',
-    action: 'retry',
-  },
-  unsupported: {
-    icon: BellOff,
-    tile: 'bg-bronze-100 text-stone',
-    title: 'Thiết bị chưa hỗ trợ',
-    description: 'Bạn vẫn nhận thông báo trong ứng dụng khi đang mở Cloud 9.',
-  },
+// Tiêu đề / mô tả lấy từ onboarding.notifications.<trạng thái>.title|description
+const META: Record<NotifyStatus, { icon: LucideIcon; tile: string; action?: 'enable' | 'retry' }> = {
+  granted: { icon: BellRing, tile: 'bg-leaf-soft text-leaf-dark' },
+  default: { icon: Bell, tile: 'bg-gold-soft text-bronze-700', action: 'enable' },
+  unknown: { icon: Bell, tile: 'bg-gold-soft text-bronze-700', action: 'enable' },
+  dismissed: { icon: Bell, tile: 'bg-gold-soft text-bronze-700', action: 'enable' },
+  denied: { icon: BellOff, tile: 'bg-rattan-soft text-rattan-dark', action: 'retry' },
+  unsupported: { icon: BellOff, tile: 'bg-bronze-100 text-stone' },
 };
 
 /** Thẻ bật thông báo hệ thống qua platform.requestNotificationPermission() */
 export function NotificationSettings() {
+  const { t } = useT();
   const [status, setStatus] = useState<NotifyStatus>(readNotifyStatus);
   const [request, loading] = useAction(() => platform.requestNotificationPermission());
 
@@ -76,7 +42,7 @@ export function NotificationSettings() {
     if (granted) {
       setStatus('granted');
       platform.vibrate(30);
-      toast('Đã bật thông báo', 'success');
+      toast(t('onboarding.notifications.enabledToast'), 'success');
       return;
     }
     const now = readNotifyStatus();
@@ -93,12 +59,14 @@ export function NotificationSettings() {
         </span>
         <div className="min-w-0 flex-1" aria-live="polite">
           <div className="flex items-center justify-between gap-2">
-            <p className="font-semibold text-espresso">{m.title}</p>
+            <p className="font-semibold text-espresso">{t(`onboarding.notifications.${status}.title`)}</p>
             {status === 'granted' && (
-              <span className="shrink-0 rounded-full bg-leaf px-2.5 py-0.5 text-[11px] font-bold text-white">Đang bật</span>
+              <span className="shrink-0 rounded-full bg-leaf px-2.5 py-0.5 text-[11px] font-bold text-white">
+                {t('onboarding.notifications.on')}
+              </span>
             )}
           </div>
-          <p className="mt-0.5 text-[13px] leading-snug text-stone">{m.description}</p>
+          <p className="mt-0.5 text-[13px] leading-snug text-stone">{t(`onboarding.notifications.${status}.description`)}</p>
         </div>
       </div>
       {m.action && (
@@ -110,7 +78,7 @@ export function NotificationSettings() {
           leftIcon={<BellRing className="h-[18px] w-[18px]" aria-hidden />}
           onClick={enable}
         >
-          {m.action === 'enable' ? 'Bật thông báo' : 'Thử lại'}
+          {m.action === 'enable' ? t('onboarding.notifications.enable') : t('common.retry')}
         </Button>
       )}
     </Card>

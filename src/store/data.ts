@@ -1,6 +1,11 @@
 import { create } from 'zustand';
 import { repo } from '@/services';
-import type { MenuItem, Order } from '@/types';
+import type { LoyaltyAccount, MenuItem, Order } from '@/types';
+import { APP_CONFIG } from '@/config/app';
+import { translate } from '@/i18n';
+import { platform } from '@/platform';
+import { useNotifications } from './notifications';
+import { useUi } from './ui';
 import { useCart } from './cart';
 import { toast } from './ui';
 import { useSession } from './session';
@@ -13,6 +18,8 @@ interface DataState {
   ready: boolean;
   /** Lỗi kết nối máy chủ gần nhất (null khi bình thường) */
   error: { message: string; code?: string } | null;
+  /** Thẻ tích điểm của khách đang đăng nhập (null: khách vãng lai / chưa có) */
+  loyalty: LoyaltyAccount | null;
   refreshMenu: () => Promise<void>;
   refreshOrders: () => Promise<void>;
 }
@@ -26,12 +33,13 @@ export const useDataStore = create<DataState>((set) => ({
   orders: [],
   ready: false,
   error: null,
+  loyalty: null,
   refreshMenu: async () => {
     const menu = await repo.listMenu();
     set({ menu });
     // Giỏ hàng luôn theo giá/tuỳ chọn mới nhất của quán
     const cart = useCart.getState();
-    if (cart.lines.length && cart.reprice(menu)) toast('Giá một số món trong giỏ vừa được quán cập nhật', 'info');
+    if (cart.lines.length && cart.reprice(menu)) toast(translate('errors.pricesUpdated'), 'info');
   },
   refreshOrders: async () => set({ orders: await repo.listOrders() }),
 }));
@@ -69,12 +77,59 @@ export async function startDataSync() {
       .then((r) => {
         if (r !== 'stale-app-session') return;
         useSession.getState().logout();
-        toast('Phiên đăng nhập Microsoft 365 đã hết — vui lòng đăng nhập lại.', 'info');
+        toast(translate('errors.sessionExpired'), 'info');
       })
       .catch(() => undefined);
   }
 
+  startLoyaltySync();
+
   await repo.whenReady?.();
   await Promise.all([refreshMenu(), refreshOrders()]);
   useDataStore.setState({ ready: true });
+}
+
+/**
+ * Theo dõi thẻ tích điểm của khách đang đăng nhập (không phải khách vãng lai).
+ * Khi vừa đủ cốc miễn phí → thông báo trong app + banner.
+ */
+function startLoyaltySync() {
+  if (!APP_CONFIG.loyalty.enabled) return;
+  let unwatch: (() => void) | null = null;
+  let watchingId: string | null = null;
+  const per = APP_CONFIG.loyalty.cupsPerReward;
+  const apply = () => {
+    const user = useSession.getState().user;
+    const id = user && !user.isGuest ? user.id : null;
+    if (id === watchingId) return;
+    unwatch?.();
+    unwatch = null;
+    watchingId = id;
+    useDataStore.setState({ loyalty: null });
+    if (!id) return;
+    let first = true;
+    unwatch = repo.watchLoyalty(id, (account) => {
+      const prev = useDataStore.getState().loyalty;
+      useDataStore.setState({ loyalty: account });
+      // Số cốc có thể âm (hoàn đơn đã dùng để đổi thưởng) → so theo giá trị hiển thị, tránh báo thưởng sai khi -3 → 0
+      const before = Math.floor(Math.max(0, prev?.stamps ?? 0) / per);
+      const after = Math.floor(Math.max(0, account?.stamps ?? 0) / per);
+      // Không báo trên trang quản trị (bản demo dùng chung phiên với khách trên cùng máy)
+      if (!first && after > before && !window.location.hash.startsWith('#/admin')) {
+        const title = translate('notify.reward.title');
+        const body = translate('notify.reward.body', { cups: per });
+        useNotifications.getState().push({
+          kind: 'info',
+          title,
+          body,
+          msg: { title: 'notify.reward.title', body: 'notify.reward.body', vars: { cups: per } },
+        });
+        useUi.getState().showBanner({ title, body, href: '/account', icon: 'completed' });
+        platform.vibrate([60, 40, 60]);
+      }
+      first = false;
+    });
+  };
+  apply();
+  useSession.subscribe(apply);
 }

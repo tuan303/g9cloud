@@ -1,18 +1,21 @@
 import heroUrl from '@/assets/photos/espresso-bar.webp';
 import { cn } from '@/lib/cn';
-import { Logo } from '@/components/ui';
-import { greetingFor } from './helpers';
+import { LanguageSwitch, Logo } from '@/components/ui';
+import { useT } from '@/i18n';
+import { greetingKey } from './helpers';
 
 /**
  * Ảnh quầy espresso thật (logo 3D trên tường vữa nằm trọn ở nửa trên) + lớp phủ espresso và vệt nắng vàng.
  * Khối chữ đặt ở dưới, trên nền tối, để không chồng lên logo trong ảnh.
  * `compact` thu gọn ảnh khi người dùng đang điền form để chừa chỗ cho bàn phím.
+ * Nút chọn ngôn ngữ VI/EN nằm ngay trên thanh thương hiệu — thấy ngay từ màn hình đầu tiên, ở mọi bước.
  */
 export function WelcomeHero({ compact }: { compact: boolean }) {
-  const greeting = greetingFor(new Date().getHours());
+  const { t } = useT();
+  const greeting = t(greetingKey(new Date().getHours()));
   return (
     <section
-      aria-label="Chào mừng đến Cloud 9"
+      aria-label={t('onboarding.hero.aria')}
       className={cn(
         'relative shrink-0 overflow-hidden bg-espresso-900 transition-[height] duration-500 ease-out motion-reduce:transition-none',
         compact ? 'h-[max(26dvh,190px)]' : 'h-[max(46dvh,330px)]',
@@ -36,19 +39,21 @@ export function WelcomeHero({ compact }: { compact: boolean }) {
       />
 
       <div className="safe-top relative flex h-full flex-col px-6">
-        {/* Logo nhỏ như thanh thương hiệu — logo 3D trên tường trong ảnh là “nhân vật chính” */}
-        <div className="flex h-14 shrink-0 items-center">
+        {/* Logo nhỏ như thanh thương hiệu — logo 3D trên tường trong ảnh là “nhân vật chính”; bên phải: chọn ngôn ngữ */}
+        <div className="flex h-14 shrink-0 items-center justify-between gap-3">
           <Logo className="h-7 text-cream" />
+          {/* Nút VI/EN cao 44px (vùng chạm đủ lớn) */}
+          <LanguageSwitch tone="dark" className="-mr-1 shrink-0 [&_button]:min-h-9 [&_button]:min-w-10" />
         </div>
         <div className={cn('mt-auto [text-shadow:0_1px_12px_rgba(28,22,14,0.75)]', compact ? 'pb-12' : 'pb-14')}>
           <p className="font-display text-xs font-bold uppercase tracking-[0.22em] text-gold">{greeting}</p>
           {!compact && (
             <div className="motion-safe:animate-fade-in">
               <h1 className="mt-1.5 font-display text-[27px] font-extrabold leading-[1.15] tracking-tight text-cream text-balance">
-                Hôm nay mình uống gì nhỉ?
+                {t('onboarding.hero.title')}
               </h1>
               <p className="mt-2 max-w-[21rem] text-[15px] leading-relaxed text-cream/85">
-                Cà phê &amp; bánh nướng mỗi ngày — gọi món nhanh, nhận món ngay tại trường.
+                {t('onboarding.hero.subtitle')}
               </p>
             </div>
           )}

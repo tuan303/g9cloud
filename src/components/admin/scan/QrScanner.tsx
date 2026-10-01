@@ -3,6 +3,7 @@ import jsQR from 'jsqr';
 import { Camera, CameraOff, LoaderCircle, Pause, RotateCcw, ScanLine, Smartphone } from 'lucide-react';
 import barPhoto from '@/assets/photos/espresso-bar-sm.webp';
 import { Button, Logo } from '@/components/ui';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 import { platform } from '@/platform';
 import { toast } from '@/store/ui';
@@ -12,37 +13,14 @@ export type ScanSource = 'camera' | 'native';
 type Phase = 'idle' | 'starting' | 'live' | 'error';
 type Issue = 'insecure' | 'unsupported' | 'denied' | 'notfound' | 'busy' | 'unknown';
 
-const ISSUE_COPY: Record<Issue, { title: string; body: string; retry: boolean }> = {
-  insecure: {
-    title: 'Camera cần kết nối bảo mật',
-    body: 'Trình duyệt chỉ mở camera trên trang https:// hoặc localhost. Bạn vẫn có thể nhập mã đơn bên dưới.',
-    retry: false,
-  },
-  unsupported: {
-    title: 'Trình duyệt chưa hỗ trợ camera',
-    body: 'Hãy mở bằng Chrome hoặc Safari bản mới, hoặc nhập mã đơn bên dưới.',
-    retry: false,
-  },
-  denied: {
-    title: 'Chưa được phép dùng camera',
-    body: 'Cho phép truy cập camera trong cài đặt trình duyệt rồi bấm “Thử lại”.',
-    retry: true,
-  },
-  notfound: {
-    title: 'Không tìm thấy camera',
-    body: 'Thiết bị này chưa có camera phù hợp. Hãy nhập mã đơn bên dưới.',
-    retry: true,
-  },
-  busy: {
-    title: 'Camera đang bận',
-    body: 'Một ứng dụng khác đang dùng camera. Đóng ứng dụng đó rồi thử lại.',
-    retry: true,
-  },
-  unknown: {
-    title: 'Không mở được camera',
-    body: 'Vui lòng thử lại, hoặc nhập mã đơn bên dưới.',
-    retry: true,
-  },
+/** Lỗi nào cho phép bấm “Thử lại” (nội dung chữ: adminScan.scanner.issues.<lỗi>) */
+const ISSUE_RETRY: Record<Issue, boolean> = {
+  insecure: false,
+  unsupported: false,
+  denied: true,
+  notfound: true,
+  busy: true,
+  unknown: true,
 };
 
 /** ~5 khung hình/giây là đủ nhanh mà vẫn nhẹ máy */
@@ -86,6 +64,7 @@ const CORNERS = [
 
 /** Khung ngắm: góc vàng + vạch quét chạy lên xuống, vùng ngoài khung tối lại */
 function Viewfinder({ lineRef }: { lineRef: RefObject<HTMLDivElement> }) {
+  const { t } = useT();
   return (
     <div className="pointer-events-none absolute inset-0" aria-hidden>
       <div className="absolute left-1/2 top-[44%] aspect-square w-[62%] max-w-[300px] -translate-x-1/2 -translate-y-1/2 rounded-[26px] shadow-[0_0_0_9999px_rgba(28,22,14,0.5)]">
@@ -100,7 +79,7 @@ function Viewfinder({ lineRef }: { lineRef: RefObject<HTMLDivElement> }) {
       </div>
       <p className="absolute inset-x-0 top-4 px-4 text-center">
         <span className="inline-block rounded-full bg-espresso-900/60 px-3 py-1.5 text-xs font-medium text-cream/90 backdrop-blur">
-          Đưa mã QR trên điện thoại khách vào khung
+          {t('adminScan.scanner.aim')}
         </span>
       </p>
     </div>
@@ -126,6 +105,7 @@ export function QrScanner({
   busy?: boolean;
   className?: string;
 }) {
+  const { t } = useT();
   const videoRef = useRef<HTMLVideoElement>(null);
   const lineRef = useRef<HTMLDivElement>(null);
   const [phase, setPhase] = useState<Phase>(active ? 'starting' : 'idle');
@@ -266,25 +246,32 @@ export function QrScanner({
       const text = (await platform.scanQRCode())?.trim();
       if (text) cbRef.current.onDetected(text, 'native');
     } catch {
-      toast('Không mở được trình quét của Zalo', 'error');
+      toast(t('adminScan.scanner.zaloError'), 'error');
     } finally {
       setNativeBusy(false);
     }
   };
 
-  const copy = phase === 'error' && issue ? ISSUE_COPY[issue] : null;
+  const copy =
+    phase === 'error' && issue
+      ? {
+          title: t(`adminScan.scanner.issues.${issue}.title`),
+          body: t(`adminScan.scanner.issues.${issue}.body`),
+          retry: ISSUE_RETRY[issue],
+        }
+      : null;
   const loadingText =
     phase === 'starting'
-      ? 'Đang mở camera…'
+      ? t('adminScan.scanner.opening')
       : nativeBusy
-        ? 'Đang mở trình quét Zalo…'
+        ? t('adminScan.scanner.openingZalo')
         : busy && phase !== 'error'
-          ? 'Đang tìm đơn…'
+          ? t('adminScan.scanner.finding')
           : null;
 
   const nativeButton = platform.canNativeScan && (
     <Button variant="leaf" size="lg" leftIcon={<Smartphone className="h-5 w-5" />} onClick={() => void scanNative()} loading={nativeBusy}>
-      Quét bằng Zalo
+      {t('adminScan.scanner.scanZalo')}
     </Button>
   );
 
@@ -313,10 +300,10 @@ export function QrScanner({
                 <span className="absolute inset-0 animate-ping rounded-full bg-leaf-light/70" />
                 <span className="relative h-2.5 w-2.5 rounded-full bg-leaf-light" />
               </span>
-              Đang quét…
+              {t('adminScan.scanner.scanning')}
             </span>
             <Button variant="light" leftIcon={<Pause className="h-4 w-4" />} onClick={() => onActiveChange(false)}>
-              Tạm dừng
+              {t('adminScan.scanner.pause')}
             </Button>
           </div>
         </>
@@ -346,7 +333,7 @@ export function QrScanner({
                   {nativeButton}
                   {copy.retry && (
                     <Button variant="light" leftIcon={<RotateCcw className="h-4 w-4" />} onClick={() => onActiveChange(true)}>
-                      Thử lại
+                      {t('common.retry')}
                     </Button>
                   )}
                 </div>
@@ -357,10 +344,8 @@ export function QrScanner({
                   <ScanLine className="h-7 w-7" />
                 </span>
                 <div>
-                  <p className="font-display text-lg font-bold text-cream">{startedOnce ? 'Đã tạm dừng quét' : 'Sẵn sàng quét mã'}</p>
-                  <p className="mx-auto mt-1 max-w-xs text-[13px] leading-snug text-cream/75">
-                    Hướng camera vào mã QR trên điện thoại của khách.
-                  </p>
+                  <p className="font-display text-lg font-bold text-cream">{startedOnce ? t('adminScan.scanner.paused') : t('adminScan.scanner.ready')}</p>
+                  <p className="mx-auto mt-1 max-w-xs text-[13px] leading-snug text-cream/75">{t('adminScan.scanner.hint')}</p>
                 </div>
                 <div className="flex flex-wrap justify-center gap-2">
                   {nativeButton}
@@ -370,7 +355,7 @@ export function QrScanner({
                     leftIcon={<Camera className="h-5 w-5" />}
                     onClick={() => onActiveChange(true)}
                   >
-                    {platform.canNativeScan ? 'Dùng camera' : startedOnce ? 'Quét tiếp' : 'Bật camera'}
+                    {t(platform.canNativeScan ? 'adminScan.scanner.useCamera' : startedOnce ? 'adminScan.scanner.scanNext' : 'adminScan.scanner.start')}
                   </Button>
                 </div>
               </>

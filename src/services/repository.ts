@@ -1,4 +1,4 @@
-import type { CreateOrderInput, MenuItem, Order, OrderStatus } from '@/types';
+import type { CreateOrderInput, LoyaltyAccount, MenuItem, Order, OrderStatus } from '@/types';
 
 /**
  * Lớp truy cập dữ liệu. Bản demo dùng `LocalRepository` (localStorage + đồng bộ giữa các tab).
@@ -22,6 +22,12 @@ export interface DataRepository {
   confirmPayment(orderId: string): Promise<Order>;
   updateOrderStatus(orderId: string, status: OrderStatus, by?: 'customer' | 'staff' | 'system'): Promise<Order>;
   cancelOrder(orderId: string, reason?: string, by?: 'customer' | 'staff'): Promise<Order>;
+
+  // ── Tích điểm ──
+  /** Thẻ tích điểm của khách (null nếu chưa có) */
+  getLoyalty(customerId: string): Promise<LoyaltyAccount | null>;
+  /** Theo dõi thẻ tích điểm theo thời gian thực; trả về hàm huỷ theo dõi */
+  watchLoyalty(customerId: string, cb: (account: LoyaltyAccount | null) => void): () => void;
 
   // ── Thời gian thực ──
   subscribe(listener: (event: RepoEvent) => void): () => void;

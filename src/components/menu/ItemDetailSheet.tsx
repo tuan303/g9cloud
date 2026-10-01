@@ -1,8 +1,12 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { Check, CircleAlert, X } from 'lucide-react';
+import { Check, CircleAlert, Coffee, X } from 'lucide-react';
 import { BottomSheet, Button, IconButton, MenuImage, QuantityStepper, TagBadge, TextArea } from '@/components/ui';
+import { APP_CONFIG } from '@/config/app';
+import { useLoyalty } from '@/hooks/loyalty';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 import { formatPrice } from '@/lib/format';
+import { choiceName, groupName, itemDescription, itemName } from '@/lib/i18n-data';
 import { defaultSelections, missingRequiredGroup, toSelectedOptions, unitPrice } from '@/lib/pricing';
 import { platform } from '@/platform';
 import { useCart } from '@/store/cart';
@@ -45,6 +49,8 @@ function initialSelections(item: MenuItem, editLine?: CartLine): Record<string, 
 
 function DetailSheet({ item, onClose: onCloseProp, editLine }: { item: MenuItem; onClose: () => void; editLine?: CartLine }) {
   const onClose = useStableCallback(onCloseProp);
+  const { t, locale } = useT();
+  const loyalty = useLoyalty();
   const add = useCart((s) => s.add);
   const replace = useCart((s) => s.replace);
 
@@ -73,6 +79,13 @@ function DetailSheet({ item, onClose: onCloseProp, editLine }: { item: MenuItem;
   const price = unitPrice(item, options);
   const total = price * quantity;
 
+  const name = itemName(item);
+  const description = itemDescription(item);
+  // Tên phụ ở ngôn ngữ còn lại (tiếng Việt: hiện tên tiếng Anh; tiếng Anh: hiện tên tiếng Việt để gọi món tại quầy)
+  const altName = locale === 'en' ? item.name : item.nameEn;
+  // Món nước được tích điểm (chỉ gợi ý cho khách có thẻ tích điểm)
+  const countsForLoyalty = loyalty.member && APP_CONFIG.loyalty.eligibleCategories.includes(item.categoryId);
+
   const pick = (group: OptionGroup, choiceId: string) => {
     const current = selections[group.id] ?? [];
     let next: string[];
@@ -84,7 +97,7 @@ function DetailSheet({ item, onClose: onCloseProp, editLine }: { item: MenuItem;
     } else if (group.max === 1) {
       next = [choiceId];
     } else if (group.max && current.length >= group.max) {
-      toast(`${group.name}: chọn tối đa ${group.max} mục`, 'info');
+      toast(t('menu.detail.maxChoices', { group: groupName(group), count: group.max }), 'info');
       return;
     } else {
       next = [...current, choiceId];
@@ -97,6 +110,7 @@ function DetailSheet({ item, onClose: onCloseProp, editLine }: { item: MenuItem;
     if (soldOut) return;
     const missing = missingRequiredGroup(item.optionGroups, selections);
     if (missing) {
+      // missingRequiredGroup trả về tên nhóm gốc (tiếng Việt) → tìm nhóm để lấy tên theo ngôn ngữ đang chọn
       const group = groups.find((g) => g.name === missing);
       if (group) {
         setInvalidGroup(group.id);
@@ -104,17 +118,17 @@ function DetailSheet({ item, onClose: onCloseProp, editLine }: { item: MenuItem;
           .getElementById(groupDomId(group.id))
           ?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'center' });
       }
-      toast(`Bạn chọn giúp mục “${missing}” nhé`, 'error');
+      toast(t('menu.detail.chooseRequired', { group: group ? groupName(group) : missing }), 'error');
       return;
     }
     const trimmed = note.trim();
     if (editLine) {
       replace(editLine.lineId, item, options, quantity, trimmed);
-      toast(`Đã cập nhật ${item.name}`, 'success');
+      toast(t('menu.detail.updated', { name }), 'success');
     } else {
       add(item, options, quantity, trimmed);
       platform.vibrate(12);
-      toast(quantity > 1 ? `Đã thêm ${quantity} × ${item.name}` : `Đã thêm ${item.name}`, 'success');
+      toast(quantity > 1 ? t('menu.addedQty', { count: quantity, name }) : t('menu.added', { name }), 'success');
     }
     onClose();
   };
@@ -122,10 +136,10 @@ function DetailSheet({ item, onClose: onCloseProp, editLine }: { item: MenuItem;
   const footer = (
     <Button block size="lg" disabled={soldOut} onClick={submit} className="mb-0.5">
       {soldOut ? (
-        'Món tạm hết'
+        t('menu.detail.soldOutButton')
       ) : (
         <>
-          <span>{editLine ? 'Cập nhật món' : 'Thêm vào giỏ'}</span>
+          <span>{editLine ? t('menu.detail.update') : t('menu.detail.addToCart')}</span>
           <span aria-hidden className="text-cream/40">
             ·
           </span>
@@ -142,12 +156,12 @@ function DetailSheet({ item, onClose: onCloseProp, editLine }: { item: MenuItem;
         <div className="relative">
           <MenuImage
             image={item.image}
-            alt={item.name}
+            alt={name}
             categoryId={item.categoryId}
             rounded="rounded-3xl"
             className={cn('h-[220px] w-full ring-1 ring-bronze-200/50', soldOut && 'grayscale-[.6]')}
           />
-          <IconButton label="Đóng" tone="glass" onClick={onClose} className="absolute right-3 top-3">
+          <IconButton label={t('common.close')} tone="glass" onClick={onClose} className="absolute right-3 top-3">
             <X className="h-5 w-5" />
           </IconButton>
           {!!item.tags?.length && (
@@ -159,7 +173,7 @@ function DetailSheet({ item, onClose: onCloseProp, editLine }: { item: MenuItem;
           )}
           {soldOut && (
             <span className="absolute bottom-3 left-3 rounded-full bg-espresso/85 px-3 py-1 text-xs font-bold text-cream backdrop-blur">
-              Tạm hết
+              {t('menu.soldOut')}
             </span>
           )}
         </div>
@@ -168,18 +182,22 @@ function DetailSheet({ item, onClose: onCloseProp, editLine }: { item: MenuItem;
         <div className="mt-4 flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h2 id={titleId} className="font-display text-[22px] font-extrabold leading-tight tracking-tight text-espresso">
-              {item.name}
+              {name}
             </h2>
-            {item.nameEn && item.nameEn !== item.name && <p className="mt-0.5 text-sm font-medium text-stone">{item.nameEn}</p>}
+            {altName && altName !== name && (
+              <p lang={locale === 'en' ? 'vi' : 'en'} className="mt-0.5 text-sm font-medium text-stone">
+                {altName}
+              </p>
+            )}
           </div>
           <p className="shrink-0 pt-0.5 font-display text-xl font-bold tabular-nums text-espresso">{formatPrice(item.price)}</p>
         </div>
-        {item.description && <p className="mt-2.5 text-[15px] leading-relaxed text-bronze-800">{item.description}</p>}
+        {description && <p className="mt-2.5 text-[15px] leading-relaxed text-bronze-800">{description}</p>}
 
         {soldOut ? (
           <div role="status" className="mt-5 flex items-start gap-2.5 rounded-2xl bg-rattan-soft p-4 text-sm text-rattan-dark">
             <CircleAlert className="mt-px h-[18px] w-[18px] shrink-0" aria-hidden />
-            <p>Món này đang tạm hết. Bạn chọn món khác hoặc quay lại sau nhé!</p>
+            <p>{t('menu.detail.soldOutNotice')}</p>
           </div>
         ) : (
           <>
@@ -196,23 +214,29 @@ function DetailSheet({ item, onClose: onCloseProp, editLine }: { item: MenuItem;
 
             <div className="mt-6">
               <TextArea
-                label="Ghi chú cho quán"
-                placeholder="VD: ít ngọt hơn, không lấy ống hút…"
+                label={t('menu.detail.noteLabel')}
+                placeholder={t('menu.detail.notePlaceholder')}
                 rows={2}
                 maxLength={NOTE_MAX}
                 value={note}
                 onChange={(e) => setNote(e.target.value.slice(0, NOTE_MAX))}
-                hint={`${note.length}/${NOTE_MAX} ký tự`}
+                hint={t('menu.detail.noteHint', { used: note.length, max: NOTE_MAX })}
               />
             </div>
 
             <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl bg-white p-2.5 pl-4 ring-1 ring-bronze-200/60">
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-espresso">Số lượng</p>
-                <p className="text-xs tabular-nums text-stone">{formatPrice(price)} / phần</p>
+                <p className="text-sm font-semibold text-espresso">{t('menu.detail.quantity')}</p>
+                <p className="text-xs tabular-nums text-stone">{t('menu.detail.perServing', { price: formatPrice(price) })}</p>
               </div>
               <QuantityStepper value={quantity} onChange={setQuantity} min={1} max={99} />
             </div>
+            {countsForLoyalty && (
+              <p className="mt-2.5 flex items-center gap-1.5 px-1 text-xs font-medium text-bronze-700">
+                <Coffee className="h-3.5 w-3.5 shrink-0 text-gold-dark" aria-hidden />
+                {t('menu.detail.loyaltyHint', { count: quantity })}
+              </p>
+            )}
           </>
         )}
       </div>
@@ -234,17 +258,19 @@ function OptionGroupField({
   invalid: boolean;
   onPick: (choiceId: string) => void;
 }) {
+  const { t } = useT();
   const single = group.type === 'single';
+  const label = groupName(group);
   const atMax = !single && !!group.max && group.max > 1 && selected.length >= group.max;
   // Nhóm ngắn (size, % đường, đá) → lưới chip; nhóm dài (topping) → danh sách có ô chọn
-  const compact = single && group.choices.length <= 4 && group.choices.every((c) => c.name.length <= 12);
+  const compact = single && group.choices.length <= 4 && group.choices.every((c) => choiceName(c).length <= 12);
   const headingId = `${domId}-label`;
 
   return (
     <section id={domId} className="mt-6 scroll-mt-4" aria-labelledby={headingId}>
       <div className="mb-2.5 flex items-center justify-between gap-2 px-0.5">
         <h3 id={headingId} className="font-display text-[15px] font-bold text-espresso">
-          {group.name}
+          {label}
         </h3>
         {group.required ? (
           <span
@@ -253,10 +279,12 @@ function OptionGroupField({
               invalid ? 'bg-rattan text-white' : 'bg-rattan-soft text-rattan-dark',
             )}
           >
-            Bắt buộc
+            {t('common.required')}
           </span>
         ) : (
-          <span className="text-xs text-stone">{group.max && !single ? `Tuỳ chọn · tối đa ${group.max}` : 'Tuỳ chọn'}</span>
+          <span className="text-xs text-stone">
+            {group.max && !single ? t('menu.detail.optionalMax', { max: group.max }) : t('menu.detail.optional')}
+          </span>
         )}
       </div>
 
@@ -290,7 +318,7 @@ function OptionGroupField({
                 onClick={() => onPick(c.id)}
                 className={cn(base, 'flex min-h-[48px] flex-col items-center justify-center px-2 py-2 text-center')}
               >
-                <span className="text-sm font-semibold leading-tight">{c.name}</span>
+                <span className="text-sm font-semibold leading-tight">{choiceName(c)}</span>
                 {delta && <span className={cn('mt-0.5 text-[11px] font-semibold tabular-nums', checked ? 'text-bronze-700' : 'text-stone')}>{delta}</span>}
               </button>
             );
@@ -316,7 +344,7 @@ function OptionGroupField({
               >
                 {checked && (single ? <span className="h-2 w-2 rounded-full bg-gold" /> : <Check className="h-3.5 w-3.5 text-gold-light" strokeWidth={3} />)}
               </span>
-              <span className="min-w-0 flex-1 text-[15px] font-medium leading-snug">{c.name}</span>
+              <span className="min-w-0 flex-1 text-[15px] font-medium leading-snug">{choiceName(c)}</span>
               {delta && <span className={cn('shrink-0 font-display text-sm font-semibold tabular-nums', checked ? 'text-bronze-700' : 'text-stone')}>{delta}</span>}
             </button>
           );
@@ -325,7 +353,7 @@ function OptionGroupField({
 
       {invalid && (
         <p role="alert" className="mt-2 px-1 text-xs font-medium text-rattan-dark">
-          Vui lòng chọn {group.name.toLowerCase()}
+          {t('menu.detail.pleaseChoose', { group: label, groupLower: label.toLowerCase() })}
         </p>
       )}
     </section>

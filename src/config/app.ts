@@ -2,6 +2,7 @@
  * Cấu hình cửa hàng — chỉnh tại đây khi có thông tin thật.
  * Các giá trị đánh dấu TODO là giá trị tạm, cần quán xác nhận (xem README.md › "Thông tin cần cung cấp").
  */
+import type { CategoryId } from '@/types';
 import { BACKEND } from './firebase';
 
 export const APP_CONFIG = {
@@ -12,8 +13,10 @@ export const APP_CONFIG = {
     tagline: 'Bakery · Cafe',
     // TODO: địa chỉ / vị trí quầy chính xác trong trường
     location: 'Khuôn viên trường',
+    locationEn: 'On campus',
     // TODO: giờ mở cửa thật
     openingHours: '07:00 – 17:00 · Thứ 2 – Thứ 7',
+    openingHoursEn: '07:00 – 17:00 · Mon – Sat',
     // TODO: số hotline của quán (để trống thì ẩn)
     hotline: '',
     currency: 'VND',
@@ -67,6 +70,14 @@ export const APP_CONFIG = {
      * TODO: điền để bật. bankBin = mã BIN ngân hàng (VD Vietcombank 970436, MB 970422, Techcombank 970407...).
      */
     vietqr: null as null | { bankBin: string; bankName: string; accountNo: string; accountName: string },
+  },
+
+  /** Thẻ tích điểm: mua đủ N cốc nước (cà phê + nước uống) được 1 cốc miễn phí */
+  loyalty: {
+    enabled: true,
+    cupsPerReward: 20,
+    /** Danh mục được tính là "cốc" (bánh ngọt không tính) */
+    eligibleCategories: ['coffee', 'drinks'] as CategoryId[],
   },
 
   admin: {

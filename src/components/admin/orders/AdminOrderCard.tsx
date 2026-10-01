@@ -3,19 +3,22 @@ import type { LucideIcon } from 'lucide-react';
 import { Ban, Bike, CircleCheckBig, Clock, Coffee, HandCoins, QrCode, ShoppingBag, StickyNote, TriangleAlert } from 'lucide-react';
 import { APP_CONFIG } from '@/config/app';
 import { Button, ConfirmDialog, StatusBadge } from '@/components/ui';
+import { OrderTotals } from '@/components/order/OrderItemsList';
 import { useAction } from '@/hooks/useAction';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 import { formatPrice, formatTime } from '@/lib/format';
+import { lineName } from '@/lib/i18n-data';
 import { isActiveOrder, nextActionLabel, nextStatus, statusSteps, stepLabel } from '@/lib/order-status';
 import { optionsSummary } from '@/lib/pricing';
 import { repo } from '@/services';
 import { toast } from '@/store/ui';
 import type { Order, OrderLine, OrderStatus } from '@/types';
 import { CancelOrderDialog } from './CancelOrderDialog';
-import { CustomerContact, FulfillmentInfo, OrderNote, PaymentBadge } from './OrderMeta';
+import { CustomerContact, FulfillmentInfo, LoyaltyRedeemBadge, OrderNote, PaymentBadge } from './OrderMeta';
 import { OrderStatusToggles, shortStepLabel } from './OrderStatusToggles';
 import { OverflowMenu } from './OverflowMenu';
-import { formatElapsed, LONG_WAIT_MS, waitingSince } from './order-filters';
+import { cancelReasonText, formatElapsed, LONG_WAIT_MS, waitingSince } from './order-filters';
 import { suppressOrderAlert } from './useNewOrderAlert';
 
 /** Icon + màu cho nút hành động chính theo trạng thái hiện tại */
@@ -44,7 +47,7 @@ function BaristaItems({ items }: { items: OrderLine[] }) {
               {l.quantity}×
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-[15px] font-semibold leading-snug text-espresso">{l.name}</p>
+              <p className="text-[15px] font-semibold leading-snug text-espresso">{lineName(l)}</p>
               {opts && <p className="mt-0.5 text-[13px] leading-snug text-bronze-700">{opts}</p>}
               {l.note && (
                 <p className="mt-1 flex items-start gap-1 text-[13px] font-medium italic leading-snug text-rattan">
@@ -65,6 +68,7 @@ function BaristaItems({ items }: { items: OrderLine[] }) {
  * hình thức nhận, món (kèm tuỳ chọn/ghi chú), tổng tiền, nút chuyển trạng thái.
  */
 export function AdminOrderCard({ order, now, highlight }: { order: Order; now: number; highlight?: boolean }) {
+  const { t } = useT();
   const [payOpen, setPayOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [skipTo, setSkipTo] = useState<OrderStatus | null>(null);
@@ -79,7 +83,7 @@ export function AdminOrderCard({ order, now, highlight }: { order: Order; now: n
       suppressOrderAlert(order.id);
       return repo.confirmPayment(order.id);
     },
-    { success: `Đã thu ${formatPrice(order.total)} · ${order.code}` },
+    { success: t('adminOrders.card.paidToast', { amount: formatPrice(order.total), code: order.code }) },
   );
 
   const active = isActiveOrder(order);
@@ -95,12 +99,14 @@ export function AdminOrderCard({ order, now, highlight }: { order: Order; now: n
   const PrimaryIcon = primary.icon;
 
   const timeInfo = pending
-    ? `Đặt lúc ${formatTime(order.createdAt)}`
+    ? t('adminOrders.card.orderedAt', { time: formatTime(order.createdAt) })
     : order.status === 'completed'
-      ? `Xong lúc ${formatTime(order.updatedAt)}`
+      ? t('adminOrders.card.doneAt', { time: formatTime(order.updatedAt) })
       : order.status === 'cancelled'
-        ? `Huỷ lúc ${formatTime(order.updatedAt)}`
-        : `Trả tiền lúc ${formatTime(waitingSince(order))}`;
+        ? t('adminOrders.card.cancelledAt', { time: formatTime(order.updatedAt) })
+        : t('adminOrders.card.paidAt', { time: formatTime(waitingSince(order)) });
+  const elapsedText = formatElapsed(elapsed);
+  const discounted = order.discount > 0;
 
   const expiresInMin = Math.max(1, Math.ceil((APP_CONFIG.payment.qrExpiryMinutes * 60_000 - (now - order.createdAt)) / 60_000));
 
@@ -140,10 +146,13 @@ export function AdminOrderCard({ order, now, highlight }: { order: Order; now: n
           <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
             <StatusBadge status={order.status} />
             {highlight && (
-              <span className="rounded-full bg-gold px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-espresso">Vừa trả tiền</span>
+              <span className="rounded-full bg-gold px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-espresso">
+                {t('adminOrders.card.justPaid')}
+              </span>
             )}
             <span className="text-xs text-stone">{timeInfo}</span>
           </div>
+          {order.loyaltyRedeem && <LoyaltyRedeemBadge amount={order.discount} className="mt-2" />}
         </div>
         {active && (
           <span
@@ -151,10 +160,10 @@ export function AdminOrderCard({ order, now, highlight }: { order: Order; now: n
               'inline-flex h-8 shrink-0 items-center gap-1 rounded-full px-2.5 font-display text-[13px] font-bold tabular-nums',
               longWait ? 'bg-rattan text-white' : 'bg-bronze-100 text-bronze-800',
             )}
-            aria-label={`${longWait ? 'Chờ lâu: ' : 'Đã chờ '}${formatElapsed(elapsed)}`}
+            aria-label={t(longWait ? 'adminOrders.card.longWaitAria' : 'adminOrders.card.waitingAria', { time: elapsedText })}
           >
             {longWait ? <TriangleAlert className="h-3.5 w-3.5" aria-hidden /> : <Clock className="h-3.5 w-3.5" aria-hidden />}
-            {longWait ? `Chờ lâu · ${formatElapsed(elapsed)}` : formatElapsed(elapsed)}
+            {longWait ? t('adminOrders.card.longWait', { time: elapsedText }) : elapsedText}
           </span>
         )}
       </header>
@@ -173,18 +182,34 @@ export function AdminOrderCard({ order, now, highlight }: { order: Order; now: n
 
       {/* Chân thẻ: tổng tiền + hành động */}
       <div className="mt-auto px-4 pb-4 pt-3">
-        <div className="flex items-center justify-between gap-3 border-t border-dashed border-bronze-200 pt-3">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-stone">{order.itemCount} món</p>
-            <p className="font-display text-xl font-extrabold tabular-nums text-espresso">{formatPrice(order.total)}</p>
+        <div className="border-t border-dashed border-bronze-200 pt-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-stone">
+                {t('adminOrders.card.items', { count: order.itemCount })}
+              </p>
+              {!discounted && <p className="font-display text-xl font-extrabold tabular-nums text-espresso">{formatPrice(order.total)}</p>}
+            </div>
+            <PaymentBadge status={order.paymentStatus} />
           </div>
-          <PaymentBadge status={order.paymentStatus} />
+          {/* Đơn có giảm giá (cốc miễn phí): ghi rõ tạm tính / giảm / tổng để thu ngân thu đúng */}
+          {discounted && (
+            <OrderTotals
+              subtotal={order.subtotal}
+              deliveryFee={order.deliveryFee}
+              discount={order.discount}
+              total={order.total}
+              showDelivery={order.deliveryFee > 0}
+              loyaltyRedeem={order.loyaltyRedeem}
+              className="mt-2"
+            />
+          )}
         </div>
 
         {pending && (
           <p className="mt-3 flex items-center gap-2 rounded-2xl bg-gold-soft/70 px-3 py-2 text-[13px] font-medium text-bronze-800 ring-1 ring-inset ring-gold/40">
             <QrCode className="h-4 w-4 shrink-0 text-gold-dark" aria-hidden />
-            Chờ khách quét mã tại quầy · hết hạn sau {expiresInMin} phút
+            {t('adminOrders.card.awaitingScan', { count: expiresInMin })}
           </p>
         )}
 
@@ -206,16 +231,16 @@ export function AdminOrderCard({ order, now, highlight }: { order: Order; now: n
               <span className="truncate">{nextLabel}</span>
             </Button>
             <OverflowMenu
-              label={`Thao tác khác cho đơn ${order.code}`}
-              items={[{ label: 'Huỷ đơn này', icon: Ban, tone: 'danger', onSelect: () => setCancelOpen(true) }]}
+              label={t('adminOrders.card.moreActions', { code: order.code })}
+              items={[{ label: t('adminOrders.card.cancelThis'), icon: Ban, tone: 'danger', onSelect: () => setCancelOpen(true) }]}
             />
           </div>
         )}
 
         {order.status === 'cancelled' && (
           <p className="mt-3 rounded-2xl bg-stone-soft/50 px-3 py-2 text-[13px] text-stone">
-            <span className="font-semibold text-espresso">Lý do: </span>
-            {order.cancelReason || 'Không ghi lý do'}
+            <span className="font-semibold text-espresso">{t('adminOrders.card.reason')} </span>
+            {cancelReasonText(order) ?? t('adminOrders.card.noReason')}
           </p>
         )}
       </div>
@@ -223,11 +248,11 @@ export function AdminOrderCard({ order, now, highlight }: { order: Order; now: n
       {/* Hộp thoại */}
       <ConfirmDialog
         open={payOpen}
-        title={`Đã thu ${formatPrice(order.total)}?`}
-        description={`Đơn ${order.code} · ${order.customer.name}. Chỉ xác nhận khi đã nhận đủ tiền.`}
+        title={t('adminOrders.card.payTitle', { amount: formatPrice(order.total) })}
+        description={t('adminOrders.card.payBody', { code: order.code, name: order.customer.name })}
         tone="leaf"
-        confirmText="Đã thu tiền"
-        cancelText="Chưa"
+        confirmText={t('adminOrders.card.payConfirm')}
+        cancelText={t('adminOrders.card.payCancel')}
         loading={paying}
         onCancel={() => setPayOpen(false)}
         onConfirm={() => {
@@ -236,10 +261,10 @@ export function AdminOrderCard({ order, now, highlight }: { order: Order; now: n
       />
       <ConfirmDialog
         open={skipTo !== null}
-        title={`Chuyển thẳng sang “${skipTo ? shortStepLabel(skipTo) : ''}”?`}
-        description="Các bước ở giữa sẽ được bỏ qua và không thể quay lại."
-        confirmText="Chuyển luôn"
-        cancelText="Thôi"
+        title={t('adminOrders.card.skipTitle', { step: skipTo ? shortStepLabel(skipTo) : '' })}
+        description={t('adminOrders.card.skipBody')}
+        confirmText={t('adminOrders.card.skipConfirm')}
+        cancelText={t('adminOrders.card.skipCancel')}
         loading={updating}
         onCancel={() => setSkipTo(null)}
         onConfirm={() => {

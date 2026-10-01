@@ -1,4 +1,5 @@
 import { useId, type KeyboardEvent } from 'react';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 import { formatCompactPrice } from '@/lib/format';
 import { useChartWidth } from './useChartWidth';
@@ -56,9 +57,10 @@ export function BarChart({
   selectedIndex = null,
   onSelect,
   showValues = true,
-  emptyLabel = 'Chưa có dữ liệu',
+  emptyLabel,
   className,
 }: BarChartProps) {
+  const { t } = useT();
   const [ref, width] = useChartWidth<HTMLDivElement>();
   const uid = useId();
   const titleId = `${uid}-title`;
@@ -223,7 +225,7 @@ export function BarChart({
 
         {max <= 0 && (
           <text x={width / 2} y={top + plotH / 2} textAnchor="middle" fontSize={12} className="fill-stone" aria-hidden>
-            {emptyLabel}
+            {emptyLabel ?? t('adminDashboard.chart.noData')}
           </text>
         )}
       </svg>

@@ -5,7 +5,9 @@ import { CATEGORIES } from '@/data/menu';
 import { useDataReady, useMenu } from '@/hooks/data';
 import { useAction } from '@/hooks/useAction';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/cn';
+import { categoryName, itemName } from '@/lib/i18n-data';
 import { repo } from '@/services';
 import { toast } from '@/store/ui';
 import { Button, ConfirmDialog, EmptyState, IconButton, Segmented, type SegmentedOption } from '@/components/ui';
@@ -20,15 +22,35 @@ type StockFilter = 'all' | 'available' | 'soldout';
 
 // Nhãn gọn hơn một chút trên điện thoại để 4 tab vừa khung 375px (vẫn cuộn ngang được nếu màn hẹp hơn)
 const tabLabel = (text: string) => <span className="-mx-1 text-[13px] sm:mx-0 sm:text-sm">{text}</span>;
-const CATEGORY_OPTIONS: SegmentedOption<CategoryFilter>[] = [
-  { value: 'all', label: tabLabel('Tất cả') },
-  ...CATEGORIES.map((c) => ({ value: c.id, label: tabLabel(c.name) })),
-];
+
+/** Chuỗi đã dịch có con số (VD "5 món phù hợp") — in đậm con số */
+function CountText({ text, count }: { text: string; count: number }) {
+  const n = String(count);
+  const at = text.indexOf(n);
+  if (at < 0) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, at)}
+      <span className="font-display font-bold text-espresso">{n}</span>
+      {text.slice(at + n.length)}
+    </>
+  );
+}
 
 export default function AdminMenuPage() {
-  usePageTitle('Thực đơn · Quản trị');
+  const { t } = useT();
+  usePageTitle(t('adminMenu.pageTitle'));
   const ready = useDataReady();
   const menu = useMenu();
+
+  // Tên danh mục đổi theo ngôn ngữ (CATEGORIES[i].name) → dựng tab trong component
+  const categoryOptions = useMemo<SegmentedOption<CategoryFilter>[]>(
+    () => [
+      { value: 'all', label: tabLabel(t('adminMenu.filters.all')) },
+      ...CATEGORIES.map((c) => ({ value: c.id, label: tabLabel(c.name) })),
+    ],
+    [t],
+  );
 
   const [category, setCategory] = useState<CategoryFilter>('all');
   const [stock, setStock] = useState<StockFilter>('all');
@@ -112,7 +134,7 @@ export default function AdminMenuPage() {
     if (!deleting) return;
     const removed = await runDelete(deleting);
     if (removed) {
-      toast(`Đã xoá ${removed.name}`, 'success');
+      toast(t('adminMenu.remove.done', { name: itemName(removed) }), 'success');
       setDeleting(null);
     }
   };
@@ -131,12 +153,12 @@ export default function AdminMenuPage() {
   }, []);
 
   const stockTiles: { value: StockFilter; label: string; count: number; dot: string }[] = [
-    { value: 'all', label: 'Tổng món', count: counts.total, dot: 'bg-gold' },
-    { value: 'available', label: 'Đang bán', count: counts.available, dot: 'bg-leaf-light' },
-    { value: 'soldout', label: 'Tạm hết', count: counts.soldout, dot: 'bg-rattan-light' },
+    { value: 'all', label: t('adminMenu.stock.total'), count: counts.total, dot: 'bg-gold' },
+    { value: 'available', label: t('adminMenu.available'), count: counts.available, dot: 'bg-leaf-light' },
+    { value: 'soldout', label: t('adminMenu.soldOut'), count: counts.soldout, dot: 'bg-rattan-light' },
   ];
 
-  const categoryName = CATEGORIES.find((c) => c.id === category)?.name;
+  const activeCategoryName = category === 'all' ? undefined : categoryName(category);
 
   return (
     <div className="px-4 pt-4 md:px-8 md:pt-8">
@@ -149,18 +171,18 @@ export default function AdminMenuPage() {
         <div className="p-5 md:p-6">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gold">Quản lý quán</p>
-              <h1 className="mt-1 font-display text-[26px] font-extrabold leading-tight tracking-tight md:text-3xl">Thực đơn</h1>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gold">{t('adminMenu.eyebrow')}</p>
+              <h1 className="mt-1 font-display text-[26px] font-extrabold leading-tight tracking-tight md:text-3xl">{t('nav.adminMenu')}</h1>
             </div>
             <Button ref={addButtonRef} variant="gold" leftIcon={<Plus className="h-5 w-5" aria-hidden />} onClick={() => openEditor(null)}>
-              Thêm món
+              {t('adminMenu.addItem')}
             </Button>
           </div>
           <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-cream/75">
-            Thêm món, chỉnh giá và bật/tắt món tạm hết — app khách cập nhật ngay.
+            {t('adminMenu.intro')}
           </p>
 
-          <div role="group" aria-label="Lọc theo tình trạng bán" className="mt-4 grid grid-cols-3 gap-2 md:max-w-md">
+          <div role="group" aria-label={t('adminMenu.stock.aria')} className="mt-4 grid grid-cols-3 gap-2 md:max-w-md">
             {stockTiles.map((t) => {
               const on = stock === t.value;
               return (
@@ -196,15 +218,15 @@ export default function AdminMenuPage() {
       <div className="sticky top-[calc(env(safe-area-inset-top,0px)+3.5rem)] z-20 -mx-4 mt-3 bg-cream/90 px-4 py-2 backdrop-blur-md md:top-0 md:-mx-8 md:px-8">
         <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
           <div className="flex items-center gap-2 lg:w-80 lg:shrink-0">
-            <SearchField value={query} onChange={setQuery} placeholder="Tìm món — không dấu cũng được" className="flex-1" />
+            <SearchField value={query} onChange={setQuery} placeholder={t('adminMenu.search.placeholder')} className="flex-1" />
             {!addButtonVisible && (
-              <IconButton label="Thêm món" tone="dark" onClick={() => openEditor(null)} className="animate-pop-in shadow-card">
+              <IconButton label={t('adminMenu.addItem')} tone="dark" onClick={() => openEditor(null)} className="animate-pop-in shadow-card">
                 <Plus className="h-5 w-5" />
               </IconButton>
             )}
           </div>
           <div className="no-scrollbar -mx-4 overflow-x-auto px-4 lg:mx-0 lg:flex-1 lg:px-0">
-            <Segmented options={CATEGORY_OPTIONS} value={category} onChange={setCategory} ariaLabel="Danh mục thực đơn" className="w-max min-w-full" />
+            <Segmented options={categoryOptions} value={category} onChange={setCategory} ariaLabel={t('adminMenu.filters.categoriesAria')} className="w-max min-w-full" />
           </div>
         </div>
       </div>
@@ -212,7 +234,7 @@ export default function AdminMenuPage() {
       {/* ── Danh sách ── */}
       {!ready ? (
         <div aria-busy="true" className="mt-3 grid gap-3 lg:grid-cols-2">
-          <span className="sr-only">Đang tải thực đơn…</span>
+          <span className="sr-only">{t('adminMenu.list.loading')}</span>
           {Array.from({ length: 6 }, (_, i) => (
             <MenuItemRowSkeleton key={i} />
           ))}
@@ -220,11 +242,11 @@ export default function AdminMenuPage() {
       ) : menu.length === 0 ? (
         <EmptyState
           icon={<UtensilsCrossed className="h-9 w-9" />}
-          title="Thực đơn đang trống"
-          description="Thêm món đầu tiên để khách có thể gọi món qua app."
+          title={t('adminMenu.list.emptyTitle')}
+          description={t('adminMenu.list.emptyBody')}
           action={
             <Button leftIcon={<Plus className="h-5 w-5" aria-hidden />} onClick={() => openEditor(null)}>
-              Thêm món
+              {t('adminMenu.addItem')}
             </Button>
           }
         />
@@ -232,38 +254,48 @@ export default function AdminMenuPage() {
         tokens.length > 0 ? (
           <EmptyState
             icon={<SearchX className="h-9 w-9" />}
-            title="Không tìm thấy món"
-            description={`Không có món nào khớp “${query.trim()}”${categoryName ? ` trong mục ${categoryName}` : ''}. Thử từ khoá khác nhé.`}
+            title={t('adminMenu.list.noMatchTitle')}
+            description={
+              activeCategoryName
+                ? t('adminMenu.list.noMatchBodyIn', { query: query.trim(), category: activeCategoryName })
+                : t('adminMenu.list.noMatchBody', { query: query.trim() })
+            }
             action={
               <Button variant="outline" onClick={resetFilters}>
-                Xoá bộ lọc
+                {t('adminMenu.filters.clear')}
               </Button>
             }
           />
         ) : stock === 'soldout' ? (
           <EmptyState
             icon={<CircleCheck className="h-9 w-9" />}
-            title="Không có món nào tạm hết"
-            description={`Mọi món${categoryName ? ` trong mục ${categoryName}` : ''} đều đang bán.`}
+            title={t('adminMenu.list.noSoldOutTitle')}
+            description={
+              activeCategoryName
+                ? t('adminMenu.list.noSoldOutBodyIn', { category: activeCategoryName })
+                : t('adminMenu.list.noSoldOutBody')
+            }
             action={
               <Button variant="outline" onClick={resetFilters}>
-                Xem tất cả món
+                {t('adminMenu.filters.viewAll')}
               </Button>
             }
           />
         ) : (
           <EmptyState
             icon={<UtensilsCrossed className="h-9 w-9" />}
-            title={categoryName ? `Chưa có món trong mục ${categoryName}` : 'Không có món phù hợp'}
-            description={stock === 'available' ? 'Các món ở đây đều đang tạm hết.' : 'Thêm món để khách thấy trong mục này.'}
+            title={
+              activeCategoryName ? t('adminMenu.list.noItemsInTitle', { category: activeCategoryName }) : t('adminMenu.list.noItemsTitle')
+            }
+            description={stock === 'available' ? t('adminMenu.list.allSoldOutBody') : t('adminMenu.list.addHereBody')}
             action={
               stock === 'available' ? (
                 <Button variant="outline" onClick={resetFilters}>
-                  Xem tất cả món
+                  {t('adminMenu.filters.viewAll')}
                 </Button>
               ) : (
                 <Button leftIcon={<Plus className="h-5 w-5" aria-hidden />} onClick={() => openEditor(null)}>
-                  Thêm món
+                  {t('adminMenu.addItem')}
                 </Button>
               )
             }
@@ -274,22 +306,22 @@ export default function AdminMenuPage() {
           {filtersActive && (
             <div className="flex items-center justify-between gap-3 px-1 pt-2">
               <p className="text-sm text-stone" aria-live="polite">
-                <span className="font-display font-bold text-espresso">{filtered.length}</span> món phù hợp
+                <CountText text={t('adminMenu.filters.matchCount', { count: filtered.length })} count={filtered.length} />
               </p>
               <button
                 type="button"
                 onClick={resetFilters}
                 className="-mr-2 h-11 rounded-xl px-2 text-sm font-semibold text-bronze-700 transition hover:text-espresso focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
               >
-                Xoá bộ lọc
+                {t('adminMenu.filters.clear')}
               </button>
             </div>
           )}
           {sections.map(({ category: c, items }) => {
             const soldOut = items.filter((m) => !m.available).length;
             return (
-              <section key={c?.id ?? 'flat'} aria-label={c?.name ?? categoryName} className="mt-3">
-                {!c && <h2 className="sr-only">{categoryName}</h2>}
+              <section key={c?.id ?? 'flat'} aria-label={c?.name ?? activeCategoryName} className="mt-3">
+                {!c && <h2 className="sr-only">{activeCategoryName}</h2>}
                 {c && (
                   <div className="mb-2.5 mt-4 flex items-baseline justify-between px-1">
                     <h2 className="font-display text-[15px] font-bold tracking-tight text-espresso">
@@ -297,7 +329,8 @@ export default function AdminMenuPage() {
                       {c.name}
                     </h2>
                     <span className="text-xs text-stone">
-                      {items.length} món{soldOut > 0 && <span className="text-rattan-dark"> · {soldOut} tạm hết</span>}
+                      {t('adminMenu.list.itemCount', { count: items.length })}
+                      {soldOut > 0 && <span className="text-rattan-dark"> · {t('adminMenu.list.soldOutCount', { count: soldOut })}</span>}
                     </span>
                   </div>
                 )}
@@ -325,15 +358,15 @@ export default function AdminMenuPage() {
 
       <ConfirmDialog
         open={!!deleting}
-        title="Xoá món này?"
+        title={t('adminMenu.remove.title')}
         description={
           <>
-            <span className="font-semibold text-espresso">“{deleting?.name}”</span> sẽ bị xoá khỏi thực đơn. Đơn hàng cũ vẫn giữ nguyên.
-            <span className="mt-2 block text-xs">Mẹo: nếu chỉ tạm hết hàng, hãy tắt “Đang bán” thay vì xoá.</span>
+            <span className="font-semibold text-espresso">“{deleting ? itemName(deleting) : ''}”</span> {t('adminMenu.remove.body')}
+            <span className="mt-2 block text-xs">{t('adminMenu.remove.tip')}</span>
           </>
         }
-        confirmText="Xoá món"
-        cancelText="Giữ lại"
+        confirmText={t('adminMenu.remove.confirm')}
+        cancelText={t('adminMenu.remove.keep')}
         tone="danger"
         loading={removing}
         onConfirm={confirmDelete}

@@ -1,6 +1,7 @@
 import { ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { IconButton } from '@/components/ui';
+import { useT } from '@/i18n';
 
 /** Chỉ báo tiến trình “Bước 1/2” + nút quay lại (nếu có) */
 export function StepHeader({
@@ -12,11 +13,12 @@ export function StepHeader({
   labels: string[];
   onBack?: () => void;
 }) {
+  const { t } = useT();
   const total = labels.length;
   // Chỉ có 1 bước → không cần thanh tiến trình, chỉ giữ nút quay lại
   if (total <= 1) {
     return onBack ? (
-      <IconButton label="Quay lại bước trước" onClick={onBack} className="-ml-1.5 bg-bronze-100/80 hover:bg-bronze-200/70">
+      <IconButton label={t('onboarding.steps.back')} onClick={onBack} className="-ml-1.5 bg-bronze-100/80 hover:bg-bronze-200/70">
         <ArrowLeft className="h-5 w-5" />
       </IconButton>
     ) : null;
@@ -24,7 +26,7 @@ export function StepHeader({
   return (
     <div className="flex items-center gap-3">
       {onBack && (
-        <IconButton label="Quay lại bước trước" onClick={onBack} className="-ml-1.5 bg-bronze-100/80 hover:bg-bronze-200/70">
+        <IconButton label={t('onboarding.steps.back')} onClick={onBack} className="-ml-1.5 bg-bronze-100/80 hover:bg-bronze-200/70">
           <ArrowLeft className="h-5 w-5" />
         </IconButton>
       )}
@@ -34,11 +36,11 @@ export function StepHeader({
         aria-valuemin={1}
         aria-valuemax={total}
         aria-valuenow={step}
-        aria-valuetext={`Bước ${step} trên ${total}: ${labels[step - 1]}`}
+        aria-valuetext={t('onboarding.steps.progressAria', { step, total, label: labels[step - 1] })}
       >
         <div className="flex items-baseline justify-between gap-2 text-xs">
           <span className="font-display font-bold uppercase tracking-[0.16em] text-bronze-600">
-            Bước {step}/{total}
+            {t('onboarding.steps.progress', { step, total })}
           </span>
           <span className="truncate font-medium text-stone">{labels[step - 1]}</span>
         </div>

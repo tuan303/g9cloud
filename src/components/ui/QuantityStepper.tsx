@@ -1,3 +1,4 @@
+import { useT } from '@/i18n';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
@@ -27,13 +28,17 @@ export function QuantityStepper({
     // size sm: nút 32px nhưng vùng chạm mở rộng ~44px
     size === 'md' ? 'h-10 w-10' : "h-8 w-8 after:absolute after:-inset-1.5 after:content-['']",
   );
-  const suffix = itemLabel ? ` ${itemLabel}` : '';
+  const { t } = useT();
   const showRemove = !!onRemove && value <= min;
   return (
     <div className={cn('inline-flex items-center gap-1 rounded-full bg-bronze-100 p-1', className)}>
       <button
         type="button"
-        aria-label={showRemove ? `Xoá${suffix || ' món'} khỏi giỏ` : `Giảm số lượng${suffix}`}
+        aria-label={
+          showRemove
+            ? itemLabel ? t('ui.removeNamed', { name: itemLabel }) : t('ui.removeItem')
+            : itemLabel ? t('ui.decreaseNamed', { name: itemLabel }) : t('ui.decrease')
+        }
         className={cn(btn, 'bg-white text-espresso shadow-sm', showRemove && 'text-rattan-dark')}
         disabled={!showRemove && value <= min}
         onClick={() => (showRemove ? onRemove!() : onChange(Math.max(min, value - 1)))}
@@ -48,7 +53,7 @@ export function QuantityStepper({
       </span>
       <button
         type="button"
-        aria-label={`Tăng số lượng${suffix}`}
+        aria-label={itemLabel ? t('ui.increaseNamed', { name: itemLabel }) : t('ui.increase')}
         className={cn(btn, 'bg-espresso text-cream')}
         disabled={value >= max}
         onClick={() => onChange(Math.min(max, value + 1))}

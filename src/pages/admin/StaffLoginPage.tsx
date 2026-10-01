@@ -2,8 +2,9 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Lock, LogOut, Mail, RefreshCw, ShieldAlert } from 'lucide-react';
 import counterPhoto from '@/assets/photos/counter-sm.webp';
-import { Button, Input, Logo } from '@/components/ui';
+import { Button, Input, LanguageSwitch, Logo } from '@/components/ui';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useT } from '@/i18n';
 import {
   checkAuthConfigured,
   completeStaffMicrosoftRedirect,
@@ -23,7 +24,8 @@ const SILENT = ['auth/popup-closed-by-user', 'auth/cancelled-popup-request', 'au
  * Chỉ dùng khi APP_CONFIG.admin.auth = 'firebase'. Quyền nhân viên = có tài liệu staff/{uid} trong Firestore.
  */
 export default function StaffLoginPage() {
-  usePageTitle('Khu vực nhân viên');
+  const { t } = useT();
+  usePageTitle(t('adminLogin.staffArea'));
   const { status, email: signedEmail, uid, message } = useStaffAuth();
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from;
@@ -60,7 +62,7 @@ export default function StaffLoginPage() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password) {
-      setError('Vui lòng nhập email và mật khẩu.');
+      setError(t('adminLogin.staff.missingFields'));
       return;
     }
     setBusy(true);
@@ -81,17 +83,20 @@ export default function StaffLoginPage() {
       <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-espresso-900/60 via-espresso-900/90 to-espresso-900" />
 
       <div className="safe-top relative mx-auto flex w-full max-w-sm flex-1 flex-col px-6 pb-10">
-        <Link to="/" className="mt-4 inline-flex min-h-11 items-center gap-2 self-start text-sm text-cream/80 hover:text-cream">
-          <ArrowLeft className="h-4 w-4" /> Về trang gọi món
-        </Link>
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <Link to="/" className="inline-flex min-h-11 items-center gap-2 text-sm text-cream/80 hover:text-cream">
+            <ArrowLeft aria-hidden className="h-4 w-4" /> {t('adminLogin.backToOrdering')}
+          </Link>
+          <LanguageSwitch tone="dark" className="shrink-0" />
+        </div>
 
         <div className="mt-10 flex flex-col items-center text-center">
           <Logo className="h-10 text-cream" />
           <span className="mt-5 inline-flex items-center gap-2 rounded-full border border-gold/40 bg-gold/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-gold">
-            <Lock className="h-3.5 w-3.5" /> Khu vực nhân viên
+            <Lock aria-hidden className="h-3.5 w-3.5" /> {t('adminLogin.staffArea')}
           </span>
-          <h1 className="mt-5 font-display text-2xl font-bold">Đăng nhập quản trị</h1>
-          <p className="mt-1.5 text-sm text-cream/70">Dùng tài khoản nhân viên do quản lý quán cấp.</p>
+          <h1 className="mt-5 font-display text-2xl font-bold">{t('adminLogin.staff.title')}</h1>
+          <p className="mt-1.5 text-sm text-cream/70">{t('adminLogin.staff.subtitle')}</p>
         </div>
 
         {status === 'error' ? (
@@ -99,16 +104,16 @@ export default function StaffLoginPage() {
             <div className="flex items-start gap-3">
               <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-gold" />
               <div className="min-w-0 text-sm">
-                <p className="font-semibold">Chưa kiểm tra được quyền nhân viên</p>
+                <p className="font-semibold">{t('adminLogin.staff.checkFailed')}</p>
                 <p className="mt-1 text-cream/70">{message}</p>
               </div>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-2">
               <Button variant="light" leftIcon={<RefreshCw className="h-4 w-4" />} onClick={() => void recheckStaff()}>
-                Thử lại
+                {t('common.retry')}
               </Button>
               <Button variant="outline" className="bg-transparent text-cream ring-white/30 hover:bg-white/10" onClick={() => void staffSignOut()}>
-                Đăng xuất
+                {t('adminLogin.staff.signOut')}
               </Button>
             </div>
           </div>
@@ -117,16 +122,16 @@ export default function StaffLoginPage() {
             <div className="flex items-start gap-3">
               <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-gold" />
               <div className="min-w-0 text-sm">
-                <p className="font-semibold">Tài khoản chưa có quyền nhân viên</p>
+                <p className="font-semibold">{t('adminLogin.staff.notStaffTitle')}</p>
                 <p className="mt-1 text-cream/70">
-                  {signedEmail} đã đăng nhập nhưng chưa được thêm vào danh sách nhân viên. Nhờ quản lý tạo tài liệu
+                  {t('adminLogin.staff.notStaffBefore', { email: signedEmail ?? '' })}
                   <code className="mx-1 rounded bg-white/10 px-1 py-0.5 text-[12px]">staff/{uid}</code>
-                  trong Firestore.
+                  {t('adminLogin.staff.notStaffAfter')}
                 </p>
               </div>
             </div>
             <Button variant="light" block className="mt-4" leftIcon={<LogOut className="h-4 w-4" />} onClick={() => void staffSignOut()}>
-              Đăng nhập tài khoản khác
+              {t('adminLogin.staff.otherAccount')}
             </Button>
           </div>
         ) : (
@@ -142,7 +147,7 @@ export default function StaffLoginPage() {
                   loading={msBusy}
                   onClick={() => void signInMicrosoft()}
                 >
-                  Đăng nhập bằng Microsoft 365
+                  {t('adminLogin.staff.microsoft')}
                 </Button>
                 {msError && (
                   <p role="alert" className="rounded-xl bg-rattan-soft px-3 py-2 text-[13px] leading-snug text-rattan-dark">
@@ -151,23 +156,23 @@ export default function StaffLoginPage() {
                 )}
                 <div aria-hidden className="flex items-center gap-3 text-xs font-medium text-stone">
                   <span className="h-px flex-1 bg-bronze-200" />
-                  hoặc email &amp; mật khẩu
+                  {t('adminLogin.staff.or')}
                   <span className="h-px flex-1 bg-bronze-200" />
                 </div>
               </>
             )}
             <Input
-              label="Email"
+              label={t('adminLogin.staff.email')}
               type="email"
               inputMode="email"
               autoComplete="username"
               icon={<Mail className="h-4 w-4" />}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="nhanvien@cloud9.vn"
+              placeholder={t('adminLogin.staff.emailPlaceholder')}
             />
             <Input
-              label="Mật khẩu"
+              label={t('adminLogin.staff.password')}
               type="password"
               autoComplete="current-password"
               icon={<Lock className="h-4 w-4" />}
@@ -176,7 +181,7 @@ export default function StaffLoginPage() {
               error={error || undefined}
             />
             <Button type="submit" block size="lg" loading={busy || status === 'loading'}>
-              Đăng nhập
+              {t('adminLogin.staff.submit')}
             </Button>
           </form>
         )}

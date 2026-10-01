@@ -8,12 +8,12 @@ import { OrderInfoCard, OrderStatusHero, OrderTimeline, useReorder } from '@/com
 import { useDataReady, useOrder } from '@/hooks/data';
 import { useAction } from '@/hooks/useAction';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useT } from '@/i18n';
 import { isActiveOrder } from '@/lib/order-status';
 import { platform } from '@/platform';
 import { repo } from '@/services';
 import { useSession } from '@/store/session';
 
-const HEADER_TITLE = 'Theo dõi đơn hàng';
 /**
  * Tạm vá: trong PageHeader tone="dark", lớp text-espresso mặc định của IconButton đứng sau text-cream
  * trong CSS (Tailwind xếp theo tên) nên mũi tên quay lại bị chìm. Bộ chọn con có độ ưu tiên cao hơn.
@@ -21,9 +21,10 @@ const HEADER_TITLE = 'Theo dõi đơn hàng';
 const DARK_HEADER_FIX = '[&_button]:text-cream';
 
 function StatusSkeleton() {
+  const { t } = useT();
   return (
-    <div className="min-h-dvh bg-cream" aria-busy="true" aria-label="Đang tải đơn hàng">
-      <PageHeader tone="dark" back fallback="/orders" title={HEADER_TITLE} className={DARK_HEADER_FIX} />
+    <div className="min-h-dvh bg-cream" aria-busy="true" aria-label={t('orderStatus.loading')}>
+      <PageHeader tone="dark" back fallback="/orders" title={t('orderStatus.headerTitle')} className={DARK_HEADER_FIX} />
       <div className="rounded-b-[32px] bg-espresso px-5 pb-7 pt-4">
         <div className="flex flex-col items-center">
           <div className="h-20 w-20 animate-pulse rounded-full bg-white/10" />
@@ -41,6 +42,8 @@ function StatusSkeleton() {
 }
 
 export default function OrderStatusPage() {
+  const { t } = useT();
+  const headerTitle = t('orderStatus.headerTitle');
   const { id } = useParams<{ id: string }>();
   const order = useOrder(id);
   const ready = useDataReady();
@@ -50,25 +53,25 @@ export default function OrderStatusPage() {
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [cancel, cancelling] = useAction(
     async () => {
-      if (id) await repo.cancelOrder(id, 'Khách huỷ đơn', 'customer');
+      if (id) await repo.cancelOrder(id, t('errors.reasonCustomer'), 'customer');
     },
-    { success: 'Đã huỷ đơn hàng' },
+    { success: t('orderStatus.cancelSuccess') },
   );
-  usePageTitle(order ? `Đơn ${order.code}` : HEADER_TITLE);
+  usePageTitle(order ? t('orderStatus.pageTitle', { code: order.code }) : headerTitle);
 
   if (!ready) return <StatusSkeleton />;
 
   if (!order) {
     return (
       <div className="min-h-dvh bg-cream">
-        <PageHeader back fallback="/orders" title={HEADER_TITLE} />
+        <PageHeader back fallback="/orders" title={headerTitle} />
         <EmptyState
           className="pt-20"
           icon={<ReceiptText className="h-9 w-9" />}
-          title="Không tìm thấy đơn hàng"
-          description="Đơn có thể đã bị xoá hoặc đường dẫn không còn đúng."
+          title={t('errors.orderNotFound')}
+          description={t('orderStatus.notFoundBody')}
           action={
-            <Button onClick={() => navigate('/orders', { replace: true })}>Xem đơn của tôi</Button>
+            <Button onClick={() => navigate('/orders', { replace: true })}>{t('orderStatus.myOrders')}</Button>
           }
         />
       </div>
@@ -88,19 +91,19 @@ export default function OrderStatusPage() {
 
   return (
     <div className="min-h-dvh bg-cream pb-32">
-      <PageHeader tone="dark" back fallback="/orders" title={HEADER_TITLE} className={DARK_HEADER_FIX} />
+      <PageHeader tone="dark" back fallback="/orders" title={headerTitle} className={DARK_HEADER_FIX} />
       <OrderStatusHero order={order} />
 
       <div className="space-y-5 px-4 pt-5">
         <section>
-          <SectionTitle title="Thông tin đơn" />
+          <SectionTitle title={t('orderStatus.infoSection')} />
           <OrderInfoCard order={order} />
         </section>
 
         <section>
           <SectionTitle
-            title="Món đã đặt"
-            action={<span className="text-xs font-semibold text-stone">{order.itemCount} món</span>}
+            title={t('orderStatus.itemsSection')}
+            action={<span className="text-xs font-semibold text-stone">{t('orderStatus.itemCount', { count: order.itemCount })}</span>}
           />
           <Card className="px-4 pb-4 pt-1">
             <OrderItemsList lines={order.items} />
@@ -109,6 +112,7 @@ export default function OrderStatusPage() {
               subtotal={order.subtotal}
               deliveryFee={order.deliveryFee}
               discount={order.discount}
+              loyaltyRedeem={order.loyaltyRedeem}
               total={order.total}
               showDelivery={order.fulfillment === 'delivery'}
             />
@@ -116,7 +120,7 @@ export default function OrderStatusPage() {
         </section>
 
         <section>
-          <SectionTitle title="Hành trình đơn hàng" />
+          <SectionTitle title={t('orderStatus.journeySection')} />
           <Card className="p-4">
             <OrderTimeline order={order} />
           </Card>
@@ -128,7 +132,7 @@ export default function OrderStatusPage() {
           <div className="flex gap-3">
             {canCancel && (
               <Button variant="danger" size="lg" className="shrink-0" onClick={() => setConfirmCancel(true)}>
-                Huỷ đơn
+                {t('orderStatus.cancelOrder')}
               </Button>
             )}
             <Button
@@ -138,14 +142,14 @@ export default function OrderStatusPage() {
               leftIcon={<QrCode className="h-5 w-5" />}
               onClick={() => navigate(`/order/${order.id}/pay`, { replace: true })}
             >
-              Mở mã QR thanh toán
+              {t('orderStatus.openQr')}
             </Button>
           </div>
         ) : (
           <div className="flex gap-3">
             {hotline && (
               <Button variant="outline" size="lg" className="shrink-0" leftIcon={<Phone className="h-5 w-5" />} onClick={() => platform.call(hotline)}>
-                Gọi quán
+                {t('orderStatus.callShop')}
               </Button>
             )}
             <Button
@@ -155,7 +159,7 @@ export default function OrderStatusPage() {
               leftIcon={<RotateCcw className="h-5 w-5" />}
               onClick={() => reorder(order)}
             >
-              Đặt lại
+              {t('orderStatus.reorder')}
             </Button>
           </div>
         )}
@@ -164,10 +168,10 @@ export default function OrderStatusPage() {
       <ConfirmDialog
         open={confirmCancel && canCancel}
         tone="danger"
-        title="Huỷ đơn này?"
-        description={`Đơn ${order.code} chưa thanh toán sẽ bị huỷ. Bạn có thể đặt lại bất cứ lúc nào.`}
-        confirmText="Huỷ đơn"
-        cancelText="Giữ đơn"
+        title={t('orderStatus.cancelDialog.title')}
+        description={t('orderStatus.cancelDialog.body', { code: order.code })}
+        confirmText={t('orderStatus.cancelOrder')}
+        cancelText={t('orderStatus.cancelDialog.keep')}
         loading={cancelling}
         onConfirm={onConfirmCancel}
         onCancel={() => setConfirmCancel(false)}

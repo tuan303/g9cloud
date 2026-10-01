@@ -1,7 +1,9 @@
 import { useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { Camera, Check, ChevronDown, ImageOff, Loader2, TriangleAlert, Upload } from 'lucide-react';
 import { CATEGORIES } from '@/data/menu';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/cn';
+import { itemName as localizedName } from '@/lib/i18n-data';
 import { MENU_ILLUSTRATIONS } from '@/lib/images';
 import { toast } from '@/store/ui';
 import { MenuImage } from '@/components/ui';
@@ -33,6 +35,7 @@ export function ImagePicker({
   busy: boolean;
   onBusyChange: (busy: boolean) => void;
 }) {
+  const { t } = useT();
   const uploadRef = useRef<HTMLInputElement>(null);
   const captureRef = useRef<HTMLInputElement>(null);
   const [dimensions, setDimensions] = useState<{ image: string; width: number; height: number } | null>(null);
@@ -54,18 +57,19 @@ export function ImagePicker({
   const heavy = bytes > IMAGE_WARN_BYTES;
   const category = CATEGORIES.find((c) => c.id === categoryId);
 
-  let title = 'Chưa có ảnh';
-  let detail = `Khách sẽ thấy biểu tượng ${category?.emoji ?? '☕'} mặc định.`;
+  let title = t('adminMenu.image.noImage');
+  let detail = t('adminMenu.image.noImageBody', { emoji: category?.emoji ?? '☕' });
   if (isIllustration) {
-    title = 'Minh hoạ có sẵn';
-    detail = ILLUSTRATION_META.get(value)?.name ?? 'Nét vẽ nhẹ, sắc nét trên mọi màn hình.';
+    title = t('adminMenu.image.illustration');
+    const meta = ILLUSTRATION_META.get(value);
+    detail = meta ? localizedName(meta) : t('adminMenu.image.illustrationBody');
   } else if (isDataUrl) {
-    title = 'Ảnh tải lên';
+    title = t('adminMenu.image.uploaded');
     const dims = dimensions?.image === value ? `${dimensions.width}×${dimensions.height} · ` : '';
-    detail = `${dims}${formatBytes(bytes)} · đã tối ưu`;
+    detail = `${dims}${t('adminMenu.image.optimized', { size: formatBytes(bytes) })}`;
   } else if (value) {
-    title = 'Ảnh từ đường dẫn';
-    detail = 'Ảnh được tải từ máy chủ bên ngoài.';
+    title = t('adminMenu.image.fromUrl');
+    detail = t('adminMenu.image.fromUrlBody');
   }
 
   const handleFile = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -78,7 +82,7 @@ export function ImagePicker({
       setDimensions({ image: out.dataUrl, width: out.width, height: out.height });
       onChange(out.dataUrl);
     } catch (err) {
-      toast((err as Error)?.message || 'Không xử lý được ảnh', 'error');
+      toast((err as Error)?.message || t('adminMenu.image.processFailed'), 'error');
     } finally {
       onBusyChange(false);
     }
@@ -90,7 +94,7 @@ export function ImagePicker({
         <div className="flex items-center gap-3.5">
           <div className="relative shrink-0">
             {/* key: MenuImage giữ trạng thái lỗi nội bộ → dựng lại khi đổi ảnh */}
-            <MenuImage key={value} image={value} alt={itemName || 'Ảnh món'} categoryId={categoryId} className="h-24 w-24" />
+            <MenuImage key={value} image={value} alt={itemName || t('adminMenu.image.alt')} categoryId={categoryId} className="h-24 w-24" />
             {busy && (
               <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-espresso-900/45 text-cream">
                 <Loader2 className="h-6 w-6 animate-spin" aria-hidden />
@@ -98,9 +102,9 @@ export function ImagePicker({
             )}
           </div>
           <div className="min-w-0 flex-1" aria-live="polite">
-            <p className="font-display text-[15px] font-bold text-espresso">{busy ? 'Đang xử lý ảnh…' : title}</p>
+            <p className="font-display text-[15px] font-bold text-espresso">{busy ? t('adminMenu.image.processing') : title}</p>
             <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-stone">
-              {busy ? `Đang thu nhỏ về tối đa ${IMAGE_MAX_SIDE}px` : detail}
+              {busy ? t('adminMenu.image.resizing', { size: IMAGE_MAX_SIDE }) : detail}
             </p>
           </div>
         </div>
@@ -113,7 +117,7 @@ export function ImagePicker({
             className={cn(softBtn, 'flex-1 bg-espresso text-cream shadow-card hover:bg-espresso-700')}
           >
             <Upload className="h-4 w-4" aria-hidden />
-            Tải ảnh lên
+            {t('adminMenu.image.upload')}
           </button>
           {canCapture && (
             <button
@@ -123,15 +127,15 @@ export function ImagePicker({
               className={cn(softBtn, 'flex-1 bg-bronze-50 text-espresso ring-1 ring-inset ring-bronze-200 hover:bg-bronze-100')}
             >
               <Camera className="h-4 w-4" aria-hidden />
-              Chụp ảnh
+              {t('adminMenu.image.capture')}
             </button>
           )}
           {value && (
             <button
               type="button"
               disabled={busy}
-              aria-label="Bỏ ảnh"
-              title="Bỏ ảnh"
+              aria-label={t('adminMenu.image.remove')}
+              title={t('adminMenu.image.remove')}
               onClick={() => onChange('')}
               className={cn(softBtn, 'w-11 shrink-0 px-0 text-rattan-dark ring-1 ring-inset ring-rattan/30 hover:bg-rattan-soft')}
             >
@@ -155,10 +159,7 @@ export function ImagePicker({
         {heavy && (
           <p role="status" className="mt-3 flex items-start gap-2 rounded-2xl bg-rattan-soft px-3 py-2.5 text-xs leading-snug text-rattan-dark">
             <TriangleAlert className="mt-px h-4 w-4 shrink-0" aria-hidden />
-            <span>
-              Ảnh khá nặng ({formatBytes(bytes)}). Bản demo lưu ảnh trong bộ nhớ trình duyệt nên có thể bị đầy — nên chọn ảnh
-              đơn giản hơn hoặc dùng minh hoạ có sẵn.
-            </span>
+            <span>{t('adminMenu.image.heavy', { size: formatBytes(bytes) })}</span>
           </p>
         )}
       </div>
@@ -166,19 +167,20 @@ export function ImagePicker({
       {illustrations.length > 0 && (
         <div>
           <div className="mb-2 flex items-baseline justify-between px-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-bronze-600">Hoặc chọn minh hoạ</p>
-            <span className="text-xs text-stone">{illustrations.length} mẫu</span>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-bronze-600">{t('adminMenu.image.orPick')}</p>
+            <span className="text-xs text-stone">{t('adminMenu.image.designCount', { count: illustrations.length })}</span>
           </div>
           <div className="grid grid-cols-4 gap-2.5 sm:grid-cols-5">
             {visible.map((il) => {
               const selected = value === il.ref;
-              const name = ILLUSTRATION_META.get(il.ref)?.name ?? il.key;
+              const meta = ILLUSTRATION_META.get(il.ref);
+              const name = meta ? localizedName(meta) : il.key;
               return (
                 <button
                   key={il.ref}
                   type="button"
                   aria-pressed={selected}
-                  aria-label={`Minh hoạ ${name}`}
+                  aria-label={t('adminMenu.image.illustrationAria', { name })}
                   title={name}
                   disabled={busy}
                   onClick={() => onChange(il.ref)}
@@ -206,7 +208,7 @@ export function ImagePicker({
               onClick={() => setShowAll((v) => !v)}
               className="mt-2 flex h-11 w-full items-center justify-center gap-1.5 rounded-2xl text-sm font-semibold text-bronze-700 transition hover:bg-bronze-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
             >
-              {showAll ? 'Thu gọn' : `Xem thêm ${hiddenCount} minh hoạ`}
+              {showAll ? t('adminMenu.image.showLess') : t('adminMenu.image.showMore', { count: hiddenCount })}
               <ChevronDown className={cn('h-4 w-4 transition-transform', showAll && 'rotate-180')} aria-hidden />
             </button>
           )}

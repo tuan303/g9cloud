@@ -1,3 +1,4 @@
+import { useT } from '@/i18n';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
@@ -45,6 +46,7 @@ export function BottomSheet({
   ariaLabel?: string;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const { t } = useT();
   // Giữ onClose/dismissible mới nhất trong ref để hiệu ứng mở chỉ chạy lại khi `open` đổi
   // (tránh cướp focus khỏi ô nhập mỗi lần component cha render lại).
   const latest = useRef({ onClose, dismissible });
@@ -90,7 +92,7 @@ export function BottomSheet({
           <div className="flex shrink-0 items-center justify-between gap-3 px-5 pb-1 pt-3">
             <h2 className="font-display text-lg font-bold text-espresso">{title}</h2>
             {dismissible && (
-              <IconButton label="Đóng" size="sm" onClick={onClose} className="-mr-1 bg-bronze-100">
+              <IconButton label={t('common.close')} size="sm" onClick={onClose} className="-mr-1 bg-bronze-100">
                 <X className="h-4 w-4" />
               </IconButton>
             )}

@@ -2,8 +2,10 @@ import { useCallback, useId, useMemo, useRef, useState, type ReactNode } from 'r
 import { Check, CircleAlert, TriangleAlert } from 'lucide-react';
 import { CATEGORIES } from '@/data/menu';
 import { useAction } from '@/hooks/useAction';
+import { pick, useT, type MessageKey } from '@/i18n';
 import { cn } from '@/lib/cn';
 import { formatDateTime, formatPrice } from '@/lib/format';
+import { itemName } from '@/lib/i18n-data';
 import { repo } from '@/services';
 import { toast } from '@/store/ui';
 import { BottomSheet, Button, ConfirmDialog, Input, TagBadge, TextArea } from '@/components/ui';
@@ -16,6 +18,7 @@ import {
   buildOptionEntries,
   createInitialForm,
   defaultPresetKeys,
+  DESCRIPTION_EN_MAX,
   DESCRIPTION_MAX,
   isSameForm,
   NAME_EN_MAX,
@@ -29,7 +32,7 @@ import {
   type MenuFormErrors,
 } from './menu-form';
 
-const FIELD_LABEL: Record<'name' | 'price', string> = { name: 'Tên món', price: 'Giá bán' };
+const FIELD_LABEL: Record<'name' | 'price', MessageKey> = { name: 'adminMenu.editor.name', price: 'adminMenu.editor.price' };
 
 function Section({ title, aside, children }: { title: string; aside?: ReactNode; children: ReactNode }) {
   const id = useId();
@@ -66,6 +69,7 @@ export function MenuItemEditor({
   onSaved?: (saved: MenuItem, isNew: boolean) => void;
   onClose: () => void;
 }) {
+  const { t } = useT();
   const isNew = !item;
   const [initial] = useState(() => createInitialForm(item, defaultCategory));
   const entries = useMemo(() => buildOptionEntries(initial.customGroups), [initial]);
@@ -124,12 +128,12 @@ export function MenuItemEditor({
       return;
     }
     if (imageBusy) {
-      toast('Ảnh đang được xử lý, vui lòng đợi giây lát', 'info');
+      toast(t('adminMenu.editor.imageBusy'), 'info');
       return;
     }
     const saved = await runSave(toMenuItem(form, item, entries));
     if (saved) {
-      toast(`Đã lưu ${saved.name}`, 'success');
+      toast(t('adminMenu.editor.saved', { name: itemName(saved) }), 'success');
       onSaved?.(saved, isNew);
       onClose();
     }
@@ -140,52 +144,53 @@ export function MenuItemEditor({
       {errorKeys.length > 0 && (
         <p role="alert" className="flex items-center gap-1.5 px-1 text-sm font-medium text-rattan-dark">
           <CircleAlert className="h-4 w-4 shrink-0" aria-hidden />
-          Vui lòng kiểm tra: {errorKeys.map((k) => FIELD_LABEL[k]).join(', ')}
+          {t('adminMenu.editor.checkFields', { fields: errorKeys.map((k) => t(FIELD_LABEL[k])).join(', ') })}
         </p>
       )}
       <Button block size="lg" loading={saving} disabled={imageBusy} leftIcon={<Check className="h-5 w-5" aria-hidden />} onClick={handleSave}>
-        Lưu món
+        {t('adminMenu.editor.save')}
       </Button>
     </div>
   );
 
   return (
     <>
-      <BottomSheet open onClose={requestClose} title={isNew ? 'Thêm món mới' : 'Sửa món'} footer={footer} bodyClassName="space-y-6">
+      <BottomSheet open onClose={requestClose} title={isNew ? t('adminMenu.editor.addTitle') : t('adminMenu.editor.editTitle')} footer={footer} bodyClassName="space-y-6">
         {missing && (
           <p role="status" className="flex items-start gap-2 rounded-2xl bg-rattan-soft px-3.5 py-3 text-sm leading-snug text-rattan-dark">
             <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-            Món này vừa bị xoá ở thiết bị khác. Bấm “Lưu món” sẽ thêm lại món vào thực đơn.
+            {t('adminMenu.editor.missing')}
           </p>
         )}
 
         <div className="space-y-4">
           <Input
             ref={nameRef}
-            label="Tên món"
+            label={t('adminMenu.editor.name')}
             required
             value={form.name}
             maxLength={NAME_MAX}
-            placeholder="VD: Cà phê sữa đá"
+            placeholder={t('adminMenu.editor.namePlaceholder')}
             autoComplete="off"
             enterKeyHint="next"
             error={errors.name}
             onChange={(e) => update('name', e.target.value)}
           />
           <Input
-            label="Tên tiếng Anh"
+            label={t('adminMenu.editor.nameEn')}
+            lang="en"
             value={form.nameEn}
             maxLength={NAME_EN_MAX}
-            placeholder="VD: Iced Milk Coffee"
+            placeholder={t('adminMenu.editor.nameEnPlaceholder')}
             autoComplete="off"
             enterKeyHint="next"
-            hint="Không bắt buộc"
+            hint={t('common.optional')}
             onChange={(e) => update('nameEn', e.target.value)}
           />
         </div>
 
-        <Section title="Danh mục">
-          <div role="radiogroup" aria-label="Danh mục" className="grid grid-cols-3 gap-2">
+        <Section title={t('adminMenu.editor.category')}>
+          <div role="radiogroup" aria-label={t('adminMenu.editor.category')} className="grid grid-cols-3 gap-2">
             {CATEGORIES.map((c) => {
               const on = form.categoryId === c.id;
               return (
@@ -214,29 +219,38 @@ export function MenuItemEditor({
         <div className="space-y-4">
           <PriceField
             ref={priceRef}
-            label="Giá bán"
+            label={t('adminMenu.editor.price')}
             required
             value={form.price}
             onChange={(v) => update('price', v)}
             error={errors.price}
-            placeholder="VD: 35.000"
+            placeholder={t('adminMenu.editor.pricePlaceholder')}
             hint={
               form.price && Number(form.price) <= PRICE_MAX
-                ? `Khách thấy: ${formatPrice(Number(form.price))} · giá size mặc định`
-                : 'Giá size mặc định — phụ thu size L đặt ở phần Tuỳ chọn'
+                ? t('adminMenu.editor.pricePreview', { price: formatPrice(Number(form.price)) })
+                : t('adminMenu.editor.priceHint')
             }
           />
           <TextArea
-            label="Mô tả"
+            label={t('adminMenu.editor.description')}
             value={form.description}
             maxLength={DESCRIPTION_MAX}
-            placeholder="Hương vị, thành phần nổi bật…"
-            hint={`${form.description.length}/${DESCRIPTION_MAX} ký tự`}
+            placeholder={t('adminMenu.editor.descriptionPlaceholder')}
+            hint={t('adminMenu.editor.charCount', { count: form.description.length, max: DESCRIPTION_MAX })}
             onChange={(e) => update('description', e.target.value)}
+          />
+          <TextArea
+            label={t('adminMenu.editor.descriptionEn')}
+            lang="en"
+            value={form.descriptionEn}
+            maxLength={DESCRIPTION_EN_MAX}
+            placeholder={t('adminMenu.editor.descriptionEnPlaceholder')}
+            hint={`${t('common.optional')} · ${t('adminMenu.editor.charCount', { count: form.descriptionEn.length, max: DESCRIPTION_EN_MAX })}`}
+            onChange={(e) => update('descriptionEn', e.target.value)}
           />
         </div>
 
-        <Section title="Nhãn" aside="Chọn nhiều">
+        <Section title={t('adminMenu.editor.tags')} aside={t('adminMenu.editor.tagsHint')}>
           <div className="flex flex-wrap gap-2">
             {TAG_ORDER.map((tag) => {
               const on = form.tags.includes(tag);
@@ -268,44 +282,44 @@ export function MenuItemEditor({
           </div>
         </Section>
 
-        <Section title="Ảnh món">
+        <Section title={t('adminMenu.editor.image')}>
           <ImagePicker
             value={form.image}
             onChange={(img) => update('image', img)}
             categoryId={form.categoryId}
-            itemName={form.name}
+            itemName={pick(form.name, form.nameEn.trim())}
             busy={imageBusy}
             onBusyChange={setImageBusy}
           />
         </Section>
 
-        <Section title="Tuỳ chọn cho khách" aside={`${form.options.length} nhóm`}>
+        <Section title={t('adminMenu.editor.options')} aside={t('adminMenu.editor.optionCount', { count: form.options.length })}>
           <OptionPicker entries={entries} selected={form.options} onToggle={toggleOption} />
         </Section>
 
-        <Section title="Trạng thái">
+        <Section title={t('adminMenu.editor.status')}>
           <div className="flex items-center gap-3 rounded-2xl bg-white p-3.5 ring-1 ring-inset ring-bronze-200/70">
             <div className="min-w-0 flex-1">
-              <p className="text-[15px] font-semibold text-espresso">{form.available ? 'Đang bán' : 'Tạm hết'}</p>
+              <p className="text-[15px] font-semibold text-espresso">{form.available ? t('adminMenu.available') : t('adminMenu.soldOut')}</p>
               <p className="mt-0.5 text-xs leading-snug text-stone">
-                {form.available ? 'Khách có thể gọi món này ngay.' : 'Khách sẽ không đặt được món này cho đến khi mở bán lại.'}
+                {form.available ? t('adminMenu.editor.availableBody') : t('adminMenu.editor.soldOutBody')}
               </p>
             </div>
-            <AvailabilitySwitch checked={form.available} onChange={(v) => update('available', v)} label="Đang bán" showText={false} />
+            <AvailabilitySwitch checked={form.available} onChange={(v) => update('available', v)} label={t('adminMenu.available')} showText={false} />
           </div>
         </Section>
 
         {!!item?.updatedAt && !missing && (
-          <p className="px-1 text-center text-xs text-stone-light">Cập nhật lần cuối {formatDateTime(item.updatedAt)}</p>
+          <p className="px-1 text-center text-xs text-stone-light">{t('adminMenu.editor.updatedAt', { time: formatDateTime(item.updatedAt) })}</p>
         )}
       </BottomSheet>
 
       <ConfirmDialog
         open={confirmDiscard}
-        title="Bỏ các thay đổi?"
-        description="Những gì bạn vừa nhập cho món này sẽ không được lưu."
-        confirmText="Bỏ thay đổi"
-        cancelText="Tiếp tục sửa"
+        title={t('adminMenu.editor.discardTitle')}
+        description={t('adminMenu.editor.discardBody')}
+        confirmText={t('adminMenu.editor.discardConfirm')}
+        cancelText={t('adminMenu.editor.discardCancel')}
         tone="danger"
         onConfirm={onClose}
         onCancel={cancelDiscard}

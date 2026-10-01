@@ -1,3 +1,4 @@
+import { useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 import { formatTime } from '@/lib/format';
 import { formatLongDate, isoLocalDate } from './format';
@@ -14,6 +15,7 @@ export function LiveDot({ className = 'bg-leaf' }: { className?: string }) {
 
 /** Tiêu đề trang tổng quan: ngày hôm nay + chỉ báo trực tiếp */
 export function DashboardHeader({ now, updatedAt }: { now: number; updatedAt: number }) {
+  const { t } = useT();
   return (
     <header className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
       <div className="min-w-0">
@@ -21,13 +23,13 @@ export function DashboardHeader({ now, updatedAt }: { now: number; updatedAt: nu
           <time dateTime={isoLocalDate(now)}>{formatLongDate(now)}</time>
         </p>
         <h1 className="mt-1 font-display text-[26px] font-extrabold leading-tight tracking-tight text-espresso md:text-3xl">
-          Tổng quan hôm nay
+          {t('adminDashboard.header.title')}
         </h1>
       </div>
       <p className="inline-flex h-9 items-center gap-2 rounded-full bg-white px-3.5 text-xs shadow-card ring-1 ring-bronze-200/60">
         <LiveDot />
-        <span className="font-bold text-leaf-dark">Trực tiếp</span>
-        <span className="text-stone">· cập nhật {formatTime(updatedAt)}</span>
+        <span className="font-bold text-leaf-dark">{t('adminDashboard.header.live')}</span>
+        <span className="text-stone">{t('adminDashboard.header.updated', { time: formatTime(updatedAt) })}</span>
       </p>
     </header>
   );

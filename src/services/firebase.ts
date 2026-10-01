@@ -28,6 +28,7 @@ import {
   type Firestore,
 } from 'firebase/firestore';
 import { APP_CONFIG } from '@/config/app';
+import { translate } from '@/i18n';
 import { platform } from '@/platform';
 import { FIREBASE_CONFIG } from '@/config/firebase';
 
@@ -271,7 +272,7 @@ async function microsoftPopup(auth: Auth): Promise<UserCredential> {
 }
 
 function notSchoolError(email: string) {
-  return Object.assign(new Error(`Tài khoản ${email || 'này'} không thuộc trường. Vui lòng dùng email trường.`), {
+  return Object.assign(new Error(translate('errors.firebase.notSchool', { email: email || translate('errors.firebase.thisAccount') })), {
     code: 'app/not-school-account',
   });
 }
@@ -402,50 +403,48 @@ async function finishStaffMicrosoft(result: UserCredential) {
   }
 }
 
-/** Thông báo lỗi Firebase dễ hiểu cho người dùng */
+/** Thông báo lỗi Firebase dễ hiểu cho người dùng (theo ngôn ngữ đang chọn) */
 export function firebaseErrorMessage(err: unknown): string {
   const code = (err as { code?: string })?.code ?? '';
+  const message = (err as Error)?.message ?? '';
+  const aadsts = () => translate('errors.firebase.microsoftRejected', { code: message.match(/AADSTS\d+[^.]*/)?.[0] ?? '' });
   switch (code) {
     case 'permission-denied':
     case 'firestore/permission-denied':
-      return 'Không có quyền truy cập dữ liệu — kiểm tra đăng nhập nhân viên hoặc Firestore Security Rules.';
+      return translate('errors.firebase.permission');
     case 'unavailable':
     case 'firestore/unavailable':
-      return 'Mất kết nối máy chủ — kiểm tra mạng rồi thử lại.';
+      return translate('errors.firebase.unavailable');
     case 'failed-precondition':
-      return 'Firestore chưa sẵn sàng (có thể thiếu chỉ mục hoặc chưa tạo cơ sở dữ liệu).';
+      return translate('errors.firebase.notReady');
     case 'auth/invalid-credential':
-      if ((err as Error)?.message?.includes('AADSTS'))
-        return `Microsoft 365 từ chối đăng nhập: ${(err as Error).message.match(/AADSTS\d+[^.]*/)?.[0] ?? ''}`;
-      return 'Email hoặc mật khẩu không đúng.';
+      return message.includes('AADSTS') ? aadsts() : translate('errors.firebase.badCredentials');
     case 'auth/wrong-password':
     case 'auth/user-not-found':
     case 'auth/invalid-email':
-      return 'Email hoặc mật khẩu không đúng.';
+      return translate('errors.firebase.badCredentials');
     case 'auth/too-many-requests':
-      return 'Thử sai quá nhiều lần — vui lòng đợi một lát.';
+      return translate('errors.firebase.tooMany');
     case 'auth/network-request-failed':
-      return 'Không có kết nối mạng.';
+      return translate('errors.firebase.offline');
     case 'auth/configuration-not-found':
     case 'auth/operation-not-allowed':
-      return 'Phương thức đăng nhập này chưa được bật trong Firebase Authentication (xem docs/M365_SSO.md).';
+      return translate('errors.firebase.providerOff');
     case 'auth/popup-closed-by-user':
     case 'auth/cancelled-popup-request':
     case 'auth/user-cancelled':
-      return 'Bạn đã đóng cửa sổ đăng nhập.';
+      return translate('errors.firebase.popupClosed');
     case 'auth/popup-blocked':
-      return 'Trình duyệt chặn cửa sổ đăng nhập — đang chuyển sang trang đăng nhập Microsoft…';
+      return translate('errors.firebase.popupBlocked');
     case 'auth/unauthorized-domain':
-      return 'Tên miền của app chưa được thêm vào Firebase › Authentication › Authorized domains.';
+      return translate('errors.firebase.unauthorizedDomain');
     case 'auth/account-exists-with-different-credential':
-      return 'Email này đã được đăng ký bằng cách khác — liên hệ quản trị quán.';
+      return translate('errors.firebase.accountExists');
     case 'auth/internal-error':
-      return (err as Error)?.message?.includes('AADSTS')
-        ? `Microsoft 365 từ chối đăng nhập: ${(err as Error).message.match(/AADSTS\d+[^.]*/)?.[0] ?? ''}`
-        : 'Đăng nhập không thành công — vui lòng thử lại.';
+      return message.includes('AADSTS') ? aadsts() : translate('errors.firebase.signInFailed');
     case 'app/not-school-account':
-      return (err as Error).message;
+      return message;
     default:
-      return (err as Error)?.message || 'Đã có lỗi xảy ra';
+      return message || translate('common.genericError');
   }
 }

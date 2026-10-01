@@ -1,3 +1,5 @@
+import { useT } from '@/i18n';
+import { lineName } from '@/lib/i18n-data';
 import { cn } from '@/lib/cn';
 import { formatPrice } from '@/lib/format';
 import { optionsSummary } from '@/lib/pricing';
@@ -10,7 +12,7 @@ export function OrderItemsList({
   compact,
   className,
 }: {
-  lines: Pick<CartLine, 'lineId' | 'name' | 'image' | 'categoryId' | 'quantity' | 'unitPrice' | 'options' | 'note'>[];
+  lines: Pick<CartLine, 'lineId' | 'name' | 'nameEn' | 'image' | 'categoryId' | 'quantity' | 'unitPrice' | 'options' | 'note'>[];
   compact?: boolean;
   className?: string;
 }) {
@@ -20,11 +22,11 @@ export function OrderItemsList({
         const opts = optionsSummary(l.options);
         return (
           <li key={l.lineId} className={cn('flex items-start gap-3', compact ? 'py-2' : 'py-3')}>
-            {!compact && <MenuImage image={l.image} alt={l.name} categoryId={l.categoryId} className="h-12 w-12 shrink-0" rounded="rounded-xl" />}
+            {!compact && <MenuImage image={l.image} alt={lineName(l)} categoryId={l.categoryId} className="h-12 w-12 shrink-0" rounded="rounded-xl" />}
             <div className="min-w-0 flex-1">
               <p className="text-[15px] font-semibold leading-snug text-espresso">
                 <span className="mr-1.5 font-display text-bronze-500">{l.quantity}×</span>
-                {l.name}
+                {lineName(l)}
               </p>
               {opts && <p className="mt-0.5 text-xs leading-snug text-stone">{opts}</p>}
               {l.note && <p className="mt-0.5 text-xs italic text-rattan">“{l.note}”</p>}
@@ -44,6 +46,7 @@ export function OrderTotals({
   discount = 0,
   total,
   showDelivery,
+  loyaltyRedeem,
   className,
 }: {
   subtotal: number;
@@ -51,28 +54,31 @@ export function OrderTotals({
   discount?: number;
   total: number;
   showDelivery?: boolean;
+  /** Giảm giá là cốc miễn phí từ thẻ tích điểm */
+  loyaltyRedeem?: boolean;
   className?: string;
 }) {
+  const { t } = useT();
   return (
     <dl className={cn('space-y-1.5 text-sm', className)}>
       <div className="flex justify-between text-stone">
-        <dt>Tạm tính</dt>
+        <dt>{t('totals.subtotal')}</dt>
         <dd className="tabular-nums">{formatPrice(subtotal)}</dd>
       </div>
       {showDelivery && (
         <div className="flex justify-between text-stone">
-          <dt>Phí giao hàng</dt>
-          <dd className="tabular-nums">{deliveryFee ? formatPrice(deliveryFee) : 'Miễn phí'}</dd>
+          <dt>{t('totals.deliveryFee')}</dt>
+          <dd className="tabular-nums">{deliveryFee ? formatPrice(deliveryFee) : t('common.free')}</dd>
         </div>
       )}
       {!!discount && (
         <div className="flex justify-between text-leaf-dark">
-          <dt>Giảm giá</dt>
+          <dt>{t(loyaltyRedeem ? 'totals.loyaltyReward' : 'totals.discount')}</dt>
           <dd className="tabular-nums">−{formatPrice(discount)}</dd>
         </div>
       )}
       <div className="flex items-baseline justify-between border-t border-dashed border-bronze-200 pt-2.5">
-        <dt className="font-semibold text-espresso">Tổng cộng</dt>
+        <dt className="font-semibold text-espresso">{t('totals.total')}</dt>
         <dd className="font-display text-xl font-extrabold tabular-nums text-espresso">{formatPrice(total)}</dd>
       </div>
     </dl>

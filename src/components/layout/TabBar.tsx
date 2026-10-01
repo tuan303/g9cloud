@@ -1,3 +1,4 @@
+import { useT } from '@/i18n';
 import { NavLink } from 'react-router-dom';
 import { Bell, Coffee, Receipt, UserRound } from 'lucide-react';
 import { cn } from '@/lib/cn';
@@ -5,20 +6,21 @@ import { useMyActiveOrders } from '@/hooks/data';
 import { selectUnreadCount, useNotifications } from '@/store/notifications';
 
 const TABS = [
-  { to: '/', label: 'Thực đơn', icon: Coffee, end: true },
-  { to: '/orders', label: 'Đơn hàng', icon: Receipt },
-  { to: '/notifications', label: 'Thông báo', icon: Bell },
-  { to: '/account', label: 'Tài khoản', icon: UserRound },
+  { to: '/', label: 'nav.menu', icon: Coffee, end: true },
+  { to: '/orders', label: 'nav.orders', icon: Receipt },
+  { to: '/notifications', label: 'nav.notifications', icon: Bell },
+  { to: '/account', label: 'nav.account', icon: UserRound },
 ] as const;
 
 export function TabBar() {
+  const { t } = useT();
   const activeOrders = useMyActiveOrders().length;
   const unread = useNotifications(selectUnreadCount);
   const badges: Record<string, number> = { '/orders': activeOrders, '/notifications': unread };
 
   return (
     <nav
-      aria-label="Điều hướng chính"
+      aria-label={t('nav.main')}
       className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md border-t border-bronze-200/70 bg-cream/95 backdrop-blur-md"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
@@ -46,7 +48,7 @@ export function TabBar() {
                       </span>
                     )}
                   </span>
-                  {label}
+                  {t(label)}
                 </>
               )}
             </NavLink>

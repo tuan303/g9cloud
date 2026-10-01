@@ -1,3 +1,5 @@
+import { useT } from '@/i18n';
+import { formatPrice } from '@/lib/format';
 import { Bike, Store } from 'lucide-react';
 import { APP_CONFIG } from '@/config/app';
 import { cn } from '@/lib/cn';
@@ -24,14 +26,15 @@ export function FulfillmentPicker({
   tone?: 'light' | 'dark';
 }) {
   const { pickup, delivery } = APP_CONFIG.fulfillment;
+  const { t } = useT();
   const options = [
-    pickup.enabled && { value: 'pickup' as const, label: pickup.label, description: pickup.description, icon: Store },
-    delivery.enabled && { value: 'delivery' as const, label: delivery.label, description: delivery.description, icon: Bike },
+    pickup.enabled && { value: 'pickup' as const, label: t('fulfillment.pickup'), description: t('fulfillment.pickupDesc'), icon: Store },
+    delivery.enabled && { value: 'delivery' as const, label: t('fulfillment.delivery'), description: t('fulfillment.deliveryDesc'), icon: Bike },
   ].filter(Boolean) as { value: FulfillmentType; label: string; description: string; icon: typeof Store }[];
 
   return (
     <div className="space-y-3">
-      <div role="radiogroup" aria-label="Hình thức nhận món" className="grid grid-cols-2 gap-3">
+      <div role="radiogroup" aria-label={t('fulfillment.aria')} className="grid grid-cols-2 gap-3">
         {options.map((o) => {
           const active = value === o.value;
           const Icon = o.icon;
@@ -81,13 +84,13 @@ export function FulfillmentPicker({
       {value === 'delivery' && (
         <div className="animate-fade-in">
           <Input
-            label="Giao đến"
+            label={t('fulfillment.deliverTo')}
             required
-            placeholder={delivery.addressPlaceholder}
+            placeholder={t('fulfillment.addressPlaceholder')}
             value={address}
             onChange={(e) => onAddressChange(e.target.value)}
             error={addressError}
-            hint={delivery.fee ? `Phí giao: ${delivery.fee.toLocaleString('vi-VN')}đ` : 'Miễn phí giao trong trường'}
+            hint={delivery.fee ? t('fulfillment.deliveryFee', { fee: formatPrice(delivery.fee) }) : t('fulfillment.freeDelivery')}
             autoComplete="off"
           />
         </div>

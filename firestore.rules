@@ -25,7 +25,7 @@ service cloud.firestore {
     // Đơn mới do khách tạo (khớp với buildOrder trong src/services/order-logic.ts)
     function validNewOrder(d) {
       return d.keys().hasOnly(['code', 'customer', 'customerUid', 'fulfillment', 'deliveryAddress', 'note',
-                               'items', 'itemCount', 'subtotal', 'deliveryFee', 'discount', 'total',
+                               'items', 'itemCount', 'subtotal', 'deliveryFee', 'discount', 'total', 'loyaltyRedeem',
                                'paymentMethod', 'paymentStatus', 'status', 'createdAt', 'updatedAt', 'statusHistory'])
         && d.customerUid == request.auth.uid
         && d.status == 'pending_payment'
@@ -37,8 +37,11 @@ service cloud.firestore {
         && d.itemCount is int && d.itemCount > 0
         && d.subtotal is int && d.subtotal >= 0
         && d.deliveryFee is int && d.deliveryFee >= 0
-        && d.discount == 0
-        && d.total == d.subtotal + d.deliveryFee
+        // Giảm giá chỉ có khi đổi cốc miễn phí (tích điểm) — thu ngân kiểm tra điểm khi xác nhận thu tiền
+        && d.discount is int && d.discount >= 0
+        && (d.discount == 0 || d.loyaltyRedeem == true)
+        && (!('loyaltyRedeem' in d) || d.loyaltyRedeem == true)
+        && d.total == d.subtotal + d.deliveryFee - d.discount
         && d.createdAt is int
         && d.createdAt > request.time.toMillis() - 3600000
         && d.createdAt < request.time.toMillis() + 3600000
@@ -47,6 +50,9 @@ service cloud.firestore {
         && d.statusHistory[0].status == 'pending_payment'
         && d.customer is map
         && d.customer.name is string && d.customer.name.size() <= 100
+        // Thẻ tích điểm loyalty/{customer.id} được cộng/trừ khi thu tiền → khách chỉ đặt đơn bằng mã M365 của chính mình
+        && d.customer.id is string && d.customer.isGuest is bool
+        && (!d.customer.id.matches('ms_.*') || d.customer.id == 'ms_' + request.auth.uid)
         && optionalString(d, 'note', 300)
         && optionalString(d, 'deliveryAddress', 200);
     }
@@ -74,6 +80,12 @@ service cloud.firestore {
         || (signedIn()
           && request.resource.data.keys().hasOnly(['seq', 'updatedAt'])
           && request.resource.data.seq == resource.data.seq + 1);
+    }
+
+    // Thẻ tích điểm: khách (Microsoft 365) đọc thẻ của mình; chỉ nhân viên ghi (lúc xác nhận thu tiền)
+    match /loyalty/{customerId} {
+      allow read: if isStaff() || (signedIn() && customerId == 'ms_' + request.auth.uid);
+      allow write: if isStaff();
     }
 
     // Cờ hệ thống (VD meta/menuSeed — đã khởi tạo thực đơn mẫu)

@@ -25,6 +25,7 @@ function makeLine(item: MenuItem, options: SelectedOption[], quantity: number, n
     itemId: item.id,
     categoryId: item.categoryId,
     name: item.name,
+    nameEn: item.nameEn,
     image: lineImageRef(item),
     basePrice: item.price,
     unitPrice: unitPrice(item, options),

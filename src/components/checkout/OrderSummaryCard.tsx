@@ -1,19 +1,23 @@
 import { useId, useState } from 'react';
 import { Bike, ChevronDown, MessageSquareText, ReceiptText, Store, User } from 'lucide-react';
 import { APP_CONFIG } from '@/config/app';
+import { pick, useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 import { formatPrice } from '@/lib/format';
+import { lineName } from '@/lib/i18n-data';
 import { Card } from '@/components/ui';
 import { OrderItemsList, OrderTotals } from '@/components/order/OrderItemsList';
 import type { Order } from '@/types';
 
 /** Thẻ tóm tắt đơn (thu gọn được): món, tổng tiền, hình thức nhận, người nhận, ghi chú */
 export function OrderSummaryCard({ order, defaultOpen = false, className }: { order: Order; defaultOpen?: boolean; className?: string }) {
+  const { t } = useT();
   const [open, setOpen] = useState(defaultOpen);
   const panelId = useId();
   const isDelivery = order.fulfillment === 'delivery';
   const FIcon = isDelivery ? Bike : Store;
-  const preview = order.items.map((l) => `${l.quantity}× ${l.name}`).join(', ');
+  const fulfillmentLabel = t(isDelivery ? 'fulfillment.delivery' : 'fulfillment.pickup');
+  const preview = order.items.map((l) => `${l.quantity}× ${lineName(l)}`).join(', ');
 
   return (
     <Card className={cn('overflow-hidden', className)}>
@@ -29,11 +33,11 @@ export function OrderSummaryCard({ order, defaultOpen = false, className }: { or
         </span>
         <span className="min-w-0 flex-1">
           <span className="flex items-baseline justify-between gap-2">
-            <span className="font-display text-[15px] font-bold text-espresso">Chi tiết đơn hàng</span>
+            <span className="font-display text-[15px] font-bold text-espresso">{t('payment.summary.title')}</span>
             <span className="shrink-0 font-display text-[15px] font-bold tabular-nums text-espresso">{formatPrice(order.total)}</span>
           </span>
           <span className="mt-0.5 block truncate text-xs text-stone">
-            {order.itemCount} món · {open ? (isDelivery ? APP_CONFIG.fulfillment.delivery.label : APP_CONFIG.fulfillment.pickup.label) : preview}
+            {t('cart.itemCount', { count: order.itemCount })} · {open ? fulfillmentLabel : preview}
           </span>
         </span>
         <ChevronDown className={cn('h-5 w-5 shrink-0 text-bronze-400 transition-transform', open && 'rotate-180')} aria-hidden />
@@ -47,6 +51,7 @@ export function OrderSummaryCard({ order, defaultOpen = false, className }: { or
             subtotal={order.subtotal}
             deliveryFee={order.deliveryFee}
             discount={order.discount}
+            loyaltyRedeem={order.loyaltyRedeem}
             total={order.total}
             showDelivery={isDelivery}
           />
@@ -55,11 +60,11 @@ export function OrderSummaryCard({ order, defaultOpen = false, className }: { or
             <div className="flex items-start gap-2.5">
               <FIcon className="mt-0.5 h-4 w-4 shrink-0 text-bronze-500" aria-hidden />
               <div className="min-w-0">
-                <p className="font-semibold text-espresso">
-                  {isDelivery ? APP_CONFIG.fulfillment.delivery.label : APP_CONFIG.fulfillment.pickup.label}
-                </p>
+                <p className="font-semibold text-espresso">{fulfillmentLabel}</p>
                 <p className="text-stone">
-                  {isDelivery ? order.deliveryAddress || 'Chưa có địa chỉ' : `Tại quầy Cloud 9 · ${APP_CONFIG.shop.location}`}
+                  {isDelivery
+                    ? order.deliveryAddress || t('payment.summary.noAddress')
+                    : t('payment.summary.atCounter', { location: pick(APP_CONFIG.shop.location, APP_CONFIG.shop.locationEn) })}
                 </p>
               </div>
             </div>
@@ -67,7 +72,7 @@ export function OrderSummaryCard({ order, defaultOpen = false, className }: { or
               <User className="mt-0.5 h-4 w-4 shrink-0 text-bronze-500" aria-hidden />
               <div className="min-w-0">
                 <p className="text-espresso">
-                  <span className="sr-only">Người nhận: </span>
+                  <span className="sr-only">{t('payment.summary.recipient')}</span>
                   {order.customer.name}
                   {order.customer.phone && <span className="text-stone"> · {order.customer.phone}</span>}
                 </p>
@@ -78,7 +83,7 @@ export function OrderSummaryCard({ order, defaultOpen = false, className }: { or
                 <MessageSquareText className="mt-0.5 h-4 w-4 shrink-0 text-bronze-500" aria-hidden />
                 <div className="min-w-0">
                   <p className="italic text-rattan">
-                    <span className="sr-only">Ghi chú: </span>“{order.note}”
+                    <span className="sr-only">{t('payment.summary.note')}</span>“{order.note}”
                   </p>
                 </div>
               </div>

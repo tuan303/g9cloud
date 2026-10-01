@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
-import { ArrowRight, Bike, Store } from 'lucide-react';
-import { APP_CONFIG } from '@/config/app';
+import { ArrowRight, Bike, Coffee, Gift, Store } from 'lucide-react';
+import { useLoyalty } from '@/hooks/loyalty';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 import { formatPrice, formatTime } from '@/lib/format';
 import { STATUS_META } from '@/lib/order-status';
@@ -27,11 +28,18 @@ export function PaymentSuccess({
   onTrack: () => void;
   onHome: () => void;
 }) {
+  const { t } = useT();
   const titleRef = useRef<HTMLHeadingElement>(null);
   const checkRef = useRef<SVGPathElement>(null);
   const burstRef = useRef<HTMLDivElement>(null);
   const isDelivery = order.fulfillment === 'delivery';
   const FIcon = isDelivery ? Bike : Store;
+  // Đơn này vừa giúp khách đủ cốc miễn phí? (thẻ tích điểm cập nhật trực tiếp, không phụ thuộc banner)
+  const loyalty = useLoyalty();
+  const per = loyalty.cupsPerReward;
+  const stampsBefore = loyalty.stamps - (order.loyaltyEarned ?? 0) + (order.loyaltyRedeem ? per : 0);
+  const unlocked =
+    loyalty.member && !!order.loyaltyEarned && Math.floor(loyalty.stamps / per) > Math.floor(Math.max(0, stampsBefore) / per);
 
   useEffect(() => {
     titleRef.current?.focus({ preventScroll: true });
@@ -115,12 +123,12 @@ export function PaymentSuccess({
 
         <div role="status" aria-live="polite" className="mt-8">
           <h1 ref={titleRef} tabIndex={-1} className="font-display text-[26px] font-extrabold tracking-tight text-espresso outline-none">
-            {celebrate ? 'Đơn hàng đã nhận!' : 'Đơn hàng đã thanh toán'}
+            {celebrate ? t('payment.success.title') : t('payment.success.titlePaid')}
           </h1>
           <p className="mx-auto mt-2 max-w-[18rem] text-[15px] leading-relaxed text-stone">
             {celebrate
-              ? 'Quán đã nhận thanh toán và bắt đầu chuẩn bị.'
-              : `Đơn đang ở bước “${STATUS_META[order.status].label}” — theo dõi để biết khi nào món xong nhé.`}
+              ? t('payment.success.body')
+              : t('payment.success.bodyStatus', { status: STATUS_META[order.status].label })}
           </p>
         </div>
 
@@ -128,10 +136,10 @@ export function PaymentSuccess({
         <div className="relative mt-8 w-full max-w-sm rounded-3xl bg-white text-left shadow-card ring-1 ring-bronze-200/60">
           <div className="flex items-center justify-between gap-3 px-5 pb-4 pt-5">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-bronze-500">Mã đơn</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-bronze-500">{t('payment.success.orderCode')}</p>
               <p className="font-display text-3xl font-extrabold tracking-tight text-espresso">{order.code}</p>
             </div>
-            <span className="rounded-full bg-leaf-soft px-3 py-1 text-xs font-bold text-leaf-dark ring-1 ring-leaf-light/60">Đã thanh toán</span>
+            <span className="rounded-full bg-leaf-soft px-3 py-1 text-xs font-bold text-leaf-dark ring-1 ring-leaf-light/60">{t('payment.success.paidBadge')}</span>
           </div>
           {/* Đường răng cưa vé */}
           <div aria-hidden className="relative h-4">
@@ -141,35 +149,58 @@ export function PaymentSuccess({
           </div>
           <div className="space-y-2.5 px-5 pb-5 pt-3 text-sm">
             <div className="flex justify-between gap-3">
-              <span className="text-stone">Số tiền</span>
+              <span className="text-stone">{t('payment.success.amount')}</span>
               <span className="font-display font-bold tabular-nums text-espresso">{formatPrice(order.total)}</span>
             </div>
             {order.paidAt && (
               <div className="flex justify-between gap-3">
-                <span className="text-stone">Thanh toán lúc</span>
+                <span className="text-stone">{t('payment.success.paidAt')}</span>
                 <span className="font-semibold tabular-nums text-espresso">{formatTime(order.paidAt)}</span>
               </div>
             )}
             <div className="flex items-start justify-between gap-3">
-              <span className="text-stone">Nhận món</span>
+              <span className="text-stone">{t(isDelivery ? 'payment.success.collectDelivery' : 'payment.success.collect')}</span>
               <span className="inline-flex min-w-0 items-center gap-1.5 text-right font-semibold text-espresso">
                 <FIcon className="h-4 w-4 shrink-0 text-bronze-500" aria-hidden />
                 <span className="truncate">
-                  {isDelivery ? order.deliveryAddress || APP_CONFIG.fulfillment.delivery.label : APP_CONFIG.fulfillment.pickup.label}
+                  {isDelivery ? order.deliveryAddress || t('fulfillment.delivery') : t('fulfillment.pickup')}
                 </span>
               </span>
             </div>
           </div>
         </div>
-        {!isDelivery && <p className="mt-3 text-xs text-stone">Nhớ mã đơn khi đến quầy nhận món nhé.</p>}
+        {/* Tích điểm: cốc miễn phí đã dùng / số cốc được cộng sau khi thanh toán */}
+        {(order.loyaltyRedeem || !!order.loyaltyEarned) && (
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            {order.loyaltyRedeem && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-gold-soft px-3 py-1 text-xs font-semibold text-bronze-800 ring-1 ring-inset ring-gold/50">
+                <Gift className="h-3.5 w-3.5 text-gold-dark" aria-hidden />
+                {t('loyalty.redeemed')}
+              </span>
+            )}
+            {!!order.loyaltyEarned && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-gold-soft px-3 py-1 text-xs font-semibold text-bronze-800 ring-1 ring-inset ring-gold/50">
+                <Coffee className="h-3.5 w-3.5 text-gold-dark" aria-hidden />
+                {t('loyalty.earned', { count: order.loyaltyEarned })}
+              </span>
+            )}
+            {unlocked && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-leaf-soft px-3 py-1 text-xs font-bold text-leaf-dark ring-1 ring-inset ring-leaf-light/60">
+                <Gift className="h-3.5 w-3.5" aria-hidden />
+                {t('loyalty.rewardReady', { cups: per })}
+              </span>
+            )}
+          </div>
+        )}
+        {!isDelivery && <p className="mt-3 text-xs text-stone">{t('payment.success.rememberCode')}</p>}
       </div>
 
       <div className="safe-bottom relative space-y-1 px-5">
         <Button variant="leaf" size="lg" block onClick={onTrack} rightIcon={<ArrowRight className="h-5 w-5" aria-hidden />}>
-          Theo dõi đơn hàng
+          {t('payment.success.track')}
         </Button>
         <Button variant="ghost" block onClick={onHome}>
-          Về thực đơn
+          {t('common.backToMenu')}
         </Button>
       </div>
     </div>

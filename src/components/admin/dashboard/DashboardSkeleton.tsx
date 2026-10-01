@@ -1,9 +1,11 @@
+import { useT } from '@/i18n';
 import { Skeleton } from '@/components/ui';
 
 /** Khung chờ khi dữ liệu chưa sẵn sàng — giữ đúng bố cục để trang không nhảy */
 export function DashboardSkeleton() {
+  const { t } = useT();
   return (
-    <div role="status" aria-busy="true" aria-label="Đang tải tổng quan" className="space-y-6">
+    <div role="status" aria-busy="true" aria-label={t('adminDashboard.loadingAria')} className="space-y-6">
       <div className="space-y-2">
         <Skeleton className="h-3.5 w-40 rounded-full" />
         <Skeleton className="h-8 w-64 rounded-xl" />
@@ -25,7 +27,7 @@ export function DashboardSkeleton() {
         <Skeleton className="h-72 rounded-3xl lg:col-span-2" />
         <Skeleton className="h-72 rounded-3xl" />
       </div>
-      <span className="sr-only">Đang tải dữ liệu…</span>
+      <span className="sr-only">{t('adminDashboard.loadingData')}</span>
     </div>
   );
 }

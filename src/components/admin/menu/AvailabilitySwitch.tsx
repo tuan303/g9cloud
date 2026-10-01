@@ -1,4 +1,5 @@
 import { Loader2 } from 'lucide-react';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 
 /**
@@ -22,6 +23,7 @@ export function AvailabilitySwitch({
   showText?: boolean;
   className?: string;
 }) {
+  const { t } = useT();
   return (
     <button
       type="button"
@@ -56,7 +58,7 @@ export function AvailabilitySwitch({
       </span>
       {showText && (
         <span aria-hidden className={cn('whitespace-nowrap', checked ? 'text-leaf-dark' : 'text-rattan-dark')}>
-          {checked ? 'Đang bán' : 'Tạm hết'}
+          {checked ? t('adminMenu.available') : t('adminMenu.soldOut')}
         </span>
       )}
     </button>

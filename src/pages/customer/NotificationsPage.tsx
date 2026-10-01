@@ -5,12 +5,14 @@ import { Button, EmptyState } from '@/components/ui';
 import { NotificationItem, NotificationPermissionCard, TabPageHeader } from '@/components/tracking';
 import { useNow } from '@/hooks/useNow';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useT } from '@/i18n';
 import { isSameDay } from '@/lib/format';
 import { selectUnreadCount, useNotifications } from '@/store/notifications';
 import type { AppNotification } from '@/types';
 
 export default function NotificationsPage() {
-  usePageTitle('Thông báo');
+  const { t } = useT();
+  usePageTitle(t('notifications.title'));
   const navigate = useNavigate();
   const items = useNotifications((s) => s.items);
   const markRead = useNotifications((s) => s.markRead);
@@ -21,10 +23,10 @@ export default function NotificationsPage() {
   const groups = useMemo(() => {
     const sorted = [...items].sort((a, b) => b.createdAt - a.createdAt);
     return [
-      { key: 'today', label: 'Hôm nay', items: sorted.filter((n) => isSameDay(n.createdAt, now)) },
-      { key: 'earlier', label: 'Trước đó', items: sorted.filter((n) => !isSameDay(n.createdAt, now)) },
+      { key: 'today', label: t('notifications.today'), items: sorted.filter((n) => isSameDay(n.createdAt, now)) },
+      { key: 'earlier', label: t('notifications.earlier'), items: sorted.filter((n) => !isSameDay(n.createdAt, now)) },
     ].filter((g) => g.items.length);
-  }, [items, now]);
+  }, [items, now, t]);
 
   const open = (n: AppNotification) => {
     if (!n.read) markRead(n.id);
@@ -34,12 +36,12 @@ export default function NotificationsPage() {
   return (
     <div className="min-h-full">
       <TabPageHeader
-        title="Thông báo"
-        subtitle={unread ? `${unread} thông báo chưa đọc` : items.length ? 'Bạn đã xem hết thông báo' : undefined}
+        title={t('notifications.title')}
+        subtitle={unread ? t('notifications.unread', { count: unread }) : items.length ? t('notifications.allRead') : undefined}
         right={
           unread > 0 && (
             <Button variant="ghost" leftIcon={<CheckCheck className="h-4 w-4" />} onClick={markAllRead}>
-              Đánh dấu đã đọc
+              {t('notifications.markAllRead')}
             </Button>
           )
         }
@@ -64,8 +66,8 @@ export default function NotificationsPage() {
         ) : (
           <EmptyState
             icon={<Bell className="h-9 w-9" />}
-            title="Chưa có thông báo"
-            description="Trạng thái đơn hàng sẽ hiện ở đây — từ lúc quán nhận đơn đến khi món sẵn sàng."
+            title={t('notifications.emptyTitle')}
+            description={t('notifications.emptyBody')}
           />
         )}
       </div>

@@ -1,17 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Landmark, QrCode as QrIcon, ReceiptText, Sun, Timer } from 'lucide-react';
+import { Gift, Landmark, QrCode as QrIcon, ReceiptText, Sun, Timer } from 'lucide-react';
 import barPhoto from '@/assets/photos/espresso-bar.webp';
 import { APP_CONFIG } from '@/config/app';
 import { useDataReady, useMenu, useOrder } from '@/hooks/data';
 import { useAction } from '@/hooks/useAction';
 import { useNow } from '@/hooks/useNow';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 import { formatPrice } from '@/lib/format';
 import { buildOrderQrPayload } from '@/lib/qr';
 import { platform } from '@/platform';
 import { repo } from '@/services';
+import { expiredReason, isExpiryCancel } from '@/services/order-logic';
 import { useCart } from '@/store/cart';
 import { toast, useUi } from '@/store/ui';
 import { Button, Card, ConfirmDialog, EmptyState, PageHeader, Segmented, Skeleton, StatusBadge } from '@/components/ui';
@@ -23,14 +25,12 @@ import { PaymentSuccess } from '@/components/checkout/PaymentSuccess';
 import { QR_RESPONSIVE_CLASS, QrCode, QrFrame } from '@/components/checkout/QrCode';
 import { VietQrPanel } from '@/components/checkout/VietQrPanel';
 import { planReorder } from '@/components/checkout/reorder';
-import type { Order } from '@/types';
 
 type PayTab = 'pos' | 'vietqr';
 
 const EXPIRY_MS = APP_CONFIG.payment.qrExpiryMinutes * 60_000;
 /** Nút quay lại trên header tối: đảm bảo icon màu kem (IconButton mặc định dùng text-espresso) */
 const DARK_HEADER_CLASS = '[&_button:hover]:!bg-white/10 [&_button]:!text-cream';
-const EXPIRED_REASON = 'Hết hạn thanh toán';
 
 const pad2 = (n: number) => String(n).padStart(2, '0');
 const formatCountdown = (ms: number) => {
@@ -38,11 +38,9 @@ const formatCountdown = (ms: number) => {
   return `${pad2(Math.floor(s / 60))}:${pad2(s % 60)}`;
 };
 
-/** Đơn bị huỷ do hết hạn (hệ thống tự huỷ hoặc khách bấm "Đặt lại" sau khi mã hết hạn) */
-const isExpiryCancel = (o: Order) => o.status === 'cancelled' && o.cancelReason === EXPIRED_REASON;
-
 export default function PaymentPage() {
-  usePageTitle('Thanh toán');
+  const { t } = useT();
+  usePageTitle(t('payment.title'));
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const ready = useDataReady();
@@ -94,13 +92,13 @@ export default function PaymentPage() {
   if (!order) {
     return (
       <div className="min-h-dvh bg-cream">
-        <PageHeader title="Thanh toán" back fallback="/" />
+        <PageHeader title={t('payment.title')} back fallback="/" />
         <EmptyState
           className="pt-20"
           icon={<ReceiptText className="h-9 w-9" />}
-          title="Không tìm thấy đơn hàng"
-          description="Đơn có thể đã bị xoá hoặc đường dẫn chưa đúng."
-          action={<Button onClick={goHome}>Về thực đơn</Button>}
+          title={t('payment.notFound.title')}
+          description={t('payment.notFound.body')}
+          action={<Button onClick={goHome}>{t('common.backToMenu')}</Button>}
         />
       </div>
     );
@@ -118,7 +116,7 @@ export default function PaymentPage() {
   }
 
   const cancel = async () => {
-    const done = await runCancel(order.id, 'Khách huỷ đơn');
+    const done = await runCancel(order.id, t('errors.reasonCustomer'));
     setConfirmCancel(false);
     // Màn hình chuyển sang trạng thái "Đã huỷ" → ẩn banner chung
     if (done) useUi.getState().hideBanner();
@@ -128,13 +126,13 @@ export default function PaymentPage() {
     if (reorderingRef.current) return;
     const { entries, skipped } = planReorder(order.items, menu);
     if (!entries.length) {
-      toast('Các món trong đơn này hiện đã hết', 'error');
+      toast(t('payment.reorder.allSoldOut'), 'error');
       return;
     }
     reorderingRef.current = true;
     if (order.status === 'pending_payment') {
       // Mã đã hết hạn nhưng hệ thống chưa kịp huỷ → huỷ luôn để thu ngân không quét nhầm mã cũ
-      const done = await runCancel(order.id, EXPIRED_REASON);
+      const done = await runCancel(order.id, expiredReason());
       if (!done) {
         reorderingRef.current = false;
         return;
@@ -143,7 +141,9 @@ export default function PaymentPage() {
     }
     entries.forEach((e) => addToCart(e.item, e.options, e.quantity, e.note));
     toast(
-      skipped.length ? `Đã thêm lại ${entries.length} món · ${skipped.join(', ')} đang tạm hết` : 'Đã thêm lại các món vào giỏ',
+      skipped.length
+        ? t('payment.reorder.partial', { count: entries.length, items: skipped.join(', ') })
+        : t('payment.reorder.done'),
       skipped.length ? 'info' : 'success',
     );
     navigate('/cart', { replace: true });
@@ -152,7 +152,7 @@ export default function PaymentPage() {
   if (isClosed) {
     return (
       <div className="min-h-dvh bg-cream">
-        <PageHeader title="Thanh toán" subtitle={`Đơn ${order.code}`} back fallback="/" />
+        <PageHeader title={t('payment.title')} subtitle={t('payment.orderSubtitle', { code: order.code })} back fallback="/" />
         <PaymentClosed
           order={order}
           expired={timedOut || isExpiryCancel(order)}
@@ -170,14 +170,14 @@ export default function PaymentPage() {
 
   return (
     <div className="min-h-dvh bg-cream pb-10">
-      <PageHeader title="Thanh toán" back fallback="/" tone="dark" className={DARK_HEADER_CLASS} />
+      <PageHeader title={t('payment.title')} back fallback="/" tone="dark" className={DARK_HEADER_CLASS} />
 
       {/* Hero tối: quầy espresso thật của quán dưới nắng chiều */}
       <section className="relative overflow-hidden bg-espresso-900 px-5 pb-24 pt-5 text-center text-cream">
         <img src={barPhoto} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover object-[70%_35%] opacity-60" />
         <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-espresso via-espresso-900/70 to-espresso-900" />
         <div className="relative">
-          <p className="text-[11px] font-semibold uppercase tracking-[.24em] text-gold-light">Mã đơn của bạn</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[.24em] text-gold-light">{t('payment.yourCode')}</p>
           <p className="mt-1.5 font-display text-[clamp(32px,11vw,44px)] font-extrabold leading-none tracking-tight drop-shadow-[0_2px_10px_rgba(0,0,0,.35)]">
             {order.code}
           </p>
@@ -185,14 +185,14 @@ export default function PaymentPage() {
             <StatusBadge status={order.status} />
             <span
               role="timer"
-              aria-label={`Mã hết hạn sau ${formatCountdown(remainingMs)}`}
+              aria-label={t('payment.expiresAria', { time: formatCountdown(remainingMs) })}
               className={cn(
                 'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 backdrop-blur',
                 lowTime ? 'bg-rattan/90 text-white ring-rattan-light' : 'bg-white/10 text-cream ring-white/15',
               )}
             >
               <Timer className="h-3.5 w-3.5" aria-hidden />
-              Hết hạn sau <span className="font-display tabular-nums">{formatCountdown(remainingMs)}</span>
+              {t('payment.expiresIn')} <span className="font-display tabular-nums">{formatCountdown(remainingMs)}</span>
             </span>
           </div>
         </div>
@@ -212,13 +212,13 @@ export default function PaymentPage() {
             {vietqr && (
               <Segmented<PayTab>
                 className="mb-5"
-                ariaLabel="Cách thanh toán"
+                ariaLabel={t('payment.tabsAria')}
                 value={tab}
                 onChange={setTabChoice}
                 options={[
-                  { value: 'pos', label: 'Quét tại quầy', icon: <QrIcon className="hidden h-4 w-4 min-[360px]:block" aria-hidden /> },
+                  { value: 'pos', label: t('payment.tabPos'), icon: <QrIcon className="hidden h-4 w-4 min-[360px]:block" aria-hidden /> },
                   // Nhãn ngắn (ẩn icon dưới 360px) để vừa màn hình hẹp; tiêu đề VietQR nằm trong nội dung tab
-                  { value: 'vietqr', label: 'Chuyển khoản', icon: <Landmark className="hidden h-4 w-4 min-[360px]:block" aria-hidden /> },
+                  { value: 'vietqr', label: t('payment.tabTransfer'), icon: <Landmark className="hidden h-4 w-4 min-[360px]:block" aria-hidden /> },
                 ]}
               />
             )}
@@ -233,20 +233,26 @@ export default function PaymentPage() {
                     level="Q"
                     margin={1}
                     className={QR_RESPONSIVE_CLASS}
-                    label={`Mã QR đơn hàng ${order.code} — đưa thu ngân quét để thanh toán`}
+                    label={t('payment.qrAria', { code: order.code })}
                   />
                 </QrFrame>
-                <p className="mt-4 text-center font-display text-lg font-bold tracking-tight text-espresso">Quét tại quầy POS để thanh toán</p>
+                <p className="mt-4 text-center font-display text-lg font-bold tracking-tight text-espresso">{t('payment.scanAtPos')}</p>
                 <p className="mt-1 text-center text-sm text-stone">
-                  Tổng thanh toán{' '}
+                  {t('payment.amountDue')}{' '}
                   <span className="font-display text-base font-extrabold tabular-nums text-espresso">{formatPrice(order.total)}</span>
                 </p>
+                {order.loyaltyRedeem && (
+                  <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-gold-soft px-3 py-1 text-xs font-semibold text-bronze-800 ring-1 ring-inset ring-gold/50">
+                    <Gift className="h-3.5 w-3.5 text-gold-dark" aria-hidden />
+                    {t('loyalty.redeemed')}
+                  </p>
+                )}
 
                 <PayAtCounterSteps className="mt-6 w-full" />
 
                 <p className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-gold-soft/70 px-3 py-1.5 text-xs font-medium text-bronze-800">
                   <Sun className="h-3.5 w-3.5 text-gold-dark" aria-hidden />
-                  Tăng độ sáng màn hình để quét nhanh hơn
+                  {t('payment.brightness')}
                 </p>
               </div>
             )}
@@ -261,7 +267,7 @@ export default function PaymentPage() {
             onClick={() => setConfirmCancel(true)}
             className="h-11 rounded-xl px-4 text-sm font-semibold text-rattan-dark underline-offset-4 transition hover:bg-rattan-soft/60 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
           >
-            Huỷ đơn
+            {t('payment.cancelOrder')}
           </button>
         </div>
 
@@ -272,10 +278,10 @@ export default function PaymentPage() {
 
       <ConfirmDialog
         open={confirmCancel}
-        title="Huỷ đơn này?"
-        description={`Mã QR của đơn ${order.code} sẽ không dùng được nữa. Bạn vẫn có thể đặt lại các món sau.`}
-        confirmText="Huỷ đơn"
-        cancelText="Giữ đơn"
+        title={t('payment.cancelConfirm.title')}
+        description={t('payment.cancelConfirm.body', { code: order.code })}
+        confirmText={t('payment.cancelConfirm.confirm')}
+        cancelText={t('payment.cancelConfirm.keep')}
         tone="danger"
         loading={cancelling}
         onConfirm={() => void cancel()}
@@ -287,9 +293,10 @@ export default function PaymentPage() {
 
 /** Khung chờ khi dữ liệu chưa sẵn sàng */
 function PaymentSkeleton() {
+  const { t } = useT();
   return (
-    <div className="min-h-dvh bg-cream" aria-busy="true" aria-label="Đang tải đơn hàng">
-      <PageHeader title="Thanh toán" back fallback="/" tone="dark" className={DARK_HEADER_CLASS} />
+    <div className="min-h-dvh bg-cream" aria-busy="true" aria-label={t('payment.loadingAria')}>
+      <PageHeader title={t('payment.title')} back fallback="/" tone="dark" className={DARK_HEADER_CLASS} />
       <div className="flex flex-col items-center bg-espresso-900 px-5 pb-24 pt-6">
         <div className="h-3 w-28 animate-pulse rounded-full bg-white/10" />
         <div className="mt-3 h-10 w-40 animate-pulse rounded-2xl bg-white/10" />

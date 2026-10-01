@@ -13,9 +13,12 @@ export function normalizeText(input: string): string {
     .trim();
 }
 
-/** Chuỗi đã chuẩn hoá của một món (tên + tên tiếng Anh + mô tả) — tính sẵn một lần */
-export function searchableText(item: Pick<MenuItem, 'name' | 'nameEn' | 'description'>): string {
-  return normalizeText([item.name, item.nameEn, item.description].filter(Boolean).join(' '));
+/**
+ * Chuỗi đã chuẩn hoá của một món (tên + mô tả, cả tiếng Việt lẫn tiếng Anh) — tính sẵn một lần.
+ * Tìm được bằng cả hai ngôn ngữ, bất kể đang chọn ngôn ngữ nào.
+ */
+export function searchableText(item: Pick<MenuItem, 'name' | 'nameEn' | 'description' | 'descriptionEn'>): string {
+  return normalizeText([item.name, item.nameEn, item.description, item.descriptionEn].filter(Boolean).join(' '));
 }
 
 /** Mọi từ trong truy vấn (đã chuẩn hoá) đều phải xuất hiện trong chuỗi tìm kiếm */

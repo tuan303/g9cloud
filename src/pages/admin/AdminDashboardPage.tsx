@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useDataReady, useOrders } from '@/hooks/data';
 import { useNow } from '@/hooks/useNow';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useT } from '@/i18n';
 import { startOfDay } from '@/lib/format';
 import { countByStatus, revenueByDay, todayKpis } from '@/lib/stats';
 import {
@@ -19,7 +20,8 @@ const PAGE = 'space-y-6 px-4 pb-4 pt-5 md:space-y-8 md:px-8';
 
 /** Tổng quan quản trị: KPI hôm nay, thanh toán QR trực tiếp, đơn đang xử lý, thống kê 7 ngày */
 export default function AdminDashboardPage() {
-  usePageTitle('Tổng quan');
+  const { t } = useT();
+  usePageTitle(t('nav.dashboard'));
   const ready = useDataReady();
   const orders = useOrders();
   // Làm mới số liệu theo thời gian (so sánh "cùng giờ hôm qua", sang ngày mới) mỗi 30 giây

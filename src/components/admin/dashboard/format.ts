@@ -1,12 +1,12 @@
-const WEEKDAY_FULL = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+import { getLocale } from '@/i18n';
+import { formatWeekdayLong } from '@/lib/format';
+
 const pad = (n: number) => String(n).padStart(2, '0');
 
-/** "Thứ Tư" */
-export function formatWeekdayLong(ts: number): string {
-  return WEEKDAY_FULL[new Date(ts).getDay()];
-}
+/** "Thứ Tư" / "Wednesday" — dùng chung bản theo ngôn ngữ trong lib/format */
+export { formatWeekdayLong };
 
-/** "Thứ Tư, 30/09/2026" */
+/** "Thứ Tư, 30/09/2026" / "Wednesday, 30/09/2026" */
 export function formatLongDate(ts: number): string {
   const d = new Date(ts);
   return `${formatWeekdayLong(ts)}, ${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
@@ -18,12 +18,16 @@ export function isoLocalDate(ts: number): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-const pct = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 });
+const pct = {
+  vi: new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }),
+  en: new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }),
+};
 
-/** 12.34 → "12%", 4.56 → "4,6%" (không dấu) */
+/** 12.34 → "12%", 4.56 → "4,6%" (tiếng Anh "4.6%") — không dấu */
 export function formatPercentAbs(value: number): string {
   const a = Math.abs(value);
-  return `${a >= 10 ? pct.format(Math.round(a)) : pct.format(a)}%`;
+  const f = pct[getLocale()];
+  return `${a >= 10 ? f.format(Math.round(a)) : f.format(a)}%`;
 }
 
 /** 754_000 ms → "12:34" */

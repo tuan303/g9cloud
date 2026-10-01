@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Bike, ChefHat, ChevronRight, CircleCheck, QrCode, ShoppingBag, type LucideIcon } from 'lucide-react';
 import { StatusBadge } from '@/components/ui';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 import { STATUS_META, statusSteps } from '@/lib/order-status';
 import type { Order, OrderStatus } from '@/types';
@@ -22,6 +23,7 @@ export function pickHighlightedOrder(orders: Order[]): Order | undefined {
 
 /** Thẻ "đơn đang xử lý" gọn dưới hero: mã đơn, trạng thái, tiến trình, nút Xem */
 export function ActiveOrderCard({ order, moreCount = 0, className }: { order: Order; moreCount?: number; className?: string }) {
+  const { t } = useT();
   const pending = order.status === 'pending_payment';
   const href = pending ? `/order/${order.id}/pay` : `/order/${order.id}`;
   const meta = STATUS_META[order.status];
@@ -46,7 +48,7 @@ export function ActiveOrderCard({ order, moreCount = 0, className }: { order: Or
         <span className="min-w-0 flex-1">
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className="font-display text-[15px] font-bold tabular-nums text-espresso">
-              <span className="sr-only">Đơn </span>
+              <span className="sr-only">{t('menu.activeOrder.orderSr')} </span>
               {order.code}
             </span>
             <StatusBadge status={order.status} />
@@ -59,7 +61,7 @@ export function ActiveOrderCard({ order, moreCount = 0, className }: { order: Or
           </span>
         </span>
         <span className="flex h-9 shrink-0 items-center gap-0.5 rounded-xl bg-espresso pl-3 pr-2 text-[13px] font-semibold text-cream">
-          Xem
+          {t('menu.activeOrder.view')}
           <ChevronRight className="h-4 w-4" aria-hidden />
         </span>
       </Link>
@@ -68,7 +70,7 @@ export function ActiveOrderCard({ order, moreCount = 0, className }: { order: Or
           to="/orders"
           className="mt-1 flex min-h-[44px] items-center justify-center gap-1 text-[13px] font-semibold text-bronze-700 hover:text-espresso"
         >
-          Còn {moreCount} đơn khác đang xử lý · Xem tất cả
+          {t('menu.activeOrder.more', { count: moreCount })}
           <ChevronRight className="h-4 w-4" aria-hidden />
         </Link>
       )}

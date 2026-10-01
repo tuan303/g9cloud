@@ -1,13 +1,15 @@
 import { useMemo, useState } from 'react';
 import { ChartColumn, ChartPie, Clock, Trophy } from 'lucide-react';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/cn';
-import { formatCompactPrice, formatDayMonth, formatPrice } from '@/lib/format';
+import { formatCompactPrice, formatDayMonth, formatPrice, formatWeekdayLong } from '@/lib/format';
+import { categoryName, lineName } from '@/lib/i18n-data';
 import { addDays, ordersByHour, revenueByCategory, topItems, type DayRevenue } from '@/lib/stats';
 import { MenuImage } from '@/components/ui';
 import { BarChart, DonutChart, HorizontalBars, type DonutSlice } from '@/components/admin/charts';
 import type { CategoryId, Order } from '@/types';
 import { ChartCard } from './ChartCard';
-import { formatWeekdayLong } from './format';
+import { Rich } from './Rich';
 
 /** Màu danh mục trên biểu đồ tròn — theo bảng màu quán */
 const CATEGORY_COLORS: Record<CategoryId, { stroke: string; dot: string }> = {
@@ -18,6 +20,7 @@ const CATEGORY_COLORS: Record<CategoryId, { stroke: string; dot: string }> = {
 
 /** Phần "Thống kê": doanh thu 7 ngày, cơ cấu danh mục, món bán chạy, lượng đơn theo giờ */
 export function StatsSection({ orders, week, now, className }: { orders: Order[]; week: DayRevenue[]; now: number; className?: string }) {
+  const { t } = useT();
   const todayStart = week[week.length - 1]?.dayStart ?? now;
   const since = week[0]?.dayStart ?? addDays(todayStart, -6);
 
@@ -38,10 +41,10 @@ export function StatsSection({ orders, week, now, className }: { orders: Order[]
 
   const slices: DonutSlice[] = categories.slices.map((c) => ({
     key: c.categoryId,
-    label: c.name,
+    label: categoryName(c.categoryId),
     value: c.revenue,
     share: c.share,
-    note: `${c.quantity} phần`,
+    note: t('adminDashboard.stats.categories.portions', { count: c.quantity }),
     strokeClass: CATEGORY_COLORS[c.categoryId].stroke,
     dotClass: CATEGORY_COLORS[c.categoryId].dot,
   }));
@@ -50,10 +53,10 @@ export function StatsSection({ orders, week, now, className }: { orders: Order[]
     <section aria-labelledby="stats-title" className={cn('space-y-3', className)}>
       <header className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-1">
         <h2 id="stats-title" className="font-display text-lg font-bold tracking-tight text-espresso">
-          Thống kê
+          {t('adminDashboard.stats.title')}
         </h2>
         <p className="text-xs text-stone">
-          7 ngày gần nhất · {formatDayMonth(since)} – {formatDayMonth(todayStart)}
+          {t('adminDashboard.stats.range', { from: formatDayMonth(since), to: formatDayMonth(todayStart) })}
         </p>
       </header>
 
@@ -62,64 +65,78 @@ export function StatsSection({ orders, week, now, className }: { orders: Order[]
         <ChartCard
           className="lg:col-span-2"
           icon={<ChartColumn className="h-[18px] w-[18px]" />}
-          title="Doanh thu 7 ngày"
+          title={t('adminDashboard.stats.week.title')}
           subtitle={
-            <>
-              Tổng <b className="font-semibold text-bronze-800">{formatPrice(weekTotal)}</b> · {weekOrders} đơn
-            </>
+            <Rich
+              text={t('adminDashboard.stats.week.subtitle', { amount: formatPrice(weekTotal), count: weekOrders })}
+              className="font-semibold text-bronze-800"
+            />
           }
         >
           {selDay && (
             <div aria-live="polite" className="mb-3 flex items-center justify-between gap-3 rounded-2xl bg-cream px-3.5 py-2.5">
               <span className="min-w-0 text-xs font-semibold text-bronze-700">
-                {selDay.isToday ? 'Hôm nay' : formatWeekdayLong(selDay.dayStart)} · {selDay.dayMonth}
+                {selDay.isToday ? t('adminDashboard.stats.today') : formatWeekdayLong(selDay.dayStart)} · {selDay.dayMonth}
               </span>
               <span className="shrink-0 text-right">
                 <span className="font-display text-base font-extrabold tabular-nums text-espresso">{formatPrice(selDay.revenue)}</span>
-                <span className="ml-1.5 text-xs text-stone">{selDay.orders} đơn</span>
+                <span className="ml-1.5 text-xs text-stone">{t('adminDashboard.stats.orders', { count: selDay.orders })}</span>
               </span>
             </div>
           )}
           <BarChart
-            title="Doanh thu 7 ngày gần nhất"
+            title={t('adminDashboard.stats.week.chartTitle')}
             height={200}
             data={week.map((d) => ({
               key: String(d.dayStart),
-              label: d.isToday ? 'Hôm nay' : d.weekday,
+              label: d.isToday ? t('adminDashboard.stats.today') : d.weekday,
               sublabel: d.dayMonth,
               value: d.revenue,
-              description: `${d.isToday ? 'Hôm nay' : formatWeekdayLong(d.dayStart)} ${d.dayMonth}: ${formatPrice(d.revenue)}, ${d.orders} đơn`,
+              description: t('adminDashboard.stats.week.barDesc', {
+                day: d.isToday ? t('adminDashboard.stats.today') : formatWeekdayLong(d.dayStart),
+                date: d.dayMonth,
+                amount: formatPrice(d.revenue),
+                count: d.orders,
+              }),
             }))}
             selectedIndex={selected}
             onSelect={setPicked}
-            emptyLabel="Chưa có doanh thu trong 7 ngày qua"
+            emptyLabel={t('adminDashboard.stats.week.empty')}
           />
-          <p className="mt-2 text-center text-[11px] text-stone">Chạm vào cột để xem chi tiết từng ngày</p>
+          <p className="mt-2 text-center text-[11px] text-stone">{t('adminDashboard.stats.week.hint')}</p>
         </ChartCard>
 
         {/* Cơ cấu doanh thu */}
-        <ChartCard icon={<ChartPie className="h-[18px] w-[18px]" />} title="Cơ cấu doanh thu" subtitle="Theo danh mục · 7 ngày">
+        <ChartCard
+          icon={<ChartPie className="h-[18px] w-[18px]" />}
+          title={t('adminDashboard.stats.categories.title')}
+          subtitle={t('adminDashboard.stats.categories.subtitle')}
+        >
           <DonutChart
-            title="Cơ cấu doanh thu theo danh mục, 7 ngày gần nhất"
+            title={t('adminDashboard.stats.categories.chartTitle')}
             slices={slices}
             centerValue={formatCompactPrice(categories.total)}
-            centerLabel="7 ngày"
+            centerLabel={t('adminDashboard.stats.categories.center')}
           />
         </ChartCard>
 
         {/* Món bán chạy */}
-        <ChartCard icon={<Trophy className="h-[18px] w-[18px]" />} title="Món bán chạy" subtitle="Top 5 · 7 ngày">
+        <ChartCard
+          icon={<Trophy className="h-[18px] w-[18px]" />}
+          title={t('adminDashboard.stats.top.title')}
+          subtitle={t('adminDashboard.stats.top.subtitle')}
+        >
           {top.length ? (
             <HorizontalBars
-              title="5 món bán chạy nhất 7 ngày gần nhất"
-              data={top.map((t) => ({
-                key: t.itemId,
-                label: t.name,
-                value: t.quantity,
-                valueLabel: String(t.quantity),
-                unit: 'phần',
-                secondary: formatPrice(t.revenue),
-                leading: <MenuImage image={t.image} alt="" categoryId={t.categoryId} className="h-10 w-10 shrink-0" rounded="rounded-xl" />,
+              title={t('adminDashboard.stats.top.chartTitle')}
+              data={top.map((item) => ({
+                key: item.itemId,
+                label: lineName(item),
+                value: item.quantity,
+                valueLabel: String(item.quantity),
+                unit: t('adminDashboard.stats.top.unit'),
+                secondary: formatPrice(item.revenue),
+                leading: <MenuImage image={item.image} alt="" categoryId={item.categoryId} className="h-10 w-10 shrink-0" rounded="rounded-xl" />,
               }))}
             />
           ) : (
@@ -127,8 +144,8 @@ export function StatsSection({ orders, week, now, className }: { orders: Order[]
               <span aria-hidden className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-bronze-100 text-bronze-500">
                 <Trophy className="h-6 w-6" />
               </span>
-              <p className="text-sm font-semibold text-espresso">Chưa có món nào được bán</p>
-              <p className="mt-0.5 text-xs text-stone">Bảng xếp hạng sẽ hiện khi có đơn đã thanh toán.</p>
+              <p className="text-sm font-semibold text-espresso">{t('adminDashboard.stats.top.emptyTitle')}</p>
+              <p className="mt-0.5 text-xs text-stone">{t('adminDashboard.stats.top.emptyBody')}</p>
             </div>
           )}
         </ChartCard>
@@ -137,30 +154,34 @@ export function StatsSection({ orders, week, now, className }: { orders: Order[]
         <ChartCard
           className="lg:col-span-2"
           icon={<Clock className="h-[18px] w-[18px]" />}
-          title="Lượng đơn theo giờ"
-          subtitle={`Hôm nay · ${todayOrders} đơn đã thanh toán`}
+          title={t('adminDashboard.stats.hours.title')}
+          subtitle={t('adminDashboard.stats.hours.subtitle', { count: todayOrders })}
         >
           {peak && (
             <p className="mb-3 flex flex-wrap items-center gap-2 text-xs text-stone">
               <span className="inline-flex items-center rounded-full bg-gold-soft px-2.5 py-1 font-semibold text-bronze-800 ring-1 ring-gold/50">
-                Cao điểm {peak.label} · {peak.orders} đơn
+                {t('adminDashboard.stats.hours.peak', { label: peak.label, count: peak.orders })}
               </span>
-              {hourIdx >= 0 && <span>Cột vàng là khung giờ hiện tại</span>}
+              {hourIdx >= 0 && <span>{t('adminDashboard.stats.hours.currentHint')}</span>}
             </p>
           )}
           <BarChart
-            title="Số đơn theo giờ hôm nay"
+            title={t('adminDashboard.stats.hours.chartTitle')}
             height={150}
             data={hours.map((h) => ({
               key: String(h.hour),
               label: h.label,
               value: h.orders,
-              description: `${h.hour}:00–${h.hour}:59: ${h.orders} đơn, ${formatPrice(h.revenue)}`,
+              description: t('adminDashboard.stats.hours.barDesc', {
+                range: `${h.hour}:00–${h.hour}:59`,
+                count: h.orders,
+                amount: formatPrice(h.revenue),
+              }),
             }))}
             formatValue={(v) => String(v)}
             showValues="nonzero"
             highlightIndex={hourIdx >= 0 ? hourIdx : null}
-            emptyLabel="Hôm nay chưa có đơn đã thanh toán"
+            emptyLabel={t('adminDashboard.stats.hours.empty')}
           />
         </ChartCard>
       </div>

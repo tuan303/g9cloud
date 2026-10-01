@@ -3,18 +3,21 @@ import { ChevronRight, GraduationCap, IdCard, MessageCircle, Pencil, Phone, Rece
 import interiorUrl from '@/assets/photos/interior-wall-sm.webp';
 import { cn } from '@/lib/cn';
 import { Badge } from '@/components/ui';
+import { useT } from '@/i18n';
 import type { AuthProvider, CustomerInfo } from '@/types';
 import { Avatar } from './Avatar';
 import { GUEST_NAME, formatPhoneDisplay } from './helpers';
 
-const PROVIDER: Record<AuthProvider, { label: string; icon: LucideIcon }> = {
-  microsoft: { label: 'Microsoft 365', icon: GraduationCap },
-  school_email: { label: 'Email trường', icon: GraduationCap },
-  zalo: { label: 'Zalo', icon: MessageCircle },
-  guest: { label: 'Khách', icon: UserRound },
+// Nhãn lấy từ onboarding.profileCard.provider.<provider>
+const PROVIDER_ICON: Record<AuthProvider, LucideIcon> = {
+  microsoft: GraduationCap,
+  school_email: GraduationCap,
+  zalo: MessageCircle,
+  guest: UserRound,
 };
 
 function InfoTile({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value?: string }) {
+  const { t } = useT();
   return (
     <div className="min-w-0 rounded-2xl bg-white/[0.06] px-3 py-2.5 ring-1 ring-inset ring-white/10">
       <dt className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-cream/65">
@@ -22,7 +25,7 @@ function InfoTile({ icon: Icon, label, value }: { icon: LucideIcon; label: strin
         {label}
       </dt>
       <dd className={cn('mt-1 truncate', value ? 'font-display text-[15px] font-bold tabular-nums' : 'text-sm text-cream/65')}>
-        {value || 'Chưa có'}
+        {value || t('onboarding.profileCard.empty')}
       </dd>
     </div>
   );
@@ -42,12 +45,12 @@ export function AccountProfileCard({
   activeCount: number;
   loading: boolean;
 }) {
+  const { t } = useT();
   const unnamed = user.isGuest && (!user.name.trim() || user.name === GUEST_NAME);
-  const provider = PROVIDER[user.authProvider];
-  const ProviderIcon = provider.icon;
+  const ProviderIcon = PROVIDER_ICON[user.authProvider];
 
   return (
-    <section aria-label="Thông tin tài khoản" className="relative overflow-hidden rounded-[28px] bg-espresso text-cream shadow-lift">
+    <section aria-label={t('onboarding.profileCard.aria')} className="relative overflow-hidden rounded-[28px] bg-espresso text-cream shadow-lift">
       <img src={interiorUrl} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover opacity-20" />
       <div aria-hidden className="absolute inset-0 bg-gradient-to-br from-espresso-900/30 via-espresso/85 to-espresso-900" />
       <div aria-hidden className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-gold/25 blur-3xl" />
@@ -68,31 +71,31 @@ export function AccountProfileCard({
             )}
           >
             <Pencil className="h-4 w-4" aria-hidden />
-            Chỉnh sửa
+            {t('onboarding.profileCard.edit')}
           </button>
         </div>
 
         <h2 className="mt-4 break-words font-display text-[22px] font-extrabold leading-tight tracking-tight">
-          {unnamed ? 'Xin chào bạn!' : user.name}
+          {unnamed ? t('onboarding.profileCard.hello') : user.name}
         </h2>
         <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1.5">
           {user.email && <span className="min-w-0 max-w-full truncate text-sm text-cream/75">{user.email}</span>}
           {user.isGuest ? (
             <Badge className="bg-gold text-espresso">
               <UserRound className="h-3 w-3" aria-hidden />
-              Khách
+              {t('onboarding.profileCard.provider.guest')}
             </Badge>
           ) : (
             <Badge className="bg-white/10 text-gold-light ring-1 ring-inset ring-white/10">
               <ProviderIcon className="h-3 w-3" aria-hidden />
-              {provider.label}
+              {t(`onboarding.profileCard.provider.${user.authProvider}`)}
             </Badge>
           )}
         </div>
 
         <dl className="mt-4 grid grid-cols-2 gap-2">
-          <InfoTile icon={Phone} label="Điện thoại" value={user.phone ? formatPhoneDisplay(user.phone) : undefined} />
-          <InfoTile icon={IdCard} label="Mã HS / NV" value={user.studentId} />
+          <InfoTile icon={Phone} label={t('onboarding.profileCard.phone')} value={user.phone ? formatPhoneDisplay(user.phone) : undefined} />
+          <InfoTile icon={IdCard} label={t('onboarding.profileCard.studentId')} value={user.studentId} />
         </dl>
 
         <div className="mt-4 border-t border-white/10 pt-2">
@@ -104,19 +107,21 @@ export function AccountProfileCard({
             <ReceiptText className="h-5 w-5 shrink-0 text-gold" aria-hidden />
             <span className="min-w-0 flex-1 text-sm text-cream/80">
               {loading ? (
-                <span className="block h-4 w-40 animate-pulse rounded-full bg-white/10" aria-label="Đang tải đơn hàng" />
+                <span className="block h-4 w-40 animate-pulse rounded-full bg-white/10" aria-label={t('onboarding.profileCard.loadingOrders')} />
               ) : orderCount ? (
                 <>
-                  <b className="font-display text-base text-cream">{orderCount}</b> đơn đã đặt
+                  <b className="font-display text-base text-cream">{orderCount}</b>{' '}
+                  {t('onboarding.profileCard.ordersPlaced', { count: orderCount })}
                   {activeCount > 0 && (
                     <>
                       {' · '}
-                      <b className="font-display text-base text-gold">{activeCount}</b> đang xử lý
+                      <b className="font-display text-base text-gold">{activeCount}</b>{' '}
+                      {t('onboarding.profileCard.ordersActive', { count: activeCount })}
                     </>
                   )}
                 </>
               ) : (
-                'Chưa có đơn nào — gọi món ngay'
+                t('onboarding.profileCard.noOrders')
               )}
             </span>
             <ChevronRight className="h-5 w-5 shrink-0 text-cream/60" aria-hidden />

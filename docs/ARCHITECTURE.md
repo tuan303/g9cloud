@@ -100,3 +100,26 @@ Chủ đề: **“Golden hour ở Cloud 9”** — tường vữa nâu đồng, 
 - Trang khách có tab bar đã được `CustomerLayout` chừa chỗ (`pb-tabbar`). Phần tử cố định phía dưới (thanh giỏ hàng) dùng `fixed inset-x-0 mx-auto max-w-md bottom-tabbar` để nằm trên tab bar. Trang không có tab bar (giỏ hàng, thanh toán, trạng thái đơn) tự thêm footer `fixed bottom-0 ... safe-bottom`.
 - Luôn xử lý: đang tải (`useDataReady`), không tìm thấy, danh sách rỗng, lỗi (toast).
 - Accessibility: `aria-label` cho nút icon, `role`/`aria-selected` cho tab, tương phản đủ.
+
+## Song ngữ Tiếng Việt / English (i18n) — BẮT BUỘC cho mọi chữ hiển thị
+
+- Thư viện tự viết trong `src/i18n` (không dùng package ngoài). Ngôn ngữ lưu ở `useLocale` (persist `c9.locale.v1`), mặc định theo ngôn ngữ trình duyệt.
+- Trong component: `const { t, locale } = useT();` rồi `t('cart.title')`, có biến: `t('cart.items', { count: 3 })` (chuỗi có `{count}`). Ngoài React (store, service, toast): `translate('errors.cartEmpty')`.
+- **Khai báo chữ**: tiếng Việt (bản gốc) ở `src/i18n/locales/vi/<nhóm>.ts`, tiếng Anh ở `src/i18n/locales/en/<nhóm>.ts` cùng cấu trúc (kiểu `MessageShape` — TypeScript báo lỗi nếu thiếu/thừa khoá). Khoá có dạng `<nhóm>.<khoá>` hoặc lồng nhau `<nhóm>.<phần>.<khoá>`.
+- **Số nhiều tiếng Anh**: trong file en dùng `{ one: '1 item', other: '{count} items' }` (biến phải tên `count`); file vi để chuỗi thường.
+- Nhóm dùng chung đã có (xem `locales/vi/core.ts`): `common`, `lang`, `nav`, `ui`, `notFound`, `connection`, `fulfillment`, `totals`, `status`, `notify`, `errors`, `time`, `loyalty`. Dùng lại khoá có sẵn (VD `common.cancel`, `common.save`, `totals.total`) thay vì tạo trùng.
+- **Dữ liệu song ngữ** (món, tuỳ chọn, danh mục, dòng đơn): dùng `itemName(item)`, `itemDescription(item)`, `groupName(g)`, `choiceName(c)`, `categoryName(id)`, `lineName(line)` trong `src/lib/i18n-data.ts`; `CATEGORIES[i].name` tự đổi theo ngôn ngữ; `optionsSummary()` tự dịch. Thông tin quán: `pick(APP_CONFIG.shop.openingHours, APP_CONFIG.shop.openingHoursEn)` (`pick` từ `@/i18n`).
+- Định dạng đã tự theo ngôn ngữ: `formatPrice`, `formatCompactPrice`, `formatWeekday`, `formatWeekdayLong`, `formatRelative`; `STATUS_META[s].label/description`, `stepLabel`, `nextActionLabel`, `notificationFor` cũng tự dịch.
+- Đổi ngôn ngữ sẽ vẽ lại toàn bộ trang (Root dùng `key={locale}`), nên không cần lo chữ bị “kẹt”.
+- Nút chọn ngôn ngữ: `<LanguageSwitch tone="light|dark" />` từ `@/components/ui`.
+- Tiếng Anh: tự nhiên, ngắn gọn, thân thiện (café trong trường quốc tế); giữ tên riêng (Cloud 9, Microsoft 365, Bạc xỉu có nameEn sẵn…). `aria-label`, `title`, placeholder, toast, thông báo lỗi đều phải dịch.
+- Ghi chú/comment trong code vẫn viết tiếng Việt như cũ.
+
+## Tích điểm: mua 20 cốc tặng 1 cốc
+
+- Cấu hình `APP_CONFIG.loyalty` (`cupsPerReward: 20`, danh mục tính “cốc”: cà phê + nước uống). Chỉ khách có tài khoản (Microsoft 365 / email demo) tích điểm; khách vãng lai không.
+- Thẻ `LoyaltyAccount { stamps, totalCups, rewardsRedeemed }` lưu ở `loyalty/{customer.id}` (Firestore) / `c9.loyalty.v1` (local). **Chỉ thu ngân** cập nhật thẻ, trong cùng giao dịch xác nhận thanh toán (`applyLoyaltyOnPayment`): cộng số cốc nước của đơn (cốc miễn phí không tính), trừ 20 nếu đơn đổi thưởng (không đủ điểm → báo lỗi, không thu). Huỷ đơn đã thanh toán → hoàn điểm (`reverseLoyalty`).
+- Đổi thưởng: khách bật “Dùng 1 cốc miễn phí” ở giỏ → `repo.createOrder({ ..., redeemReward: true })` → `order.discount` = giá 1 cốc nước đắt nhất (`rewardDiscount`), `order.loyaltyRedeem = true`. Sau khi thanh toán, `order.loyaltyEarned` = số cốc được cộng.
+- Giao diện: `useLoyalty()` (`src/hooks/loyalty.ts`) → `{ enabled, member, stamps, progress, toNext, rewardsAvailable (đã trừ đơn đổi thưởng đang chờ), cupsPerReward, totalCups, pendingRedeemCodes }`; `useRewardLine(lines)` → dòng sẽ được miễn phí. Component `<LoyaltyCard variant="full|compact" onSignIn? signingIn? />` ở `@/components/loyalty/LoyaltyCard`. `repo.getLoyalty(customerId)` cho thu ngân xem điểm của khách.
+- `OrderTotals` nhận `discount` + `loyaltyRedeem` để ghi “Cốc miễn phí (tích điểm)”.
+- Hết hạn thanh toán: dùng `isExpiryCancel(order)` và `expiredReason()` từ `@/services/order-logic` (không so chuỗi tiếng Việt cố định).

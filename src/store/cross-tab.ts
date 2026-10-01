@@ -1,3 +1,4 @@
+import { useLocale } from '@/i18n';
 import { useCart } from './cart';
 import { useNotifications } from './notifications';
 import { useSession } from './session';
@@ -12,6 +13,7 @@ export function startCrossTabSync() {
     'c9.session.v1': useSession,
     'c9.cart.v1': useCart,
     'c9.notifications.v1': useNotifications,
+    'c9.locale.v1': useLocale,
   } as const;
   window.addEventListener('storage', (e) => {
     if (e.key && e.key in stores) void stores[e.key as keyof typeof stores].persist.rehydrate();

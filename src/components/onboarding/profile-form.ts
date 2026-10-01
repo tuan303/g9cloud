@@ -1,7 +1,9 @@
 import { useCallback, useState } from 'react';
 import { APP_CONFIG } from '@/config/app';
+import { translate } from '@/i18n';
 import { isValidEmail, isValidVnPhone, normalizePhone } from '@/lib/format';
 import type { AuthProvider, CustomerInfo } from '@/types';
+import { useDraftState } from '@/hooks/useDraftState';
 
 export interface ProfileValues {
   email: string;
@@ -59,8 +61,12 @@ const DOMAINS = APP_CONFIG.auth.schoolEmailDomains
   .filter(Boolean);
 const DOMAIN_LIST = DOMAINS.map((d) => `@${d}`).join(', ');
 
-export const schoolDomainHint = DOMAINS.length ? `Chỉ nhận email trường (${DOMAIN_LIST})` : undefined;
-export const schoolEmailPlaceholder = `ten.ban@${DOMAINS[0] ?? 'truong.edu.vn'}`;
+/** Gợi ý dưới ô email (theo ngôn ngữ đang chọn) — undefined khi không giới hạn tên miền */
+export const schoolDomainHint = (): string | undefined =>
+  DOMAINS.length ? translate('onboarding.fields.emailDomainHint', { domains: DOMAIN_LIST }) : undefined;
+/** Placeholder ô email, VD "ten.ban@truong.edu.vn" / "your.name@school.edu.vn" */
+export const schoolEmailPlaceholder = (): string =>
+  `${translate('onboarding.fields.emailPlaceholderUser')}@${DOMAINS[0] ?? translate('onboarding.fields.emailPlaceholderDomain')}`;
 
 export function matchesSchoolDomain(email: string): boolean {
   if (!DOMAINS.length) return true;
@@ -76,23 +82,23 @@ export function validateField(field: ProfileField, raw: string, rules: ProfileRu
   switch (field) {
     case 'email':
       if (rules.email !== 'required') return undefined;
-      if (!v) return 'Vui lòng nhập email trường';
-      if (!isValidEmail(v)) return 'Email chưa đúng định dạng';
-      if (!matchesSchoolDomain(v)) return `Vui lòng dùng email trường (${DOMAIN_LIST})`;
+      if (!v) return translate('onboarding.validation.emailRequired');
+      if (!isValidEmail(v)) return translate('onboarding.validation.emailInvalid');
+      if (!matchesSchoolDomain(v)) return translate('onboarding.validation.emailDomain', { domains: DOMAIN_LIST });
       return undefined;
     case 'name':
-      if (!v) return rules.name === 'required' ? 'Vui lòng nhập họ và tên' : undefined;
-      if (v.length < 2) return 'Tên cần ít nhất 2 ký tự';
-      if (v.length > 60) return 'Tên tối đa 60 ký tự';
+      if (!v) return rules.name === 'required' ? translate('onboarding.validation.nameRequired') : undefined;
+      if (v.length < 2) return translate('onboarding.validation.nameTooShort');
+      if (v.length > 60) return translate('onboarding.validation.nameTooLong');
       return undefined;
     case 'phone':
-      if (!v) return rules.phone === 'required' ? 'Vui lòng nhập số điện thoại' : undefined;
-      if (!isValidVnPhone(v)) return 'Số điện thoại chưa đúng, VD: 0912 345 678';
+      if (!v) return rules.phone === 'required' ? translate('onboarding.validation.phoneRequired') : undefined;
+      if (!isValidVnPhone(v)) return translate('onboarding.validation.phoneInvalid');
       return undefined;
     case 'studentId':
       if (rules.studentId === 'hidden' || !v) return undefined;
-      if (v.length > 20) return 'Mã tối đa 20 ký tự';
-      if (!/^[A-Za-z0-9._-]+$/.test(v)) return 'Mã chỉ gồm chữ không dấu, số, dấu chấm hoặc gạch';
+      if (v.length > 20) return translate('onboarding.validation.idTooLong');
+      if (!/^[A-Za-z0-9._-]+$/.test(v)) return translate('onboarding.validation.idChars');
       return undefined;
   }
 }
@@ -110,8 +116,9 @@ export function toProfileData(values: ProfileValues, rules: ProfileRules): Profi
  * Trạng thái form hồ sơ. Lỗi chỉ hiện khi rời ô (nếu đã nhập) hoặc khi gửi form,
  * và được xoá ngay khi người dùng sửa lại ô đó — không “la mắng” khi đang gõ.
  */
-export function useProfileForm(initial: ProfileValues) {
-  const [values, setValues] = useState<ProfileValues>(initial);
+export function useProfileForm(initial: ProfileValues, draftKey: string | null = null) {
+  // draftKey: giữ nội dung đang gõ khi đổi ngôn ngữ (trang được dựng lại)
+  const [values, setValues] = useDraftState<ProfileValues>(draftKey, initial);
   const [errors, setErrors] = useState<ProfileErrors>({});
 
   const setField = useCallback((field: ProfileField, value: string) => {

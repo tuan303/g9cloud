@@ -1,3 +1,4 @@
+import { useT } from '@/i18n';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
@@ -9,8 +10,8 @@ export function ConfirmDialog({
   open,
   title,
   description,
-  confirmText = 'Đồng ý',
-  cancelText = 'Để sau',
+  confirmText,
+  cancelText,
   tone = 'primary',
   loading,
   onConfirm,
@@ -28,6 +29,7 @@ export function ConfirmDialog({
   onCancel: () => void;
   children?: ReactNode;
 }) {
+  const { t } = useT();
   const cancelRef = useRef(onCancel);
   cancelRef.current = onCancel;
   const confirmRef = useRef<HTMLButtonElement>(null);
@@ -62,7 +64,7 @@ export function ConfirmDialog({
         {children}
         <div className="mt-6 flex gap-3">
           <Button variant="outline" block onClick={onCancel}>
-            {cancelText}
+            {cancelText ?? t('common.later')}
           </Button>
           <Button
             ref={confirmRef}
@@ -72,7 +74,7 @@ export function ConfirmDialog({
             loading={loading}
             onClick={onConfirm}
           >
-            {confirmText}
+            {confirmText ?? t('common.confirm')}
           </Button>
         </div>
       </div>

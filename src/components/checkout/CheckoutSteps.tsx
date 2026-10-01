@@ -1,19 +1,22 @@
 import { Fragment } from 'react';
 import { Check } from 'lucide-react';
+import { useT, type MessageKey } from '@/i18n';
 import { cn } from '@/lib/cn';
 
-const STEPS = ['Giỏ hàng', 'Quét mã QR', 'Nhận món'];
+const STEPS: MessageKey[] = ['cart.steps.cart', 'cart.steps.scan', 'cart.steps.collect'];
 
 /** Chỉ báo 3 bước đặt món: giúp khách hiểu ngay luồng "tạo mã QR → thu ngân quét → nhận món" */
 export function CheckoutSteps({ current, className }: { current: 1 | 2 | 3; className?: string }) {
+  const { t } = useT();
   return (
-    <ol aria-label="Các bước đặt món" className={cn('flex items-center gap-2 px-1', className)}>
-      {STEPS.map((label, i) => {
+    <ol aria-label={t('cart.steps.aria')} className={cn('flex items-center gap-2 px-1', className)}>
+      {STEPS.map((key, i) => {
+        const label = t(key);
         const step = i + 1;
         const done = step < current;
         const active = step === current;
         return (
-          <Fragment key={label}>
+          <Fragment key={key}>
             {i > 0 && <li aria-hidden className={cn('h-px min-w-3 flex-1', done || active ? 'bg-gold' : 'bg-bronze-200')} />}
             <li aria-current={active ? 'step' : undefined} className="flex shrink-0 items-center gap-1.5">
               <span

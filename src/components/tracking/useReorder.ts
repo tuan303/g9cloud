@@ -1,6 +1,8 @@
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMenu } from '@/hooks/data';
+import { useT } from '@/i18n';
+import { lineName } from '@/lib/i18n-data';
 import { defaultSelections, toSelectedOptions } from '@/lib/pricing';
 import { useCart } from '@/store/cart';
 import { toast } from '@/store/ui';
@@ -30,6 +32,7 @@ export function useReorder() {
   const add = useCart((s) => s.add);
   const setNote = useCart((s) => s.setNote);
   const navigate = useNavigate();
+  const { t } = useT();
 
   return useCallback(
     (order: Pick<Order, 'items' | 'note'>) => {
@@ -38,7 +41,7 @@ export function useReorder() {
       for (const line of order.items) {
         const item = menu.find((m) => m.id === line.itemId);
         if (!item || !item.available) {
-          unavailable.push(line.name);
+          unavailable.push(lineName(line));
           continue;
         }
         add(item, rebuildOptions(item, line.options), line.quantity, line.note);
@@ -46,20 +49,20 @@ export function useReorder() {
       }
 
       if (!added) {
-        toast('Các món trong đơn này hiện đã hết — mời bạn chọn món khác nhé', 'error');
+        toast(t('orders.reorder.allUnavailable'), 'error');
         navigate('/');
         return;
       }
       if (order.note && !useCart.getState().note.trim()) setNote(order.note);
 
       if (unavailable.length) {
-        const missing = unavailable.length === 1 ? unavailable[0] : `${unavailable.length} món`;
-        toast(`Đã thêm ${added} món vào giỏ · ${missing} tạm hết`, 'info');
+        const missing = unavailable.length === 1 ? unavailable[0] : t('orders.reorder.missingCount', { count: unavailable.length });
+        toast(t('orders.reorder.addedPartial', { count: added, missing }), 'info');
       } else {
-        toast(`Đã thêm ${added} món vào giỏ`, 'success');
+        toast(t('orders.reorder.added', { count: added }), 'success');
       }
       navigate('/cart');
     },
-    [menu, add, setNote, navigate],
+    [menu, add, setNote, navigate, t],
   );
 }

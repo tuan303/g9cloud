@@ -1,13 +1,19 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Phone, Plus, QrCode, ShoppingBag, Trash, TriangleAlert, User } from 'lucide-react';
+import { Coffee, Gift, Phone, Plus, QrCode, ShoppingBag, Trash, TriangleAlert, User } from 'lucide-react';
 import { APP_CONFIG } from '@/config/app';
+import { useDraftState } from '@/hooks/useDraftState';
 import { useDataReady, useMenu } from '@/hooks/data';
+import { useLoyalty, useRewardLine } from '@/hooks/loyalty';
 import { useAction } from '@/hooks/useAction';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useT } from '@/i18n';
+import { cn } from '@/lib/cn';
 import { formatPrice, isValidVnPhone, normalizePhone } from '@/lib/format';
+import { lineName } from '@/lib/i18n-data';
 import { cartTotals } from '@/lib/pricing';
 import { repo } from '@/services';
+import { eligibleCups, rewardDiscount } from '@/services/order-logic';
 import { useCart } from '@/store/cart';
 import { useSession } from '@/store/session';
 import { toast } from '@/store/ui';
@@ -20,7 +26,7 @@ import { CheckoutSteps } from '@/components/checkout/CheckoutSteps';
 import { PaymentMethodPicker } from '@/components/checkout/PaymentMethodPicker';
 import { PendingOrderLink } from '@/components/checkout/PendingOrderLink';
 import { GUEST_NAME } from '@/components/onboarding/helpers';
-import type { CreateOrderInput, PaymentMethod } from '@/types';
+import type { CartLine, CreateOrderInput, PaymentMethod } from '@/types';
 
 type Field = 'address' | 'name' | 'phone';
 
@@ -32,7 +38,8 @@ function focusField(el: HTMLElement | null | undefined) {
 }
 
 export default function CartPage() {
-  usePageTitle('Giỏ hàng');
+  const { t } = useT();
+  usePageTitle(t('cart.title'));
   const navigate = useNavigate();
   const ready = useDataReady();
   const menu = useMenu();
@@ -52,13 +59,15 @@ export default function CartPage() {
   const updateProfile = useSession((s) => s.updateProfile);
 
   // Khách vãng lai chưa nhập tên thì phiên lưu 'Khách' — không coi đó là tên người nhận
-  const [name, setName] = useState(user && !(user.isGuest && user.name === GUEST_NAME) ? user.name : '');
-  const [phone, setPhone] = useState(user?.phone ?? '');
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(APP_CONFIG.payment.defaultMethod);
+  // Giữ nội dung đang nhập khi khách đổi ngôn ngữ (trang được dựng lại)
+  const [name, setName] = useDraftState('cart.name', () => (user && !(user.isGuest && user.name === GUEST_NAME) ? user.name : ''));
+  const [phone, setPhone] = useDraftState('cart.phone', user?.phone ?? '');
+  const [paymentMethod, setPaymentMethod] = useDraftState<PaymentMethod>('cart.payment', APP_CONFIG.payment.defaultMethod);
   const [touched, setTouched] = useState<Partial<Record<Field, boolean>>>({});
   const [submitted, setSubmitted] = useState(false);
   const [editingLineId, setEditingLineId] = useState<string | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [rewardOn, setRewardOn] = useDraftState('cart.reward', false);
 
   const fulfillmentRef = useRef<HTMLDivElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
@@ -93,17 +102,27 @@ export default function CartPage() {
   const totals = cartTotals(lines, isDelivery ? delivery.fee : 0);
   const shortOfMin = isDelivery && delivery.minOrder > 0 ? Math.max(0, delivery.minOrder - totals.subtotal) : 0;
 
+  // ── Tích điểm: đổi 1 cốc miễn phí (cốc nước đắt nhất trong giỏ) ──
+  const loyalty = useLoyalty();
+  const rewardItem = useRewardLine(lines);
+  const canRedeem = loyalty.member && loyalty.rewardsAvailable > 0;
+  const hasEligible = !!rewardItem;
+  const redeem = rewardOn && canRedeem && hasEligible;
+  // Hết cốc miễn phí (VD vừa dùng ở đơn khác) hoặc giỏ không còn món nước → tắt lựa chọn
+  useEffect(() => {
+    if (!canRedeem || !hasEligible) setRewardOn(false);
+  }, [canRedeem, hasEligible]);
+  const discount = redeem ? rewardDiscount(lines) : 0;
+  const grandTotal = totals.subtotal + totals.deliveryFee - discount;
+  const cupsEarned = loyalty.member ? Math.max(0, eligibleCups(lines) - (redeem ? 1 : 0)) : 0;
+
   const errors: Partial<Record<Field, string>> = {
-    address: isDelivery && !deliveryAddress.trim() ? 'Vui lòng nhập nơi giao (lớp / phòng ban)' : undefined,
-    name: !name.trim() ? 'Vui lòng nhập tên người nhận' : undefined,
-    phone: !phone.trim()
-      ? 'Vui lòng nhập số điện thoại'
-      : !isValidVnPhone(phone)
-        ? 'Số điện thoại chưa đúng (VD: 0912 345 678)'
-        : undefined,
+    address: isDelivery && !deliveryAddress.trim() ? t('cart.errors.address') : undefined,
+    name: !name.trim() ? t('cart.errors.name') : undefined,
+    phone: !phone.trim() ? t('cart.errors.phone') : !isValidVnPhone(phone) ? t('cart.errors.phoneInvalid') : undefined,
   };
   const errorOf = (f: Field) => (submitted || touched[f] ? errors[f] : undefined);
-  const touch = (f: Field) => setTouched((t) => (t[f] ? t : { ...t, [f]: true }));
+  const touch = (f: Field) => setTouched((prev) => (prev[f] ? prev : { ...prev, [f]: true }));
 
   const editingLine = editingLineId ? lines.find((l) => l.lineId === editingLineId) : undefined;
   const editingItem = editingLine ? (menuById.get(editingLine.itemId) ?? null) : null;
@@ -123,13 +142,13 @@ export default function CartPage() {
       return;
     }
     if (unavailableIds.size) {
-      toast('Vui lòng xoá món đã hết trước khi đặt', 'error');
+      toast(t('cart.unavailable.toast'), 'error');
       warningRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
     if (errors.address) return focusField(fulfillmentRef.current?.querySelector('input'));
     if (shortOfMin > 0) {
-      toast(`Thêm ${formatPrice(shortOfMin)} nữa để được giao tận nơi`, 'error');
+      toast(t('cart.minOrder.short', { amount: formatPrice(shortOfMin) }), 'error');
       fulfillmentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
@@ -149,6 +168,7 @@ export default function CartPage() {
       note: note.trim() || undefined,
       lines,
       paymentMethod,
+      redeemReward: redeem || undefined,
     });
     submittingRef.current = false;
     if (!order) return;
@@ -160,15 +180,15 @@ export default function CartPage() {
   if (!lines.length) {
     return (
       <div className="min-h-dvh bg-cream">
-        <PageHeader title="Giỏ hàng" back fallback="/" />
+        <PageHeader title={t('cart.title')} back fallback="/" />
         <EmptyState
           className="pt-16"
           icon={<ShoppingBag className="h-9 w-9" />}
-          title="Giỏ hàng đang trống"
-          description="Chọn vài món ngon ở Cloud 9 rồi quay lại đây nhé."
+          title={t('cart.empty.title')}
+          description={t('cart.empty.body')}
           action={
             <Button size="lg" onClick={() => navigate('/')}>
-              Xem thực đơn
+              {t('cart.empty.cta')}
             </Button>
           }
         />
@@ -178,20 +198,20 @@ export default function CartPage() {
   }
 
   const blockMessage = unavailableIds.size
-    ? `${unavailableIds.size} món đã hết — xoá khỏi giỏ để tiếp tục`
+    ? t('cart.unavailable.block', { count: unavailableIds.size })
     : shortOfMin > 0
-      ? `Thêm ${formatPrice(shortOfMin)} nữa để được giao tận nơi`
+      ? t('cart.minOrder.short', { amount: formatPrice(shortOfMin) })
       : null;
 
   return (
     <div className="min-h-dvh bg-cream" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 156px)' }}>
       <PageHeader
-        title="Giỏ hàng"
-        subtitle={`${totals.itemCount} món`}
+        title={t('cart.title')}
+        subtitle={t('cart.itemCount', { count: totals.itemCount })}
         back
         fallback="/"
         right={
-          <IconButton label="Xoá toàn bộ giỏ hàng" onClick={() => setConfirmClear(true)}>
+          <IconButton label={t('cart.clearAria')} onClick={() => setConfirmClear(true)}>
             <Trash className="h-5 w-5" />
           </IconButton>
         }
@@ -202,7 +222,7 @@ export default function CartPage() {
 
         {/* ── Món đã chọn ── */}
         <section>
-          <SectionTitle title="Món đã chọn" />
+          <SectionTitle title={t('cart.sections.items')} />
 
           {unavailableIds.size > 0 && (
             <div
@@ -212,11 +232,11 @@ export default function CartPage() {
             >
               <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-rattan-dark" aria-hidden />
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-rattan-dark">{unavailableIds.size} món vừa tạm hết</p>
-                <p className="mt-0.5 text-xs leading-snug text-rattan-dark/80">Quán vừa cập nhật thực đơn. Xoá các món này để tiếp tục đặt hàng.</p>
+                <p className="text-sm font-semibold text-rattan-dark">{t('cart.unavailable.title', { count: unavailableIds.size })}</p>
+                <p className="mt-0.5 text-xs leading-snug text-rattan-dark/80">{t('cart.unavailable.body')}</p>
               </div>
               <Button size="sm" variant="danger" onClick={removeUnavailable} className="shrink-0">
-                Xoá hết
+                {t('cart.unavailable.removeAll')}
               </Button>
             </div>
           )}
@@ -239,14 +259,14 @@ export default function CartPage() {
               className="flex h-12 items-center justify-center gap-2 border-t border-dashed border-bronze-200 text-sm font-semibold text-bronze-700 transition hover:bg-bronze-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-gold"
             >
               <Plus className="h-4 w-4" aria-hidden />
-              Thêm món khác
+              {t('cart.addMore')}
             </Link>
           </Card>
         </section>
 
         {/* ── Hình thức nhận ── */}
         <section>
-          <SectionTitle title="Hình thức nhận" />
+          <SectionTitle title={t('cart.sections.fulfillment')} />
           <div ref={fulfillmentRef}>
             <FulfillmentPicker
               value={fulfillment}
@@ -261,7 +281,7 @@ export default function CartPage() {
             {shortOfMin > 0 && (
               <p className="mt-2.5 flex items-start gap-1.5 px-1 text-xs font-medium text-rattan-dark">
                 <TriangleAlert className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden />
-                Giao tận nơi áp dụng cho đơn từ {formatPrice(delivery.minOrder)} — thêm {formatPrice(shortOfMin)} nữa nhé.
+                {t('cart.minOrder.hint', { min: formatPrice(delivery.minOrder), amount: formatPrice(shortOfMin) })}
               </p>
             )}
           </div>
@@ -269,14 +289,14 @@ export default function CartPage() {
 
         {/* ── Người nhận ── */}
         <section>
-          <SectionTitle title="Thông tin người nhận" />
+          <SectionTitle title={t('cart.sections.recipient')} />
           <Card className="space-y-4 p-4">
             <Input
               ref={nameRef}
-              label="Tên người nhận"
+              label={t('cart.form.name')}
               required
               icon={<User className="h-[18px] w-[18px]" />}
-              placeholder="VD: Nguyễn Minh Anh"
+              placeholder={t('cart.form.namePlaceholder')}
               autoComplete="name"
               enterKeyHint="next"
               maxLength={60}
@@ -287,7 +307,7 @@ export default function CartPage() {
             />
             <Input
               ref={phoneRef}
-              label="Số điện thoại"
+              label={t('cart.form.phone')}
               required
               type="tel"
               inputMode="tel"
@@ -295,44 +315,72 @@ export default function CartPage() {
               enterKeyHint="done"
               maxLength={15}
               icon={<Phone className="h-[18px] w-[18px]" />}
-              placeholder="VD: 0912 345 678"
+              placeholder={t('cart.form.phonePlaceholder')}
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               onBlur={() => touch('phone')}
               error={errorOf('phone')}
-              hint="Quán liên hệ số này khi cần xác nhận đơn"
+              hint={t('cart.form.phoneHint')}
             />
           </Card>
         </section>
 
         {/* ── Ghi chú ── */}
         <section>
-          <SectionTitle title="Ghi chú đơn hàng" />
+          <SectionTitle title={t('cart.sections.note')} />
           <TextArea
-            aria-label="Ghi chú đơn hàng"
+            aria-label={t('cart.sections.note')}
             rows={2}
             maxLength={200}
-            placeholder="VD: Lấy thêm ống hút giấy, gọi mình khi món xong…"
+            placeholder={t('cart.form.notePlaceholder')}
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            hint="Muốn dặn riêng từng món? Chạm vào món trong giỏ để sửa."
+            hint={t('cart.form.noteHint')}
           />
         </section>
 
         {/* ── Thanh toán ── */}
         <section>
-          <SectionTitle title="Thanh toán" />
+          <SectionTitle title={t('cart.sections.payment')} />
           <PaymentMethodPicker value={paymentMethod} onChange={setPaymentMethod} />
         </section>
+
+        {/* ── Cốc miễn phí từ thẻ tích điểm ── */}
+        {canRedeem && (
+          <RewardToggle
+            on={redeem}
+            onToggle={() => setRewardOn((v) => !v)}
+            line={rewardItem}
+            rewardsAvailable={loyalty.rewardsAvailable}
+          />
+        )}
 
         {/* ── Tổng tiền ── */}
         <Card className="p-4">
           <OrderTotals
             subtotal={totals.subtotal}
             deliveryFee={totals.deliveryFee}
-            total={totals.total}
+            discount={discount}
+            loyaltyRedeem={redeem}
+            total={grandTotal}
             showDelivery={isDelivery}
           />
+          {/* Thành viên chưa có cốc miễn phí: tiến độ tích điểm + số cốc đơn này được cộng */}
+          {loyalty.member && !canRedeem && (
+            <div className="mt-3.5 flex items-center gap-2 rounded-2xl bg-gold-soft/60 px-3 py-2 text-xs font-medium text-bronze-800">
+              <Coffee className="h-3.5 w-3.5 shrink-0 text-gold-dark" aria-hidden />
+              <span className="min-w-0 flex-1 leading-snug">
+                {loyalty.pendingRedeemCodes.length > 0
+                  ? t('loyalty.pendingNote', { count: loyalty.pendingRedeemCodes.length, codes: loyalty.pendingRedeemCodes.join(', ') })
+                  : t('loyalty.toNext', { count: loyalty.toNext })}
+              </span>
+              {cupsEarned > 0 && (
+                <span className="shrink-0 rounded-full bg-white/80 px-2 py-0.5 font-semibold tabular-nums text-bronze-700">
+                  {t('loyalty.earned', { count: cupsEarned })}
+                </span>
+              )}
+            </div>
+          )}
         </Card>
       </div>
 
@@ -346,9 +394,9 @@ export default function CartPage() {
         )}
         <div className="mb-2.5 flex items-baseline justify-between gap-3 px-0.5">
           <span className="text-sm text-stone">
-            Tổng cộng · <span className="tabular-nums">{totals.itemCount}</span> món
+            {t('totals.total')} · <span className="tabular-nums">{t('cart.itemCount', { count: totals.itemCount })}</span>
           </span>
-          <span className="font-display text-[22px] font-extrabold tabular-nums leading-none text-espresso">{formatPrice(totals.total)}</span>
+          <span className="font-display text-[22px] font-extrabold tabular-nums leading-none text-espresso">{formatPrice(grandTotal)}</span>
         </div>
         <Button
           variant="leaf"
@@ -359,7 +407,7 @@ export default function CartPage() {
           onClick={() => void submit()}
           leftIcon={<QrCode className="h-5 w-5" aria-hidden />}
         >
-          Tạo mã QR đặt hàng
+          {t('cart.submit')}
         </Button>
       </div>
 
@@ -367,10 +415,10 @@ export default function CartPage() {
 
       <ConfirmDialog
         open={confirmClear}
-        title="Xoá toàn bộ giỏ hàng?"
-        description="Tất cả món và ghi chú trong giỏ sẽ bị xoá."
-        confirmText="Xoá hết"
-        cancelText="Giữ lại"
+        title={t('cart.clearConfirm.title')}
+        description={t('cart.clearConfirm.body')}
+        confirmText={t('cart.clearConfirm.confirm')}
+        cancelText={t('cart.clearConfirm.cancel')}
         tone="danger"
         onConfirm={() => {
           clearCart();
@@ -379,5 +427,74 @@ export default function CartPage() {
         onCancel={() => setConfirmClear(false)}
       />
     </div>
+  );
+}
+
+/**
+ * Thẻ bật/tắt "Dùng 1 cốc miễn phí" (viền vàng nắng, icon quà). Ghi rõ món nào được miễn phí và giá;
+ * giỏ chưa có món nước thì khoá công tắc và nhắc thêm một món nước.
+ */
+function RewardToggle({
+  on,
+  onToggle,
+  line,
+  rewardsAvailable,
+}: {
+  on: boolean;
+  onToggle: () => void;
+  line: CartLine | undefined;
+  rewardsAvailable: number;
+}) {
+  const { t } = useT();
+  const titleId = useId();
+  const hintId = useId();
+  const disabled = !line;
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      aria-labelledby={titleId}
+      aria-describedby={hintId}
+      disabled={disabled}
+      onClick={onToggle}
+      className={cn(
+        'relative flex w-full items-center gap-3 overflow-hidden rounded-3xl p-4 text-left ring-1 ring-inset transition',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold',
+        on ? 'bg-gold-soft shadow-glow ring-gold' : 'bg-white ring-gold/50',
+        disabled ? 'cursor-not-allowed' : 'active:scale-[.99]',
+        !disabled && !on && 'hover:ring-gold',
+      )}
+    >
+      <span aria-hidden className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-gold/25 blur-2xl" />
+      <span
+        className={cn(
+          'relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl',
+          disabled ? 'bg-bronze-100 text-bronze-500' : 'bg-gold text-espresso',
+        )}
+      >
+        <Gift className="h-5 w-5" aria-hidden />
+      </span>
+      <span className="relative min-w-0 flex-1">
+        <span id={titleId} className="flex flex-wrap items-baseline gap-x-2 font-display text-[15px] font-bold leading-tight text-espresso">
+          {t('loyalty.useReward')}
+          <span className="font-sans text-[11px] font-semibold text-bronze-600">{t('loyalty.rewardsAvailable', { count: rewardsAvailable })}</span>
+        </span>
+        <span id={hintId} className={cn('mt-1 block text-[13px] leading-snug', disabled ? 'text-stone' : 'text-bronze-800')}>
+          {line ? t('loyalty.useRewardHint', { name: lineName(line), amount: formatPrice(line.unitPrice) }) : t('loyalty.noEligible')}
+        </span>
+      </span>
+      {/* Công tắc */}
+      <span
+        aria-hidden
+        className={cn(
+          'relative h-7 w-12 shrink-0 rounded-full transition-colors',
+          on ? 'bg-gold-dark' : 'bg-bronze-200',
+          disabled && 'opacity-50',
+        )}
+      >
+        <span className={cn('absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all', on ? 'left-6' : 'left-1')} />
+      </span>
+    </button>
   );
 }

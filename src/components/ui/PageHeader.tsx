@@ -1,3 +1,4 @@
+import { useT } from '@/i18n';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
@@ -27,6 +28,7 @@ export function PageHeader({
   className?: string;
 }) {
   const navigate = useNavigate();
+  const { t } = useT();
   const goBack = () => {
     if (typeof back === 'string') navigate(back);
     else if (window.history.state && window.history.state.idx > 0) navigate(-1);
@@ -45,7 +47,7 @@ export function PageHeader({
       <div className="flex h-14 items-center gap-1 px-2">
         <div className="flex w-12 justify-start">
           {back && (
-            <IconButton label="Quay lại" onClick={goBack} tone={tone === 'transparent' ? 'glass' : tone === 'dark' ? 'onDark' : 'default'}>
+            <IconButton label={t('common.back')} onClick={goBack} tone={tone === 'transparent' ? 'glass' : tone === 'dark' ? 'onDark' : 'default'}>
               <ArrowLeft className="h-5 w-5" />
             </IconButton>
           )}

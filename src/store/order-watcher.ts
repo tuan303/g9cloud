@@ -27,7 +27,7 @@ export function startOrderWatcher() {
     if (order.statusHistory[order.statusHistory.length - 1]?.by === 'customer') return;
     const n = notificationFor(order);
     if (!n) return;
-    useNotifications.getState().push({ kind: n.kind, title: n.title, body: n.body, orderId: order.id });
+    useNotifications.getState().push({ kind: n.kind, title: n.title, body: n.body, msg: n.msg, orderId: order.id });
     const iconMap = {
       order_received: 'received',
       order_preparing: 'preparing',

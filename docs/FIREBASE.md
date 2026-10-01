@@ -22,6 +22,7 @@ Khi chưa bật Authentication, app vẫn chạy: khách đặt hàng bình thư
 | `orders/{orderId}` | Đơn hàng: món, tổng tiền, trạng thái, lịch sử trạng thái, `customerUid` | Khách đọc đơn của mình, tạo đơn mới và **chỉ được huỷ** đơn chưa thanh toán; nhân viên đọc/ghi tất cả |
 | `counters/{yyyy-mm-dd}` | `{ seq }`: bộ đếm để đánh mã đơn C9-001, C9-002… theo ngày (dùng transaction nên không bị trùng) | Mỗi lần chỉ được tăng đúng 1 |
 | `staff/{uid}` | Danh sách nhân viên, ví dụ `{ name: "Thu ngân 1", role: "staff" }` | Chỉ tạo trong Console |
+| `loyalty/{customerId}` | Thẻ tích điểm `{ stamps, totalCups, rewardsRedeemed }`, với `customerId` dạng `ms_<uid>` | Khách đọc thẻ của mình. **Chỉ nhân viên ghi**, trong cùng transaction xác nhận thanh toán |
 | `meta/menuSeed` | Đánh dấu đã khởi tạo thực đơn mẫu (chỉ một lần — xoá hết món mẫu sẽ không bị thêm lại) | Nhân viên |
 
 **Chống sửa giá:** giá được tính trên máy khách lúc đặt, nên khi thu ngân bấm “Xác nhận đã thu”, app **đối chiếu lại từng món với thực đơn**. Nếu giá, số lượng hoặc tổng không khớp (và không phải do quán vừa đổi giá), app **từ chối xác nhận** và báo thu ngân huỷ đơn. Security Rules cũng chặn đơn sai cấu trúc hoặc tổng tiền không nhất quán. Muốn chặn hoàn toàn từ máy chủ thì chuyển việc tạo đơn sang Cloud Functions (giai đoạn sau).
@@ -75,3 +76,10 @@ App sẽ chạy tại `https://g9cloud-22931.web.app`. Có https nên camera qu�
 - **Truy vấn** chỉ dùng chỉ mục một trường, không cần tạo composite index.
 - **Ảnh món tải lên** hiện lưu ngay trong tài liệu món (tối đa ~250 KB/ảnh, Firestore cho tối đa 1 MB/tài liệu). Khi có nhiều ảnh thật nên chuyển sang **Firebase Storage**.
 - **Thông báo khi app đang đóng** (push) cần Cloud Functions + FCM, hoặc ZNS cho bản Zalo. Hiện thông báo hoạt động khi app đang mở hoặc chạy nền trên trình duyệt.
+
+## 6. Thay đổi Security Rules theo phiên bản
+
+Nếu đã áp dụng `firestore.rules` trước bản song ngữ + tích điểm, cần **áp dụng lại**:
+- Thêm collection `loyalty`.
+- Đơn được phép có `discount` / `loyaltyRedeem` khi khách đổi cốc miễn phí.
+- Đơn của tài khoản Microsoft 365 (`customer.id` dạng `ms_<uid>`) phải đúng uid của người đang đăng nhập, để không ai cộng/trừ điểm vào thẻ của người khác.

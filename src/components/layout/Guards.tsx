@@ -1,3 +1,4 @@
+import { useT } from '@/i18n';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useSession } from '@/store/session';
@@ -14,10 +15,11 @@ export function RequireUser() {
 /** Yêu cầu quyền nhân viên (PIN hoặc tài khoản Firebase có trong staff/{uid}) */
 export function RequireAdmin() {
   const { ready, staff } = useIsStaff();
+  const { t } = useT();
   const location = useLocation();
   if (!ready)
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-cream text-bronze-500" role="status" aria-label="Đang kiểm tra quyền">
+      <div className="flex min-h-dvh items-center justify-center bg-cream text-bronze-500" role="status" aria-label={t('nav.checkingAccess')}>
         <Loader2 className="h-7 w-7 animate-spin" />
       </div>
     );

@@ -3,10 +3,12 @@ import { ChevronRight, QrCode } from 'lucide-react';
 import { APP_CONFIG } from '@/config/app';
 import { useMyActiveOrders } from '@/hooks/data';
 import { useNow } from '@/hooks/useNow';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 
 /** Nhắc khách còn đơn đang chờ thanh toán (mã QR chưa hết hạn) → mở lại màn hình mã QR */
 export function PendingOrderLink({ className }: { className?: string }) {
+  const { t } = useT();
   const active = useMyActiveOrders();
   const now = useNow(15_000);
   const limit = APP_CONFIG.payment.qrExpiryMinutes * 60_000;
@@ -26,8 +28,8 @@ export function PendingOrderLink({ className }: { className?: string }) {
         <QrCode className="h-5 w-5" aria-hidden />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block font-display text-[15px] font-bold text-espresso">Đơn {pending.code} đang chờ thanh toán</span>
-        <span className="block text-xs text-stone">Mở lại mã QR để thu ngân quét tại quầy</span>
+        <span className="block font-display text-[15px] font-bold text-espresso">{t('cart.pending.title', { code: pending.code })}</span>
+        <span className="block text-xs text-stone">{t('cart.pending.body')}</span>
       </span>
       <ChevronRight className="h-5 w-5 shrink-0 text-bronze-400" aria-hidden />
     </Link>

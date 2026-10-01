@@ -1,16 +1,20 @@
 import type { ReactNode } from 'react';
-import { Banknote, CupSoda, QrCode, Receipt, Wallet } from 'lucide-react';
+import { Banknote, CupSoda, Gift, QrCode, Receipt, Wallet } from 'lucide-react';
 import barPhoto from '@/assets/photos/espresso-bar-sm.webp';
+import { APP_CONFIG } from '@/config/app';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 import { formatPrice } from '@/lib/format';
+import { STATUS_META } from '@/lib/order-status';
 import type { DayRevenue, TodayKpis } from '@/lib/stats';
 import { formatPercentAbs } from './format';
 
 /** Mức thay đổi so với hôm qua: ▲ tăng / ▼ giảm / — không có mốc */
-function Delta({ value, tone = 'light', suffix = 'so với hôm qua' }: { value: number | null; tone?: 'light' | 'dark'; suffix?: string }) {
+function Delta({ value, tone = 'light', suffix }: { value: number | null; tone?: 'light' | 'dark'; suffix?: string }) {
+  const { t } = useT();
   const dark = tone === 'dark';
   if (value === null)
-    return <span className={cn('text-[11px] leading-tight', dark ? 'text-cream/70' : 'text-stone')}>Hôm qua chưa có số liệu</span>;
+    return <span className={cn('text-[11px] leading-tight', dark ? 'text-cream/70' : 'text-stone')}>{t('adminDashboard.kpi.noYesterday')}</span>;
 
   const rounded = Math.round(value * 10) / 10;
   const dir = rounded > 0 ? 'up' : rounded < 0 ? 'down' : 'flat';
@@ -25,7 +29,7 @@ function Delta({ value, tone = 'light', suffix = 'so với hôm qua' }: { value:
       : dir === 'down'
         ? 'text-rattan-dark'
         : 'text-stone';
-  const srText = dir === 'up' ? 'Tăng' : dir === 'down' ? 'Giảm' : 'Không đổi,';
+  const srText = t(dir === 'up' ? 'adminDashboard.kpi.up' : dir === 'down' ? 'adminDashboard.kpi.down' : 'adminDashboard.kpi.flat');
 
   return (
     <span className={cn('inline-flex flex-wrap items-baseline gap-x-1 text-[11px] leading-tight', dark ? 'text-cream/70' : 'text-stone')}>
@@ -34,14 +38,15 @@ function Delta({ value, tone = 'light', suffix = 'so với hôm qua' }: { value:
         <span className="sr-only">{srText} </span>
         {formatPercentAbs(rounded)}
       </span>
-      <span>{suffix}</span>
+      <span>{suffix ?? t('adminDashboard.kpi.vsYesterday')}</span>
     </span>
   );
 }
 
 function KpiTile({ icon, label, value, delta }: { icon: ReactNode; label: string; value: string; delta: number | null }) {
+  const { t } = useT();
   return (
-    <div className="flex min-w-0 flex-col rounded-3xl bg-white p-3.5 shadow-card ring-1 ring-bronze-200/50 lg:p-4" title="So sánh với cùng giờ hôm qua">
+    <div className="flex min-w-0 flex-col rounded-3xl bg-white p-3.5 shadow-card ring-1 ring-bronze-200/50 lg:p-4" title={t('adminDashboard.kpi.compareHint')}>
       <span aria-hidden className="flex h-9 w-9 items-center justify-center rounded-xl bg-bronze-100 text-bronze-700">
         {icon}
       </span>
@@ -58,12 +63,13 @@ function KpiTile({ icon, label, value, delta }: { icon: ReactNode; label: string
 
 /** Ô "Chờ thanh toán" — nổi màu vàng khi có đơn, chạm để cuộn tới danh sách */
 function PendingTile({ count, onClick }: { count: number; onClick: () => void }) {
+  const { t } = useT();
   const active = count > 0;
   return (
     <button
       type="button"
       onClick={onClick}
-      aria-label={active ? `Chờ thanh toán: ${count} đơn. Xem danh sách để xác nhận` : 'Chờ thanh toán: không có đơn'}
+      aria-label={active ? t('adminDashboard.kpi.pendingAria', { count }) : t('adminDashboard.kpi.pendingNoneAria')}
       className={cn(
         'flex min-w-0 flex-col rounded-3xl p-3.5 text-left ring-1 transition active:scale-[.98] lg:p-4',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-cream',
@@ -76,10 +82,10 @@ function PendingTile({ count, onClick }: { count: number; onClick: () => void })
           <QrCode className="h-[18px] w-[18px]" />
         </span>
       </span>
-      <span className={cn('mt-3 text-xs font-medium leading-tight', active ? 'text-bronze-800' : 'text-stone')}>Chờ thanh toán</span>
+      <span className={cn('mt-3 text-xs font-medium leading-tight', active ? 'text-bronze-800' : 'text-stone')}>{STATUS_META.pending_payment.label}</span>
       <span className="mt-1 font-display text-[22px] font-extrabold leading-none tabular-nums text-espresso">{count}</span>
       <span className={cn('mt-auto pt-2 text-[11px] font-semibold leading-tight', active ? 'text-bronze-800' : 'text-stone')}>
-        {active ? 'Xem & xác nhận →' : 'Không có đơn chờ'}
+        {active ? t('adminDashboard.kpi.pendingCta') : t('adminDashboard.kpi.pendingNone')}
       </span>
     </button>
   );
@@ -87,6 +93,7 @@ function PendingTile({ count, onClick }: { count: number; onClick: () => void })
 
 /** Ô doanh thu nổi bật: nền tối ảnh quầy espresso + dải cột nhỏ 7 ngày */
 function RevenueHero({ kpis, week, className }: { kpis: TodayKpis; week: DayRevenue[]; className?: string }) {
+  const { t } = useT();
   const max = Math.max(0, ...week.map((d) => d.revenue));
   return (
     <div className={cn('relative isolate flex min-h-[176px] flex-col overflow-hidden rounded-3xl bg-espresso p-5 text-cream shadow-lift', className)}>
@@ -96,17 +103,26 @@ function RevenueHero({ kpis, week, className }: { kpis: TodayKpis; week: DayReve
 
       <div className="flex items-center gap-2 text-sm font-medium text-cream/80">
         <Banknote aria-hidden className="h-4 w-4 text-gold" />
-        Doanh thu hôm nay
+        {t('adminDashboard.kpi.revenueToday')}
       </div>
       <p className="mt-2.5 font-display text-[32px] font-extrabold leading-none tracking-tight tabular-nums md:text-[34px] lg:text-3xl xl:text-[34px]">
         {formatPrice(kpis.revenue)}
       </p>
       <div className="mt-2.5">
-        <Delta value={kpis.deltas.revenue} tone="dark" suffix="so với cùng giờ hôm qua" />
+        <Delta value={kpis.deltas.revenue} tone="dark" suffix={t('adminDashboard.kpi.vsSameTime')} />
       </div>
       <p className="mt-1.5 text-xs text-cream/70">
-        Hôm qua cùng giờ: <span className="tabular-nums text-cream/90">{formatPrice(kpis.yesterday.revenue)}</span>
+        {t('adminDashboard.kpi.yesterdaySameTime')} <span className="tabular-nums text-cream/90">{formatPrice(kpis.yesterday.revenue)}</span>
       </p>
+      {/* Tích điểm: số cốc miễn phí khách đã đổi hôm nay (đơn đã thanh toán, không huỷ) */}
+      {APP_CONFIG.loyalty.enabled && (
+        <p className="mt-1 flex items-center gap-1.5 text-xs text-cream/70">
+          <Gift aria-hidden className="h-3.5 w-3.5 shrink-0 text-gold" />
+          <span>
+            {t('adminDashboard.kpi.freeCups')} <span className="font-semibold tabular-nums text-cream/90">{kpis.freeCupsRedeemed}</span>
+          </span>
+        </p>
+      )}
 
       {/* Dải cột mini 7 ngày — trang trí, biểu đồ đầy đủ ở phần Thống kê */}
       <div aria-hidden className="mt-auto flex h-14 items-end gap-1.5 pt-4">
@@ -124,17 +140,18 @@ function RevenueHero({ kpis, week, className }: { kpis: TodayKpis; week: DayReve
 
 /** Lưới KPI: 2 cột trên điện thoại/tablet (vùng nội dung hẹp do sidebar), 4 cột từ lg — ô doanh thu chiếm 2×2 */
 export function KpiGrid({ kpis, week, onPendingClick }: { kpis: TodayKpis; week: DayRevenue[]; onPendingClick: () => void }) {
+  const { t } = useT();
   return (
-    <section aria-label="Chỉ số hôm nay" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <section aria-label={t('adminDashboard.kpi.aria')} className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       <RevenueHero kpis={kpis} week={week} className="col-span-2 lg:row-span-2" />
-      <KpiTile icon={<Receipt className="h-[18px] w-[18px]" />} label="Số đơn" value={String(kpis.orderCount)} delta={kpis.deltas.orderCount} />
+      <KpiTile icon={<Receipt className="h-[18px] w-[18px]" />} label={t('adminDashboard.kpi.orders')} value={String(kpis.orderCount)} delta={kpis.deltas.orderCount} />
       <KpiTile
         icon={<Wallet className="h-[18px] w-[18px]" />}
-        label="Giá trị TB/đơn"
+        label={t('adminDashboard.kpi.avgOrder')}
         value={formatPrice(kpis.avgOrderValue)}
         delta={kpis.deltas.avgOrderValue}
       />
-      <KpiTile icon={<CupSoda className="h-[18px] w-[18px]" />} label="Món đã bán" value={String(kpis.itemsSold)} delta={kpis.deltas.itemsSold} />
+      <KpiTile icon={<CupSoda className="h-[18px] w-[18px]" />} label={t('adminDashboard.kpi.itemsSold')} value={String(kpis.itemsSold)} delta={kpis.deltas.itemsSold} />
       <PendingTile count={kpis.pendingPaymentCount} onClick={onPendingClick} />
     </section>
   );

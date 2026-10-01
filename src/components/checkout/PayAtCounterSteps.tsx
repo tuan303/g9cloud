@@ -1,14 +1,16 @@
 import { ScanLine, Store, Wallet } from 'lucide-react';
+import { useT, type MessageKey } from '@/i18n';
 import { cn } from '@/lib/cn';
 
-const STEPS = [
-  { icon: Store, text: 'Đến quầy Cloud\u00A09' },
-  { icon: ScanLine, text: 'Đưa mã cho thu ngân quét' },
-  { icon: Wallet, text: 'Thanh toán tiền mặt / chuyển khoản / thẻ' },
+const STEPS: { icon: typeof Store; text: MessageKey }[] = [
+  { icon: Store, text: 'payment.counterSteps.goToCounter' },
+  { icon: ScanLine, text: 'payment.counterSteps.handCode' },
+  { icon: Wallet, text: 'payment.counterSteps.pay' },
 ];
 
 /** 3 bước thanh toán tại quầy — hiển thị ngay dưới mã QR */
 export function PayAtCounterSteps({ className }: { className?: string }) {
+  const { t } = useT();
   return (
     <div className={cn('relative', className)}>
       {/* Đường nối mảnh giữa các bước */}
@@ -22,7 +24,7 @@ export function PayAtCounterSteps({ className }: { className?: string }) {
                 {i + 1}
               </span>
             </span>
-            <span className="mt-2 text-[12px] font-medium leading-snug text-bronze-800">{s.text}</span>
+            <span className="mt-2 text-[12px] font-medium leading-snug text-bronze-800">{t(s.text)}</span>
           </li>
         ))}
       </ol>

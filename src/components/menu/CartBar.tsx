@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { QrCode, ShoppingBag } from 'lucide-react';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 import { formatPrice } from '@/lib/format';
 import { selectCartCount, selectCartSubtotal, useCart } from '@/store/cart';
@@ -14,6 +15,7 @@ export function CartBar({ className }: { className?: string }) {
   const count = useCart(selectCartCount);
   const subtotal = useCart(selectCartSubtotal);
   const navigate = useNavigate();
+  const { t } = useT();
   const barRef = useRef<HTMLButtonElement>(null);
   const bagRef = useRef<HTMLSpanElement>(null);
   const prevCount = useRef(count);
@@ -35,7 +37,7 @@ export function CartBar({ className }: { className?: string }) {
         ref={barRef}
         type="button"
         onClick={() => navigate('/cart')}
-        aria-label={`Giỏ hàng: ${count} món, tạm tính ${formatPrice(subtotal)}. Đặt hàng bằng QR`}
+        aria-label={t('menu.cartBar.aria', { count, subtotal: formatPrice(subtotal) })}
         className={cn(
           'pointer-events-auto flex w-full animate-slide-up items-center gap-2.5 rounded-[26px] bg-espresso p-2 pl-2.5 text-left text-cream shadow-lift ring-1 ring-gold/25',
           'transition hover:bg-espresso-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold',
@@ -48,7 +50,7 @@ export function CartBar({ className }: { className?: string }) {
           </span>
         </span>
         <span className="min-w-0 flex-1" aria-hidden>
-          <span className="block text-[11px] font-medium text-cream/70">Giỏ hàng · {count} món</span>
+          <span className="block text-[11px] font-medium text-cream/70">{t('menu.cartBar.summary', { count })}</span>
           <span className="block truncate font-display text-base font-bold tabular-nums">{formatPrice(subtotal)}</span>
         </span>
         <span
@@ -56,7 +58,7 @@ export function CartBar({ className }: { className?: string }) {
           className="flex h-11 shrink-0 items-center gap-1.5 rounded-2xl bg-leaf px-3.5 text-[13px] font-semibold text-white shadow-card"
         >
           <QrCode className="h-[18px] w-[18px]" />
-          Đặt hàng bằng QR
+          {t('menu.cartBar.orderQr')}
         </span>
       </button>
     </div>

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 
 export interface HBarDatum {
@@ -20,6 +21,7 @@ export interface HBarDatum {
  * để tên món dài tự cắt gọn và trình đọc màn hình đọc tự nhiên; thanh chỉ để minh hoạ.
  */
 export function HorizontalBars({ data, title, className }: { data: HBarDatum[]; title: string; className?: string }) {
+  const { t } = useT();
   const max = Math.max(0, ...data.map((d) => d.value));
   return (
     <ol aria-label={title} className={cn('space-y-3.5', className)}>
@@ -41,7 +43,7 @@ export function HorizontalBars({ data, title, className }: { data: HBarDatum[]; 
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline justify-between gap-2">
                 <span className="truncate text-sm font-semibold text-espresso">
-                  <span className="sr-only">Hạng {i + 1}: </span>
+                  <span className="sr-only">{t('adminDashboard.chart.rank', { rank: i + 1 })}</span>
                   {d.label}
                 </span>
                 <span className="shrink-0 font-display text-sm font-bold tabular-nums text-espresso">

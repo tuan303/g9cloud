@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { translate } from '@/i18n';
 import { repo } from '@/services';
 import { platform } from '@/platform';
 import { toast } from '@/store/ui';
@@ -148,7 +149,7 @@ export function useNewOrderAlert() {
       );
 
       if (suppressed.has(order.id)) return;
-      toast(`Đơn mới ${order.code} · ${order.itemCount} món`, 'info');
+      toast(translate('adminOrders.alert.newOrder', { code: order.code, count: order.itemCount }), 'info');
       platform.vibrate([80, 60, 80]);
       const now = Date.now();
       if (!mutedRef.current && now - lastChimeRef.current > CHIME_GAP_MS) {

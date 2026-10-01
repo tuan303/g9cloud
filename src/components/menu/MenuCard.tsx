@@ -1,8 +1,10 @@
 import { memo } from 'react';
 import { Plus } from 'lucide-react';
 import { MenuImage, Skeleton, TagBadge } from '@/components/ui';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 import { formatPrice } from '@/lib/format';
+import { itemDescription, itemName } from '@/lib/i18n-data';
 import type { MenuItem } from '@/types';
 
 /**
@@ -21,7 +23,11 @@ export const MenuCard = memo(function MenuCard({
   onOpen: (item: MenuItem) => void;
   onQuickAdd: (item: MenuItem) => void;
 }) {
+  const { t } = useT();
   const soldOut = !item.available;
+  const name = itemName(item);
+  const description = itemDescription(item);
+  const price = formatPrice(item.price);
   return (
     <li>
       <article
@@ -45,11 +51,11 @@ export const MenuCard = memo(function MenuCard({
             </div>
           )}
           <h3 className={cn('line-clamp-2 font-display text-[15px] font-bold leading-snug', soldOut ? 'text-stone' : 'text-espresso')}>
-            {item.name}
+            {name}
           </h3>
-          {item.description && <p className="mt-0.5 line-clamp-1 text-xs leading-relaxed text-stone">{item.description}</p>}
+          {description && <p className="mt-0.5 line-clamp-1 text-xs leading-relaxed text-stone">{description}</p>}
           <p className={cn('mt-auto pr-12 pt-2 font-display text-base font-bold tabular-nums', soldOut ? 'text-stone' : 'text-espresso')}>
-            {formatPrice(item.price)}
+            {price}
           </p>
         </div>
 
@@ -58,19 +64,19 @@ export const MenuCard = memo(function MenuCard({
           type="button"
           onClick={() => onOpen(item)}
           aria-haspopup="dialog"
-          aria-label={`${item.name}, ${formatPrice(item.price)}${soldOut ? ', tạm hết' : ''}. Xem chi tiết`}
+          aria-label={t(soldOut ? 'menu.card.openAriaSoldOut' : 'menu.card.openAria', { name, price })}
           className="absolute inset-0 rounded-3xl transition-colors active:bg-espresso/[.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
         />
 
         {soldOut ? (
           <span className="pointer-events-none absolute bottom-4 right-3.5 rounded-full bg-bronze-100 px-2.5 py-1 text-[11px] font-semibold text-bronze-700">
-            Tạm hết
+            {t('menu.soldOut')}
           </span>
         ) : (
           <button
             type="button"
             onClick={() => onQuickAdd(item)}
-            aria-label={`Thêm nhanh ${item.name} vào giỏ${inCart ? ` (đang có ${inCart})` : ''}`}
+            aria-label={inCart ? t('menu.card.quickAddAriaInCart', { name, count: inCart }) : t('menu.card.quickAddAria', { name })}
             className={cn(
               'absolute bottom-3 right-3 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-espresso text-cream shadow-card transition',
               'hover:bg-espresso-700 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2',

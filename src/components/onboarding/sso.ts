@@ -1,3 +1,4 @@
+import { translate } from '@/i18n';
 import { firebaseErrorMessage } from '@/services/firebase';
 import { toast } from '@/store/ui';
 
@@ -13,7 +14,7 @@ export function reportSsoError(err: unknown) {
   if (SETUP_ERRORS.includes(code)) {
     // Lỗi cấu hình phía quán — khách không sửa được; chi tiết ghi console cho quản trị
     console.warn('[Cloud9] SSO Microsoft 365 chưa cấu hình:', code, '— xem docs/M365_SSO.md');
-    toast('Đăng nhập Microsoft 365 đang được quán thiết lập. Bạn có thể tiếp tục với tư cách khách.', 'info');
+    toast(translate('errors.ssoSetup'), 'info');
     return;
   }
   toast(firebaseErrorMessage(err), 'error');

@@ -12,8 +12,10 @@ import { MenuCard, MenuCardSkeleton } from '@/components/menu/MenuCard';
 import { MenuHero } from '@/components/menu/MenuHero';
 import { matchesQuery, normalizeText, prefersReducedMotion, searchableText } from '@/components/menu/menu-utils';
 import { useDataReady, useMenu, useMyActiveOrders } from '@/hooks/data';
+import { pick, useT } from '@/i18n';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { cn } from '@/lib/cn';
+import { itemName } from '@/lib/i18n-data';
 import { defaultSelections, missingRequiredGroup, toSelectedOptions } from '@/lib/pricing';
 import { platform } from '@/platform';
 import { selectCartCount, useCart } from '@/store/cart';
@@ -35,7 +37,8 @@ const GROUP_SCROLL_STYLE: CSSProperties = { scrollMarginTop: `calc(${SAFE_TOP} +
 const SLOW_LOAD_MS = 10_000;
 
 export default function MenuPage() {
-  usePageTitle('Thực đơn');
+  const { t, locale } = useT();
+  usePageTitle(t('nav.menu'));
   const ready = useDataReady();
   const menu = useMenu();
   const activeOrders = useMyActiveOrders();
@@ -72,8 +75,8 @@ export default function MenuPage() {
   const [slow, setSlow] = useState(false);
   useEffect(() => {
     if (ready) return;
-    const t = window.setTimeout(() => setSlow(true), SLOW_LOAD_MS);
-    return () => window.clearTimeout(t);
+    const timer = window.setTimeout(() => setSlow(true), SLOW_LOAD_MS);
+    return () => window.clearTimeout(timer);
   }, [ready]);
 
   // ── Dữ liệu dẫn xuất
@@ -88,8 +91,9 @@ export default function MenuPage() {
     [searching, sorted, haystacks, normalizedQuery],
   );
   const tabs: CategoryTab[] = useMemo(
+    // c.name tự đổi theo ngôn ngữ (getter) → tính lại khi đổi ngôn ngữ
     () => CATEGORIES.map((c) => ({ id: c.id, label: c.name, count: results.filter((m) => m.categoryId === c.id).length })),
-    [results],
+    [results, locale],
   );
   const categoryItems = useMemo(() => sorted.filter((m) => m.categoryId === category), [sorted, category]);
   const inCart = useMemo(() => {
@@ -116,9 +120,9 @@ export default function MenuPage() {
       }
       addToCart(item, toSelectedOptions(item.optionGroups, selections), 1);
       platform.vibrate(12);
-      toast(`Đã thêm ${item.name}`, 'success');
+      toast(t('menu.added', { name: itemName(item) }), 'success');
     },
-    [addToCart],
+    [addToCart, t],
   );
 
   const selectCategory = (id: CategoryId) => {
@@ -159,16 +163,16 @@ export default function MenuPage() {
     list = slow ? (
       <EmptyState
         icon={<CircleAlert className="h-9 w-9" />}
-        title="Chưa tải được thực đơn"
-        description="Kết nối đang chậm hơn thường lệ. Bạn thử tải lại trang nhé."
+        title={t('menu.page.loadFailedTitle')}
+        description={t('menu.page.loadFailedBody')}
         action={
           <Button variant="outline" leftIcon={<RefreshCw className="h-4 w-4" />} onClick={() => window.location.reload()}>
-            Tải lại
+            {t('menu.page.reload')}
           </Button>
         }
       />
     ) : (
-      <div className="space-y-3" role="status" aria-label="Đang tải thực đơn">
+      <div className="space-y-3" role="status" aria-label={t('menu.page.loadingAria')}>
         {Array.from({ length: 5 }, (_, i) => (
           <MenuCardSkeleton key={i} />
         ))}
@@ -178,8 +182,8 @@ export default function MenuPage() {
     list = (
       <EmptyState
         icon={<Coffee className="h-9 w-9" />}
-        title="Thực đơn đang được cập nhật"
-        description="Quán đang chuẩn bị món cho hôm nay, bạn quay lại sau ít phút nhé."
+        title={t('menu.page.emptyTitle')}
+        description={t('menu.page.emptyBody')}
       />
     );
   } else if (searching) {
@@ -187,10 +191,11 @@ export default function MenuPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between gap-3 px-1">
           <p className="min-w-0 truncate text-sm text-stone" aria-live="polite">
-            <span className="font-semibold text-espresso">{results.length} món</span> cho “{deferredQuery.trim()}”
+            <span className="font-semibold text-espresso">{t('menu.itemCount', { count: results.length })}</span>{' '}
+            {t('menu.search.resultFor', { query: deferredQuery.trim() })}
           </p>
           <button type="button" onClick={clearSearch} className="-mr-2 min-h-[44px] shrink-0 px-2 text-sm font-semibold text-bronze-700 hover:text-espresso">
-            Xoá tìm kiếm
+            {t('menu.search.clear')}
           </button>
         </div>
         {CATEGORIES.map((c) => {
@@ -200,7 +205,7 @@ export default function MenuPage() {
             <section key={c.id} id={groupDomId(c.id)} style={GROUP_SCROLL_STYLE} aria-label={c.name}>
               <h2 className="mb-2.5 flex items-baseline gap-2 px-1 font-display text-[15px] font-bold text-espresso">
                 {c.name}
-                <span className="font-sans text-xs font-medium text-stone">{items.length} món</span>
+                <span className="font-sans text-xs font-medium text-stone">{t('menu.itemCount', { count: items.length })}</span>
               </h2>
               {renderCards(items)}
             </section>
@@ -210,11 +215,11 @@ export default function MenuPage() {
     ) : (
       <EmptyState
         icon={<SearchX className="h-9 w-9" />}
-        title="Chưa tìm thấy món phù hợp"
-        description="Thử từ khoá khác, ví dụ “latte”, “trà đào” hoặc “bánh”."
+        title={t('menu.search.noResultsTitle')}
+        description={t('menu.search.noResultsBody')}
         action={
           <Button variant="outline" onClick={clearSearch}>
-            Xoá tìm kiếm
+            {t('menu.search.clear')}
           </Button>
         }
       />
@@ -224,15 +229,20 @@ export default function MenuPage() {
       <div id={LIST_PANEL_ID} role="tabpanel" aria-labelledby={categoryTabId(category)}>
         <div className="mb-3 flex items-baseline justify-between gap-3 px-1">
           <h2 className="font-display text-lg font-bold tracking-tight text-espresso">{currentCategory.name}</h2>
-          <span className="text-[11px] font-semibold uppercase tracking-[.18em] text-bronze-500">{currentCategory.nameEn}</span>
+          {/* Nhãn phụ tiếng Anh (chỉ khi đang xem tiếng Việt — tiếng Anh thì trùng tên chính) */}
+          {currentCategory.nameEn !== currentCategory.name && (
+            <span lang="en" className="text-[11px] font-semibold uppercase tracking-[.18em] text-bronze-500">
+              {currentCategory.nameEn}
+            </span>
+          )}
         </div>
         {categoryItems.length ? (
           renderCards(categoryItems)
         ) : (
           <EmptyState
             icon={<Coffee className="h-9 w-9" />}
-            title="Danh mục đang cập nhật"
-            description="Quán đang chuẩn bị món mới cho mục này, bạn xem các danh mục khác nhé."
+            title={t('menu.page.categoryEmptyTitle')}
+            description={t('menu.page.categoryEmptyBody')}
           />
         )}
       </div>
@@ -256,8 +266,8 @@ export default function MenuPage() {
             inputMode="search"
             enterKeyHint="search"
             autoComplete="off"
-            aria-label="Tìm món"
-            placeholder="Tìm món: latte, trà đào, croissant…"
+            aria-label={t('menu.search.aria')}
+            placeholder={t('menu.search.placeholder')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
@@ -269,7 +279,7 @@ export default function MenuPage() {
           />
           {query && (
             <IconButton
-              label="Xoá tìm kiếm"
+              label={t('menu.search.clear')}
               onClick={clearSearch}
               className="absolute right-0.5 top-1/2 -translate-y-1/2"
             >
@@ -313,7 +323,8 @@ export default function MenuPage() {
           <footer className="mt-10 flex flex-col items-center gap-1.5 pb-2 text-center">
             <Logo className="h-[20px] text-bronze-300" title="Cloud 9" />
             <p className="text-xs text-stone">
-              {APP_CONFIG.shop.location} · {APP_CONFIG.shop.openingHours}
+              {pick(APP_CONFIG.shop.location, APP_CONFIG.shop.locationEn, locale)} ·{' '}
+              {pick(APP_CONFIG.shop.openingHours, APP_CONFIG.shop.openingHoursEn, locale)}
             </p>
           </footer>
         )}

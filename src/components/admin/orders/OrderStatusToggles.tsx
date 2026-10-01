@@ -1,22 +1,25 @@
 import type { LucideIcon } from 'lucide-react';
 import { Bike, Check, CircleCheckBig, ClipboardCheck, Coffee, ShoppingBag } from 'lucide-react';
+import { translate, useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 import { statusSteps } from '@/lib/order-status';
 import type { Order, OrderStatus } from '@/types';
 
 type StepStatus = Extract<OrderStatus, 'received' | 'preparing' | 'ready' | 'delivering' | 'completed'>;
 
-const STEP: Record<StepStatus, { label: string; icon: LucideIcon }> = {
-  received: { label: 'Đã nhận', icon: ClipboardCheck },
-  preparing: { label: 'Đang pha', icon: Coffee },
-  ready: { label: 'Sẵn sàng', icon: ShoppingBag },
-  delivering: { label: 'Đang giao', icon: Bike },
-  completed: { label: 'Hoàn thành', icon: CircleCheckBig },
+const STEP_ICON: Record<StepStatus, LucideIcon> = {
+  received: ClipboardCheck,
+  preparing: Coffee,
+  ready: ShoppingBag,
+  delivering: Bike,
+  completed: CircleCheckBig,
 };
 
-/** Nhãn ngắn của bước (dùng cho nút chuyển trạng thái / hộp thoại) */
+const isStep = (status: OrderStatus): status is StepStatus => status in STEP_ICON;
+
+/** Nhãn ngắn của bước (dùng cho nút chuyển trạng thái / hộp thoại) — theo ngôn ngữ đang chọn */
 export function shortStepLabel(status: OrderStatus): string {
-  return status in STEP ? STEP[status as StepStatus].label : status;
+  return isStep(status) ? translate(`adminOrders.steps.${status}`) : status;
 }
 
 /**
@@ -34,28 +37,29 @@ export function OrderStatusToggles({
   disabled?: boolean;
   className?: string;
 }) {
+  const { t } = useT();
   const steps = statusSteps(order.fulfillment) as StepStatus[];
   const currentIdx = steps.indexOf(order.status as StepStatus);
 
   return (
     <div
       role="group"
-      aria-label={`Trạng thái đơn ${order.code}`}
+      aria-label={t('adminOrders.stepsAria', { code: order.code })}
       className={cn('grid grid-cols-4 gap-1 rounded-2xl bg-bronze-100/80 p-1', className)}
     >
       {steps.map((s, i) => {
         const past = currentIdx >= 0 && i < currentIdx;
         const current = i === currentIdx;
         const future = currentIdx >= 0 && i > currentIdx;
-        const { label, icon } = STEP[s];
-        const Icon = past ? Check : icon;
+        const label = t(`adminOrders.steps.${s}`);
+        const Icon = past ? Check : STEP_ICON[s];
         return (
           <button
             key={s}
             type="button"
             disabled={!future || disabled}
             aria-current={current ? 'step' : undefined}
-            aria-label={`${label}${past ? ' — đã xong' : current ? ' — hiện tại' : ' — chạm để chuyển'}`}
+            aria-label={t(past ? 'adminOrders.stepPast' : current ? 'adminOrders.stepCurrent' : 'adminOrders.stepFuture', { label })}
             onClick={() => onSelect(s)}
             className={cn(
               'flex min-h-[52px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 text-center text-[11px] font-semibold leading-tight transition',

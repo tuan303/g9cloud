@@ -12,3 +12,4 @@ export { BottomSheet } from './BottomSheet';
 export { ConfirmDialog } from './Dialog';
 export { PageHeader } from './PageHeader';
 export { Toaster } from './Toaster';
+export { LanguageSwitch } from './LanguageSwitch';

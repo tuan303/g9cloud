@@ -1,3 +1,4 @@
+import { translate } from '@/i18n';
 import { useCallback, useState } from 'react';
 import { toast } from '@/store/ui';
 
@@ -18,7 +19,7 @@ export function useAction<A extends unknown[], R>(
         if (opts.success) toast(opts.success, 'success');
         return r;
       } catch (err) {
-        toast((err as Error)?.message || opts.error || 'Đã có lỗi xảy ra', 'error');
+        toast((err as Error)?.message || opts.error || translate('common.genericError'), 'error');
         return undefined;
       } finally {
         setLoading(false);

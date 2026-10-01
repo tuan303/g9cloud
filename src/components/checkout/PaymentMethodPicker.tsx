@@ -1,5 +1,6 @@
 import { Banknote, CreditCard, Landmark, QrCode, Smartphone } from 'lucide-react';
 import { APP_CONFIG } from '@/config/app';
+import { translate, useT, type MessageKey } from '@/i18n';
 import { cn } from '@/lib/cn';
 import type { PaymentMethod } from '@/types';
 
@@ -15,8 +16,8 @@ export function availablePaymentMethods(): MethodOption[] {
   const list: MethodOption[] = [
     {
       value: 'qr_pos',
-      title: 'Mã QR · thanh toán tại quầy',
-      description: 'Đưa mã cho thu ngân quét, rồi trả bằng tiền mặt, chuyển khoản hoặc thẻ.',
+      title: translate('payment.methods.posTitle'),
+      description: translate('payment.methods.posDesc'),
       icon: QrCode,
     },
   ];
@@ -24,27 +25,28 @@ export function availablePaymentMethods(): MethodOption[] {
   if (vq) {
     list.push({
       value: 'vietqr',
-      title: 'Chuyển khoản VietQR',
-      description: `Quét bằng app ngân hàng — có sẵn số tiền và nội dung, chuyển vào ${vq.bankName}.`,
+      title: translate('payment.methods.vietqrTitle'),
+      description: translate('payment.methods.vietqrDesc', { bank: vq.bankName }),
       icon: Landmark,
     });
   }
   return list;
 }
 
-const COUNTER_WAYS = [
-  { label: 'Tiền mặt', icon: Banknote },
-  { label: 'Chuyển khoản', icon: Smartphone },
-  { label: 'Thẻ', icon: CreditCard },
+const COUNTER_WAYS: { label: MessageKey; icon: typeof Banknote }[] = [
+  { label: 'payment.methods.cash', icon: Banknote },
+  { label: 'payment.methods.transfer', icon: Smartphone },
+  { label: 'payment.methods.card', icon: CreditCard },
 ];
 
 /** Chọn phương thức thanh toán. Nếu chỉ có một phương thức, hiển thị dạng thẻ thông tin. */
 export function PaymentMethodPicker({ value, onChange }: { value: PaymentMethod; onChange: (v: PaymentMethod) => void }) {
+  const { t } = useT();
   const methods = availablePaymentMethods();
   const single = methods.length === 1;
 
   return (
-    <div role={single ? undefined : 'radiogroup'} aria-label="Phương thức thanh toán" className="space-y-2.5">
+    <div role={single ? undefined : 'radiogroup'} aria-label={t('payment.methods.aria')} className="space-y-2.5">
       {methods.map((m) => {
         const active = single || m.value === value;
         const Icon = m.icon;
@@ -66,7 +68,7 @@ export function PaymentMethodPicker({ value, onChange }: { value: PaymentMethod;
                   {COUNTER_WAYS.map((w) => (
                     <span key={w.label} className="inline-flex items-center gap-1 rounded-full bg-cream px-2 py-1 text-[11px] font-semibold text-bronze-700 ring-1 ring-inset ring-bronze-200">
                       <w.icon className="h-3 w-3" aria-hidden />
-                      {w.label}
+                      {t(w.label)}
                     </span>
                   ))}
                 </span>

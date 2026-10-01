@@ -1,4 +1,5 @@
 import { CATEGORIES } from '@/data/menu';
+import { translate } from '@/i18n';
 import { formatDayMonth, formatWeekday, startOfDay } from '@/lib/format';
 import type { CategoryId, Order, OrderStatus } from '@/types';
 
@@ -41,6 +42,8 @@ export interface TodayKpis extends PeriodKpis {
   pendingPaymentCount: number;
   /** Đơn đã thanh toán, đang xử lý: đã nhận → đang chuẩn bị → sẵn sàng / đang giao */
   activeCount: number;
+  /** Cốc miễn phí (tích điểm) đã đổi hôm nay: đơn đã thanh toán, không huỷ, có loyaltyRedeem */
+  freeCupsRedeemed: number;
   /** Hôm qua tính tới CÙNG GIỜ với hiện tại — so sánh công bằng khi ngày chưa kết thúc */
   yesterday: PeriodKpis;
   deltas: Record<keyof PeriodKpis, number | null>;
@@ -60,6 +63,17 @@ export function periodKpis(orders: Order[], from: number, to: number): PeriodKpi
     itemsSold += o.itemCount;
   }
   return { revenue, orderCount, itemsSold, avgOrderValue: orderCount ? Math.round(revenue / orderCount) : 0 };
+}
+
+/** Số cốc miễn phí (tích điểm) đã đổi trong khoảng [from, to) — mỗi đơn đổi thưởng = 1 cốc */
+export function freeCupsRedeemed(orders: Order[], from: number, to: number): number {
+  let count = 0;
+  for (const o of orders) {
+    if (!o.loyaltyRedeem || !isRevenueOrder(o)) continue;
+    const ts = revenueTime(o);
+    if (ts >= from && ts < to) count += 1;
+  }
+  return count;
 }
 
 const ACTIVE: OrderStatus[] = ['received', 'preparing', 'ready', 'delivering'];
@@ -83,6 +97,7 @@ export function todayKpis(orders: Order[], now = Date.now()): TodayKpis {
     ...today,
     pendingPaymentCount,
     activeCount,
+    freeCupsRedeemed: freeCupsRedeemed(orders, todayStart, addDays(todayStart, 1)),
     yesterday,
     deltas: {
       revenue: percentChange(today.revenue, yesterday.revenue),
@@ -208,6 +223,8 @@ function roundShares(slices: CategoryShare[], total: number) {
 export interface TopItem {
   itemId: string;
   name: string;
+  /** Tên tiếng Anh (hiển thị bằng lineName) */
+  nameEn?: string;
   categoryId: CategoryId;
   image: string;
   quantity: number;
@@ -228,11 +245,12 @@ export function topItems(orders: Order[], since: number, limit = 5): TopItem[] {
         cur.quantity += line.quantity;
         cur.revenue += revenue;
         // Giữ tên / ảnh mới nhất (món có thể được đổi tên)
-        if (ts > cur.lastSeen) Object.assign(cur, { name: line.name, image: line.image, lastSeen: ts });
+        if (ts > cur.lastSeen) Object.assign(cur, { name: line.name, nameEn: line.nameEn, image: line.image, lastSeen: ts });
       } else {
         map.set(line.itemId, {
           itemId: line.itemId,
           name: line.name,
+          nameEn: line.nameEn,
           categoryId: line.categoryId,
           image: line.image,
           quantity: line.quantity,
@@ -252,10 +270,16 @@ export function topItems(orders: Order[], since: number, limit = 5): TopItem[] {
 
 export interface HourBucket {
   hour: number;
-  /** "7h" */
+  /** "7h" (tiếng Anh "7am") */
   label: string;
   orders: number;
   revenue: number;
+}
+
+/** Nhãn giờ trên trục biểu đồ: "7h" / "7am", "13h" / "1pm" (theo ngôn ngữ đang chọn) */
+export function hourLabel(hour: number): string {
+  const h12 = hour % 12 === 0 ? 12 : hour % 12;
+  return translate(hour < 12 ? 'adminDashboard.chart.hourAm' : 'adminDashboard.chart.hourPm', { h24: hour, h12 });
 }
 
 /**
@@ -281,7 +305,7 @@ export function ordersByHour(orders: Order[], dayStart: number, openHour = 7, cl
   const buckets: HourBucket[] = [];
   for (let h = first; h <= last; h++) {
     const c = counts.get(h);
-    buckets.push({ hour: h, label: `${h}h`, orders: c?.orders ?? 0, revenue: c?.revenue ?? 0 });
+    buckets.push({ hour: h, label: hourLabel(h), orders: c?.orders ?? 0, revenue: c?.revenue ?? 0 });
   }
   return buckets;
 }

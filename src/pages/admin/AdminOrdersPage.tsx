@@ -9,6 +9,7 @@ import { useNewOrderAlert } from '@/components/admin/orders/useNewOrderAlert';
 import { useDataReady, useOrders } from '@/hooks/data';
 import { useNow } from '@/hooks/useNow';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 import { formatDayMonth, formatPrice, formatWeekday, startOfDay } from '@/lib/format';
 
@@ -22,7 +23,8 @@ const TAB_ICON: Record<OrderTab, LucideIcon> = {
 };
 
 export default function AdminOrdersPage() {
-  usePageTitle('Đơn hàng');
+  const { t } = useT();
+  usePageTitle(t('nav.adminOrders'));
   const navigate = useNavigate();
   const ready = useDataReady();
   const orders = useOrders();
@@ -42,10 +44,10 @@ export default function AdminOrdersPage() {
   }, [ready, tab, buckets]);
 
   const current: OrderTab = tab ?? 'new';
-  const meta = ORDER_TABS.find((t) => t.value === current) ?? ORDER_TABS[1];
+  const meta = ORDER_TABS.find((x) => x.value === current) ?? ORDER_TABS[1];
   const list = buckets[current];
   const searching = query.trim().length > 0;
-  const elsewhere = searching ? ORDER_TABS.filter((t) => t.value !== current && buckets[t.value].length > 0) : [];
+  const elsewhere = searching ? ORDER_TABS.filter((x) => x.value !== current && buckets[x.value].length > 0) : [];
 
   // Giữ tab đang chọn trong vùng nhìn thấy khi thanh tab cuộn ngang
   useEffect(() => {
@@ -54,10 +56,10 @@ export default function AdminOrdersPage() {
       ?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
   }, [current]);
 
-  const options: SegmentedOption<OrderTab>[] = ORDER_TABS.map((t) => ({
-    value: t.value,
-    label: t.label,
-    badge: buckets[t.value].length,
+  const options: SegmentedOption<OrderTab>[] = ORDER_TABS.map((x) => ({
+    value: x.value,
+    label: x.label,
+    badge: buckets[x.value].length,
   }));
 
   const doneRevenue = current === 'done' ? list.reduce((s, o) => s + o.total, 0) : 0;
@@ -74,13 +76,13 @@ export default function AdminOrdersPage() {
                 <span className="absolute inset-0 animate-ping rounded-full bg-leaf/60" />
                 <span className="relative h-2 w-2 rounded-full bg-leaf" />
               </span>
-              Trực tiếp · {formatWeekday(now)}, {formatDayMonth(now)}
+              {t('adminOrders.live', { date: `${formatWeekday(now)}, ${formatDayMonth(now)}` })}
             </p>
-            <h1 className="mt-1 font-display text-2xl font-extrabold tracking-tight text-espresso md:text-3xl">Đơn hàng</h1>
+            <h1 className="mt-1 font-display text-2xl font-extrabold tracking-tight text-espresso md:text-3xl">{t('nav.adminOrders')}</h1>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <IconButton
-              label="Âm báo đơn mới"
+              label={t('adminOrders.soundToggle')}
               aria-pressed={!muted}
               onClick={toggleMuted}
               className={cn('ring-1 ring-inset', muted ? 'bg-white text-stone ring-bronze-200' : 'bg-gold-soft text-bronze-800 ring-gold/50')}
@@ -88,7 +90,7 @@ export default function AdminOrdersPage() {
               {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
             </IconButton>
             <Button variant="leaf" className="hidden md:inline-flex" leftIcon={<ScanLine className="h-5 w-5" />} onClick={() => navigate('/admin/scan')}>
-              Quét QR
+              {t('nav.scan')}
             </Button>
           </div>
         </div>
@@ -99,7 +101,7 @@ export default function AdminOrdersPage() {
             className="mt-3 inline-flex min-h-[44px] items-center gap-2 rounded-full bg-gold-soft/80 px-4 text-[13px] font-semibold text-bronze-800 ring-1 ring-inset ring-gold/50 transition hover:bg-gold-soft active:scale-[.98]"
           >
             <BellRing className="h-4 w-4 text-gold-dark" aria-hidden />
-            Chạm để bật âm báo khi có đơn mới
+            {t('adminOrders.enableSound')}
           </button>
         )}
       </div>
@@ -108,8 +110,8 @@ export default function AdminOrdersPage() {
       <div className="sticky top-[calc(3.5rem_+_env(safe-area-inset-top,0px))] z-20 mt-3 border-b border-bronze-200/60 bg-cream/95 px-4 pb-3 pt-2 backdrop-blur-md md:top-0 md:px-6 lg:px-8">
         <Input
           type="search"
-          aria-label="Tìm đơn hàng"
-          placeholder="Tìm mã đơn, tên khách, số điện thoại…"
+          aria-label={t('adminOrders.searchAria')}
+          placeholder={t('adminOrders.searchPlaceholder')}
           icon={<Search className="h-5 w-5" />}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -119,7 +121,7 @@ export default function AdminOrdersPage() {
         />
         <div ref={tabsRef} className="no-scrollbar -mx-4 mt-2.5 overflow-x-auto px-4 md:-mx-6 md:px-6 lg:-mx-8 lg:px-8">
           <Segmented
-            ariaLabel="Lọc đơn theo trạng thái"
+            ariaLabel={t('adminOrders.filterAria')}
             options={options}
             value={current}
             onChange={setTab}
@@ -131,7 +133,7 @@ export default function AdminOrdersPage() {
       {/* Danh sách */}
       <section aria-label={meta.label} className="px-4 pt-4 md:px-6 lg:px-8">
         {!ready ? (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" aria-busy="true" aria-label="Đang tải đơn hàng">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" aria-busy="true" aria-label={t('adminOrders.loading')}>
             {[0, 1, 2].map((i) => (
               <Skeleton key={i} className="h-80 rounded-3xl" />
             ))}
@@ -140,18 +142,18 @@ export default function AdminOrdersPage() {
           <div className="rounded-3xl border border-dashed border-bronze-200 bg-white/40">
             <EmptyState
               icon={<EmptyIcon className="h-9 w-9" />}
-              title={searching ? 'Không tìm thấy đơn phù hợp' : meta.emptyTitle}
-              description={searching ? `Không có đơn khớp “${query.trim()}” trong mục “${meta.label}”.` : meta.emptyDescription}
+              title={searching ? t('adminOrders.noMatchTitle') : meta.emptyTitle}
+              description={searching ? t('adminOrders.noMatchBody', { query: query.trim(), tab: meta.label }) : meta.emptyDescription}
               action={
                 searching ? (
                   <div className="flex flex-wrap justify-center gap-2">
-                    {elsewhere.map((t) => (
-                      <Button key={t.value} variant="outline" size="md" onClick={() => setTab(t.value)}>
-                        Xem ở “{t.label}” · {buckets[t.value].length}
+                    {elsewhere.map((x) => (
+                      <Button key={x.value} variant="outline" size="md" onClick={() => setTab(x.value)}>
+                        {t('adminOrders.seeIn', { tab: x.label, count: buckets[x.value].length })}
                       </Button>
                     ))}
                     <Button variant="ghost" size="md" onClick={() => setQuery('')}>
-                      Xoá tìm kiếm
+                      {t('adminOrders.clearSearch')}
                     </Button>
                   </div>
                 ) : undefined
@@ -162,14 +164,17 @@ export default function AdminOrdersPage() {
           <>
             <p className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-1 text-xs text-stone" aria-live="polite">
               <span>
-                <strong className="font-display text-sm font-bold text-espresso">{list.length}</strong> đơn
+                <strong className="font-display text-sm font-bold text-espresso">{list.length}</strong>{' '}
+                {t('adminOrders.countUnit', { count: list.length })}
                 {current === 'done' && (
                   <>
-                    {' · '}doanh thu <strong className="font-display text-sm font-bold text-espresso">{formatPrice(doneRevenue)}</strong>
+                    {' · '}
+                    {t('adminOrders.revenue')}{' '}
+                    <strong className="font-display text-sm font-bold text-espresso">{formatPrice(doneRevenue)}</strong>
                   </>
                 )}
               </span>
-              <span>{QUEUE_TABS.includes(current) ? 'Đơn chờ lâu nhất ở trên cùng' : 'Mới nhất ở trên cùng'}</span>
+              <span>{t(QUEUE_TABS.includes(current) ? 'adminOrders.sortQueue' : 'adminOrders.sortNewest')}</span>
             </p>
             <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
               {list.map((o) => (

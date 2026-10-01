@@ -1,0 +1,40 @@
+/** Chữ của nhóm "orders" (tiếng Việt — bản gốc) */
+export const orders = {
+  subtitleActive: 'Bạn có {count} đơn đang xử lý',
+  subtitle: 'Theo dõi và đặt lại món yêu thích',
+  filterAria: 'Lọc đơn hàng',
+  tabActive: 'Đang xử lý',
+  tabHistory: 'Lịch sử',
+  panelActive: 'Đơn đang xử lý',
+  panelHistory: 'Lịch sử đơn hàng',
+  loading: 'Đang tải đơn hàng',
+  live: 'Cập nhật trực tiếp',
+  liveHint: 'Trạng thái tự cập nhật — bạn sẽ nhận thông báo ngay khi món sẵn sàng.',
+  today: 'Hôm nay',
+  yesterday: 'Hôm qua',
+  dayLabel: '{weekday}, {date}',
+  emptyActive: {
+    title: 'Chưa có đơn đang xử lý',
+    description: 'Chọn món yêu thích — Cloud 9 sẽ pha ngay cho bạn.',
+    cta: 'Xem thực đơn',
+  },
+  emptyHistory: {
+    title: 'Chưa có lịch sử đơn hàng',
+    description: 'Đơn đã hoàn thành hoặc đã huỷ sẽ nằm ở đây để bạn đặt lại nhanh.',
+    cta: 'Đặt món ngay',
+  },
+  card: {
+    aria: 'Đơn {code}, {status}, {total}',
+    more: '+{count} món',
+    reorder: 'Đặt lại',
+    reorderAria: 'Đặt lại đơn {code}',
+    openQr: 'Mở mã QR để thanh toán',
+    freeCup: 'Cốc miễn phí',
+  },
+  reorder: {
+    allUnavailable: 'Các món trong đơn này hiện đã hết — mời bạn chọn món khác nhé',
+    added: 'Đã thêm {count} món vào giỏ',
+    addedPartial: 'Đã thêm {count} món vào giỏ · {missing} tạm hết',
+    missingCount: '{count} món',
+  },
+};

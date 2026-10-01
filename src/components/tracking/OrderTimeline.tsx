@@ -1,7 +1,10 @@
 import { CircleX, Hourglass, Receipt, type LucideIcon } from 'lucide-react';
+import { translate, useT, type MessageKey } from '@/i18n';
 import { cn } from '@/lib/cn';
 import { formatPrice, formatTime } from '@/lib/format';
 import { STATUS_META, statusSteps, stepLabel } from '@/lib/order-status';
+import { customerCancelReason } from '@/lib/cancel-reason';
+import { isExpiryCancel } from '@/services/order-logic';
 import type { Order } from '@/types';
 import { progressIndex, stepState, stepTime, type StepState } from './OrderProgress';
 import { STATUS_VISUAL } from './visuals';
@@ -17,30 +20,32 @@ interface TimelineEntry {
   note?: string;
 }
 
-const CANCELLED_BY: Record<'customer' | 'staff' | 'system', string> = {
-  customer: 'Bạn đã huỷ đơn',
-  staff: 'Quán đã huỷ đơn',
-  system: 'Tự huỷ do quá hạn thanh toán',
+const CANCELLED_BY: Record<'customer' | 'staff' | 'system', MessageKey> = {
+  customer: 'orderStatus.timeline.cancelledByCustomer',
+  staff: 'orderStatus.timeline.cancelledByStaff',
+  system: 'orderStatus.timeline.cancelledExpired',
 };
 
 /**
  * Mô tả việc huỷ đơn: ai huỷ + lý do. Lý do chỉ hiện khi quán huỷ
- * (khách tự huỷ / hệ thống tự huỷ thì tiêu đề đã đủ nghĩa).
+ * (khách tự huỷ / hệ thống tự huỷ / hết hạn thanh toán thì tiêu đề đã đủ nghĩa).
  */
-export function cancellationInfo(order: Pick<Order, 'statusHistory' | 'cancelReason'>): { title: string; reason?: string } {
+export function cancellationInfo(order: Pick<Order, 'status' | 'statusHistory' | 'cancelReason'>): { title: string; reason?: string } {
+  // Hết hạn thanh toán (kể cả khi máy khách tự huỷ lúc hết giờ) — không so chuỗi lý do cố định
+  if (isExpiryCancel(order)) return { title: translate(CANCELLED_BY.system) };
   const by = [...order.statusHistory].reverse().find((e) => e.status === 'cancelled')?.by ?? 'staff';
-  return { title: CANCELLED_BY[by], reason: by === 'staff' ? order.cancelReason : undefined };
+  return { title: translate(CANCELLED_BY[by]), reason: by === 'staff' ? customerCancelReason(order) : undefined };
 }
 
 function buildEntries(order: Order): TimelineEntry[] {
   const entries: TimelineEntry[] = [
     {
       key: 'created',
-      label: 'Đặt đơn',
+      label: translate('orderStatus.timeline.placed'),
       icon: Receipt,
       state: 'done',
       at: order.createdAt,
-      note: `${order.itemCount} món · ${formatPrice(order.total)}`,
+      note: translate('orderStatus.timeline.placedNote', { count: order.itemCount, total: formatPrice(order.total) }),
     },
   ];
   const steps = statusSteps(order.fulfillment);
@@ -58,7 +63,7 @@ function buildEntries(order: Order): TimelineEntry[] {
       icon: CircleX,
       state: 'cancelled',
       at: stepTime(order, 'cancelled') ?? order.updatedAt,
-      note: info.reason ? `Lý do: ${info.reason}` : undefined,
+      note: info.reason ? translate('orderStatus.reason', { reason: info.reason }) : undefined,
     });
     return entries;
   }
@@ -72,9 +77,10 @@ function buildEntries(order: Order): TimelineEntry[] {
     const state = stepState(i, current);
     let note: string | undefined;
     if (state === 'current') note = STATUS_META[s].description;
-    else if (s === 'received' && state === 'done') note = 'Đã thanh toán tại quầy';
-    else if (s === 'received' && state === 'todo') note = 'Sau khi thu ngân xác nhận thanh toán';
-    else if (s === 'completed' && state === 'done') note = order.fulfillment === 'delivery' ? 'Đơn đã giao đến bạn. Chúc ngon miệng!' : 'Chúc bạn ngon miệng!';
+    else if (s === 'received' && state === 'done') note = translate('orderStatus.timeline.paidAtCounter');
+    else if (s === 'received' && state === 'todo') note = translate('orderStatus.timeline.awaitingPayment');
+    else if (s === 'completed' && state === 'done')
+      note = translate(order.fulfillment === 'delivery' ? 'orderStatus.timeline.deliveredNote' : 'orderStatus.timeline.enjoy');
     entries.push({
       key: s,
       label: stepLabel(s, order.fulfillment),
@@ -96,6 +102,7 @@ const DOT: Record<EntryState, string> = {
 
 /** Dòng thời gian dọc — chi tiết từng mốc trạng thái của đơn */
 export function OrderTimeline({ order, className }: { order: Order; className?: string }) {
+  const { t } = useT();
   const entries = buildEntries(order);
   return (
     <ol className={cn('relative', className)}>
@@ -128,7 +135,7 @@ export function OrderTimeline({ order, className }: { order: Order; className?: 
                   )}
                 >
                   {e.label}
-                  {e.state === 'current' && <span className="sr-only"> (đang diễn ra)</span>}
+                  {e.state === 'current' && <span className="sr-only"> ({t('orderStatus.progress.current')})</span>}
                 </p>
                 {e.at && (
                   <time dateTime={new Date(e.at).toISOString()} className="shrink-0 font-display text-xs font-semibold tabular-nums text-bronze-500">

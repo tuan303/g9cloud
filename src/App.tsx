@@ -1,4 +1,5 @@
-import { lazy, Suspense, type ReactNode } from 'react';
+import { Fragment, lazy, Suspense, type ReactNode } from 'react';
+import { useLocale, useT } from '@/i18n';
 import { createHashRouter, Outlet, RouterProvider, ScrollRestoration } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { Toaster } from '@/components/ui';
@@ -29,10 +30,11 @@ const AdminScanPage = lazy(() => import('@/pages/admin/AdminScanPage'));
 const AdminMenuPage = lazy(() => import('@/pages/admin/AdminMenuPage'));
 
 function Loading({ children }: { children: ReactNode }) {
+  const { t } = useT();
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-dvh items-center justify-center bg-cream text-bronze-500" role="status" aria-label="Đang tải">
+        <div className="flex min-h-dvh items-center justify-center bg-cream text-bronze-500" role="status" aria-label={t('common.loading')}>
           <Loader2 className="h-7 w-7 animate-spin" />
         </div>
       }
@@ -43,9 +45,13 @@ function Loading({ children }: { children: ReactNode }) {
 }
 
 function Root() {
+  // Đổi ngôn ngữ → vẽ lại toàn bộ trang (kể cả chữ lấy từ dữ liệu / ngoài React)
+  const locale = useLocale((s) => s.locale);
   return (
     <>
-      <Outlet />
+      <Fragment key={locale}>
+        <Outlet />
+      </Fragment>
       <ConnectionBanner />
       <Toaster />
       <ScrollRestoration />

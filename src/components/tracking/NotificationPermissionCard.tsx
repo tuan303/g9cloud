@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { BellRing, X } from 'lucide-react';
 import { Button } from '@/components/ui';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 import { platform } from '@/platform';
 import { toast } from '@/store/ui';
@@ -26,6 +27,7 @@ function readDismissed(): boolean {
  * đã bị từ chối (không thể hỏi lại) hoặc khách đã tắt gợi ý.
  */
 export function NotificationPermissionCard({ className }: { className?: string }) {
+  const { t } = useT();
   const [permission, setPermission] = useState<PermissionState>(currentPermission);
   const [dismissed, setDismissed] = useState(readDismissed);
   const [busy, setBusy] = useState(false);
@@ -46,16 +48,16 @@ export function NotificationPermissionCard({ className }: { className?: string }
     const granted = await platform.requestNotificationPermission();
     setBusy(false);
     setPermission(currentPermission());
-    if (granted) toast('Đã bật thông báo — Cloud 9 sẽ báo ngay khi món sẵn sàng', 'success');
+    if (granted) toast(t('notifications.permission.granted'), 'success');
     else {
-      toast('Chưa bật được thông báo. Bạn có thể bật lại trong cài đặt trình duyệt.', 'info');
+      toast(t('notifications.permission.denied'), 'info');
       dismiss();
     }
   };
 
   return (
     <section
-      aria-label="Bật thông báo"
+      aria-label={t('notifications.permission.aria')}
       className={cn('relative isolate overflow-hidden rounded-3xl bg-espresso p-4 pr-12 text-cream shadow-lift', className)}
     >
       <div
@@ -68,17 +70,17 @@ export function NotificationPermissionCard({ className }: { className?: string }
           <BellRing className="h-5 w-5" aria-hidden />
         </span>
         <div className="min-w-0">
-          <h2 className="font-display text-[15px] font-bold leading-snug">Bật thông báo trên máy</h2>
-          <p className="mt-0.5 text-[13px] leading-snug text-cream/75">Nhận tin ngay khi món sẵn sàng, kể cả khi bạn đang mở ứng dụng khác.</p>
+          <h2 className="font-display text-[15px] font-bold leading-snug">{t('notifications.permission.title')}</h2>
+          <p className="mt-0.5 text-[13px] leading-snug text-cream/75">{t('notifications.permission.body')}</p>
           <Button variant="gold" className="mt-3" loading={busy} onClick={enable}>
-            Bật thông báo
+            {t('notifications.permission.enable')}
           </Button>
         </div>
       </div>
       <button
         type="button"
-        aria-label="Ẩn gợi ý bật thông báo"
-        title="Ẩn gợi ý"
+        aria-label={t('notifications.permission.dismissAria')}
+        title={t('notifications.permission.dismissTitle')}
         onClick={dismiss}
         className="absolute right-1 top-1 inline-flex h-11 w-11 items-center justify-center rounded-full text-cream/70 transition hover:bg-white/10 hover:text-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold active:scale-95"
       >

@@ -1,6 +1,7 @@
 import { useMemo, type ReactNode } from 'react';
 import { create as createQr, type QRCodeErrorCorrectionLevel } from 'qrcode';
 import { QrCode as QrIcon } from 'lucide-react';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 
 /** Kích thước mã QR co giãn: tối đa 240px, thu nhỏ trên màn hình hẹp (≤ 360px) để không tràn khung */
@@ -18,7 +19,7 @@ export function QrCode({
   margin = 0,
   dark = '#2A2218',
   light = '#FFFFFF',
-  label = 'Mã QR',
+  label,
   className,
 }: {
   value: string;
@@ -32,6 +33,7 @@ export function QrCode({
   label?: string;
   className?: string;
 }) {
+  const { t } = useT();
   const qr = useMemo(() => {
     try {
       const { modules } = createQr(value, { errorCorrectionLevel: level });
@@ -60,12 +62,12 @@ export function QrCode({
     return (
       <div
         role="img"
-        aria-label="Không tạo được mã QR"
+        aria-label={t('payment.qr.failed')}
         style={{ width: size, height: size }}
         className={cn('flex flex-col items-center justify-center gap-2 rounded-2xl bg-bronze-50 text-center text-xs text-stone', className)}
       >
         <QrIcon className="h-8 w-8 text-bronze-300" aria-hidden />
-        Không tạo được mã QR
+        {t('payment.qr.failed')}
       </div>
     );
   }
@@ -77,7 +79,7 @@ export function QrCode({
       height={size}
       shapeRendering="crispEdges"
       role="img"
-      aria-label={label}
+      aria-label={label ?? t('payment.qr.label')}
       className={cn('block', className)}
     >
       <rect width={qr.dim} height={qr.dim} fill={light} />

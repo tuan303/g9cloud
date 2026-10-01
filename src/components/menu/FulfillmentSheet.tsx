@@ -3,6 +3,7 @@ import { Clock, MapPin } from 'lucide-react';
 import { APP_CONFIG } from '@/config/app';
 import { BottomSheet, Button } from '@/components/ui';
 import { FulfillmentPicker } from '@/components/customer/FulfillmentPicker';
+import { pick, useT } from '@/i18n';
 import { formatPrice } from '@/lib/format';
 import { useSession } from '@/store/session';
 import { toast } from '@/store/ui';
@@ -18,6 +19,7 @@ export function FulfillmentSheet({ open, onClose }: { open: boolean; onClose: ()
 
 function FulfillmentSheetBody({ onClose: onCloseProp }: { onClose: () => void }) {
   const onClose = useStableCallback(onCloseProp);
+  const { t, locale } = useT();
   const savedFulfillment = useSession((s) => s.fulfillment);
   const savedAddress = useSession((s) => s.deliveryAddress);
   const setFulfillment = useSession((s) => s.setFulfillment);
@@ -32,14 +34,14 @@ function FulfillmentSheetBody({ onClose: onCloseProp }: { onClose: () => void })
     if (value === 'delivery') {
       const addr = address.trim();
       if (!addr) {
-        setError('Bạn nhập giúp nơi giao (lớp hoặc phòng ban) nhé');
+        setError(t('menu.fulfillmentSheet.addressRequired'));
         return;
       }
       setFulfillment('delivery', addr);
-      toast(`Quán sẽ giao đến ${addr}`, 'success');
+      toast(t('menu.fulfillmentSheet.toastDelivery', { address: addr }), 'success');
     } else {
       setFulfillment('pickup');
-      toast('Bạn sẽ nhận món tại quầy', 'success');
+      toast(t('menu.fulfillmentSheet.toastPickup'), 'success');
     }
     onClose();
   };
@@ -48,14 +50,14 @@ function FulfillmentSheetBody({ onClose: onCloseProp }: { onClose: () => void })
     <BottomSheet
       open
       onClose={onClose}
-      title="Hình thức nhận món"
+      title={t('menu.fulfillmentSheet.title')}
       footer={
         <Button block size="lg" onClick={save}>
-          Xác nhận
+          {t('menu.fulfillmentSheet.confirm')}
         </Button>
       }
     >
-      <p className="mb-4 text-sm text-stone">Bạn muốn ghé quầy lấy món hay để quán mang đến tận nơi?</p>
+      <p className="mb-4 text-sm text-stone">{t('menu.fulfillmentSheet.intro')}</p>
       <FulfillmentPicker
         value={value}
         onChange={(v) => {
@@ -70,17 +72,19 @@ function FulfillmentSheetBody({ onClose: onCloseProp }: { onClose: () => void })
         addressError={error}
       />
       {value === 'delivery' && fulfillment.delivery.minOrder > 0 && (
-        <p className="mt-3 px-1 text-xs text-stone">Giao tận nơi cho đơn từ {formatPrice(fulfillment.delivery.minOrder)}.</p>
+        <p className="mt-3 px-1 text-xs text-stone">
+          {t('menu.fulfillmentSheet.minOrder', { amount: formatPrice(fulfillment.delivery.minOrder) })}
+        </p>
       )}
       {value === 'pickup' && (
         <div className="mt-4 space-y-2 rounded-2xl bg-white p-4 text-sm text-bronze-800 ring-1 ring-bronze-200/60">
           <p className="flex items-center gap-2.5">
             <MapPin className="h-4 w-4 shrink-0 text-bronze-500" aria-hidden />
-            Quầy {shop.name} · {shop.location}
+            {t('menu.fulfillmentSheet.counter', { name: shop.name, location: pick(shop.location, shop.locationEn, locale) })}
           </p>
           <p className="flex items-center gap-2.5">
             <Clock className="h-4 w-4 shrink-0 text-bronze-500" aria-hidden />
-            {shop.openingHours}
+            {pick(shop.openingHours, shop.openingHoursEn, locale)}
           </p>
         </div>
       )}

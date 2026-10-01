@@ -1,17 +1,20 @@
-const vnd = new Intl.NumberFormat('vi-VN');
+import { getLocale, translate } from '@/i18n';
 
-/** 35000 → "35.000đ" */
+const vnd = { vi: new Intl.NumberFormat('vi-VN'), en: new Intl.NumberFormat('en-US') };
+
+/** 35000 → "35.000đ" (tiếng Anh: "35,000đ") */
 export function formatPrice(value: number): string {
-  return `${vnd.format(Math.round(value))}đ`;
+  return `${vnd[getLocale()].format(Math.round(value))}đ`;
 }
 
-/** 1250000 → "1,25tr" — dùng cho trục biểu đồ / KPI gọn */
+/** 1250000 → "1,25tr" (tiếng Anh "1.25M") — dùng cho trục biểu đồ / KPI gọn */
 export function formatCompactPrice(value: number): string {
+  const en = getLocale() === 'en';
   if (value >= 999_500) {
     const m = value / 1_000_000;
     // ≥ 10tr: số nguyên; < 10tr: tối đa 2 chữ số thập phân, bỏ số 0 thừa SAU dấu phẩy
     const text = m >= 10 ? String(Math.round(m)) : m.toFixed(2).replace(/\.?0+$/, '');
-    return `${text.replace('.', ',')}tr`;
+    return en ? `${text}M` : `${text.replace('.', ',')}tr`;
   }
   if (value >= 1_000) return `${Math.round(value / 1_000)}k`;
   return `${value}`;
@@ -37,20 +40,25 @@ export function formatDateTime(ts: number): string {
   return `${formatTime(ts)} · ${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
 }
 
-const WEEKDAYS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+/** "T2" / "Mon" */
 export function formatWeekday(ts: number): string {
-  return WEEKDAYS[new Date(ts).getDay()];
+  return translate('time.weekdaysShort').split(',')[new Date(ts).getDay()];
 }
 
-/** "vừa xong", "5 phút trước", "2 giờ trước", "hôm qua", "30/09" */
+/** "Thứ Hai" / "Monday" */
+export function formatWeekdayLong(ts: number): string {
+  return translate('time.weekdaysLong').split(',')[new Date(ts).getDay()];
+}
+
+/** "vừa xong", "5 phút trước", "2 giờ trước", "hôm qua", "30/09" (theo ngôn ngữ đang chọn) */
 export function formatRelative(ts: number, now = Date.now()): string {
   const diff = Math.max(0, now - ts);
   const min = Math.floor(diff / 60000);
-  if (min < 1) return 'vừa xong';
-  if (min < 60) return `${min} phút trước`;
+  if (min < 1) return translate('time.justNow');
+  if (min < 60) return translate('time.minutesAgo', { count: min });
   const h = Math.floor(min / 60);
-  if (h < 24 && isSameDay(ts, now)) return `${h} giờ trước`;
-  if (isSameDay(ts, now - 86400000)) return 'hôm qua';
+  if (h < 24 && isSameDay(ts, now)) return translate('time.hoursAgo', { count: h });
+  if (isSameDay(ts, now - 86400000)) return translate('time.yesterday');
   return formatDayMonth(ts);
 }
 

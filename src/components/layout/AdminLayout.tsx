@@ -1,19 +1,21 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { ClipboardList, LayoutDashboard, Lock, ScanLine, Store, UtensilsCrossed } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { Logo } from '@/components/ui';
+import { LanguageSwitch, Logo } from '@/components/ui';
+import { useT } from '@/i18n';
 import { useOrders } from '@/hooks/data';
 import { lockStaff } from '@/store/staff-auth';
 
 const NAV = [
-  { to: '/admin', label: 'Tổng quan', icon: LayoutDashboard, end: true },
-  { to: '/admin/orders', label: 'Đơn hàng', icon: ClipboardList },
-  { to: '/admin/scan', label: 'Quét QR', icon: ScanLine },
-  { to: '/admin/menu', label: 'Thực đơn', icon: UtensilsCrossed },
+  { to: '/admin', label: 'nav.dashboard', icon: LayoutDashboard, end: true },
+  { to: '/admin/orders', label: 'nav.adminOrders', icon: ClipboardList },
+  { to: '/admin/scan', label: 'nav.scan', icon: ScanLine },
+  { to: '/admin/menu', label: 'nav.adminMenu', icon: UtensilsCrossed },
 ] as const;
 
 /** Khung trang quản trị: thanh bên trên màn hình lớn, thanh tab dưới trên điện thoại */
 export function AdminLayout() {
+  const { t } = useT();
   const navigate = useNavigate();
   const orders = useOrders();
   const pending = orders.filter((o) => o.status === 'pending_payment').length;
@@ -31,7 +33,8 @@ export function AdminLayout() {
       <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col bg-espresso text-cream md:flex">
         <div className="px-6 pb-6 pt-7">
           <Logo className="h-9 text-cream" />
-          <p className="mt-2 text-xs uppercase tracking-[0.2em] text-gold">Quản trị quán</p>
+          <p className="mt-2 text-xs uppercase tracking-[0.2em] text-gold">{t('nav.adminArea')}</p>
+          <LanguageSwitch tone="dark" className="mt-4" />
         </div>
         <nav className="flex-1 space-y-1 px-3">
           {NAV.map(({ to, label, icon: Icon, ...rest }) => (
@@ -47,17 +50,17 @@ export function AdminLayout() {
               }
             >
               <Icon className="h-5 w-5" />
-              <span className="flex-1">{label}</span>
+              <span className="flex-1">{t(label)}</span>
               {!!badges[to] && <span className="rounded-full bg-gold px-2 text-xs font-bold leading-5 text-espresso">{badges[to]}</span>}
             </NavLink>
           ))}
         </nav>
         <div className="space-y-1 border-t border-white/10 p-3">
           <NavLink to="/" className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm text-cream/75 hover:bg-white/10">
-            <Store className="h-5 w-5" /> Xem app khách
+            <Store className="h-5 w-5" /> {t('nav.customerApp')}
           </NavLink>
           <button onClick={lock} className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm text-cream/75 hover:bg-white/10">
-            <Lock className="h-5 w-5" /> Khoá màn hình
+            <Lock className="h-5 w-5" /> {t('nav.lock')}
           </button>
         </div>
       </aside>
@@ -68,11 +71,14 @@ export function AdminLayout() {
           <div className="flex h-14 items-center justify-between px-4">
             <div className="flex items-center gap-2.5">
               <Logo className="h-6 text-cream" />
-              <span className="rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-gold">Admin</span>
+              <span className="rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-gold">{t('nav.adminBadge')}</span>
             </div>
-            <button onClick={lock} aria-label="Khoá màn hình quản trị" className="rounded-full p-2 text-cream/80 hover:bg-white/10">
-              <Lock className="h-5 w-5" />
-            </button>
+            <div className="flex items-center gap-1">
+              <LanguageSwitch tone="dark" />
+              <button onClick={lock} aria-label={t('nav.lockAria')} className="rounded-full p-2 text-cream/80 hover:bg-white/10">
+                <Lock className="h-5 w-5" />
+              </button>
+            </div>
           </div>
         </header>
         <main className="mx-auto w-full max-w-6xl pb-28 md:pb-10">
@@ -82,7 +88,7 @@ export function AdminLayout() {
 
       {/* Tab dưới — điện thoại */}
       <nav
-        aria-label="Điều hướng quản trị"
+        aria-label={t('nav.admin')}
         className="fixed inset-x-0 bottom-0 z-40 border-t border-bronze-200 bg-cream/95 backdrop-blur-md md:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
@@ -104,7 +110,7 @@ export function AdminLayout() {
                     </span>
                   )}
                 </span>
-                {label}
+                {t(label)}
               </NavLink>
             </li>
           ))}

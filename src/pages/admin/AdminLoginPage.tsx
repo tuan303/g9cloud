@@ -5,10 +5,11 @@ import counterPhoto from '@/assets/photos/counter.webp';
 import { APP_CONFIG } from '@/config/app';
 import { useNow } from '@/hooks/useNow';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 import { platform } from '@/platform';
 import { useSession } from '@/store/session';
-import { Logo } from '@/components/ui';
+import { LanguageSwitch, Logo } from '@/components/ui';
 
 const PIN = APP_CONFIG.admin.pin;
 /** Chỉ gợi ý PIN khi quán chưa đổi mã mặc định (bản demo) */
@@ -21,6 +22,28 @@ const SHAKE_CSS = `@keyframes c9-shake{0%,100%{transform:translateX(0)}15%{trans
 
 type Phase = 'input' | 'checking' | 'error' | 'success';
 
+/** Số lần sai + thời điểm hết khoá lưu theo phiên trình duyệt: đổi ngôn ngữ / tải lại trang không xoá được khoá */
+const LOCK_KEY = 'c9.admin.pinLock';
+interface PinLock {
+  attempts: number;
+  lockedUntil: number;
+}
+function readLock(): PinLock {
+  try {
+    const v = JSON.parse(sessionStorage.getItem(LOCK_KEY) ?? 'null') as Partial<PinLock> | null;
+    return { attempts: Number(v?.attempts) || 0, lockedUntil: Number(v?.lockedUntil) || 0 };
+  } catch {
+    return { attempts: 0, lockedUntil: 0 };
+  }
+}
+function writeLock(lock: PinLock) {
+  try {
+    sessionStorage.setItem(LOCK_KEY, JSON.stringify(lock));
+  } catch {
+    /* chế độ riêng tư / bị chặn bộ nhớ: khoá chỉ còn trong trang */
+  }
+}
+
 /** Chỉ quay lại trang quản trị (không mở trang tuỳ ý từ state) */
 function safeDestination(from: unknown): string {
   return typeof from === 'string' && from.startsWith('/admin') && !from.startsWith('/admin/login') ? from : '/admin';
@@ -28,7 +51,8 @@ function safeDestination(from: unknown): string {
 
 /** Đăng nhập nhân viên bằng mã PIN — bàn phím số lớn, hỗ trợ cả bàn phím vật lý */
 export default function AdminLoginPage() {
-  usePageTitle('Khu vực nhân viên');
+  const { t } = useT();
+  usePageTitle(t('adminLogin.staffArea'));
   const unlocked = useSession((s) => s.adminUnlocked);
   const unlockAdmin = useSession((s) => s.unlockAdmin);
   const navigate = useNavigate();
@@ -37,8 +61,8 @@ export default function AdminLoginPage() {
 
   const [value, setValue] = useState('');
   const [phase, setPhase] = useState<Phase>('input');
-  const [attempts, setAttempts] = useState(0);
-  const [lockedUntil, setLockedUntil] = useState(0);
+  const [attempts, setAttempts] = useState(() => readLock().attempts);
+  const [lockedUntil, setLockedUntil] = useState(() => readLock().lockedUntil);
   const [shakeKey, setShakeKey] = useState(0);
   const now = useNow(1000);
   const locked = lockedUntil > now;
@@ -53,6 +77,7 @@ export default function AdminLoginPage() {
 
   const verify = (pin: string) => {
     if (pin === PIN) {
+      writeLock({ attempts: 0, lockedUntil: 0 });
       setPhase('success');
       platform.vibrate(20);
       later(() => {
@@ -67,10 +92,13 @@ export default function AdminLoginPage() {
     const next = attempts + 1;
     const lock = next >= MAX_ATTEMPTS;
     if (lock) {
+      const until = Date.now() + LOCK_MS;
       setAttempts(0);
-      setLockedUntil(Date.now() + LOCK_MS);
+      setLockedUntil(until);
+      writeLock({ attempts: 0, lockedUntil: until });
     } else {
       setAttempts(next);
+      writeLock({ attempts: next, lockedUntil });
     }
     later(() => {
       setValue('');
@@ -114,8 +142,9 @@ export default function AdminLoginPage() {
         e.preventDefault();
         h.backspace();
       } else if (e.key === 'Enter') {
-        // Enter trên liên kết vẫn giữ hành vi mặc định (điều hướng)
-        if (document.activeElement instanceof HTMLAnchorElement) return;
+        // Enter trên liên kết / nút chọn ngôn ngữ vẫn giữ hành vi mặc định (điều hướng / chọn)
+        const active = document.activeElement;
+        if (active instanceof HTMLAnchorElement || active?.getAttribute('role') === 'radio') return;
         e.preventDefault();
         h.submit();
       } else if (e.key === 'Escape') {
@@ -133,11 +162,11 @@ export default function AdminLoginPage() {
   const secondsLeft = Math.ceil((lockedUntil - now) / 1000);
   const attemptsLeft = MAX_ATTEMPTS - attempts;
   const message = locked
-    ? `Nhập sai quá nhiều lần. Thử lại sau ${secondsLeft} giây.`
+    ? t('adminLogin.pin.locked', { count: secondsLeft })
     : phase === 'success'
-      ? 'Đã mở khoá — chào mừng bạn!'
+      ? t('adminLogin.pin.success')
       : showError
-        ? `Mã PIN không đúng${attempts >= 2 && attemptsLeft > 0 ? ` · còn ${attemptsLeft} lần thử` : ''}`
+        ? `${t('adminLogin.pin.wrong')}${attempts >= 2 && attemptsLeft > 0 ? t('adminLogin.pin.attemptsLeft', { count: attemptsLeft }) : ''}`
         : '';
 
   return (
@@ -149,24 +178,25 @@ export default function AdminLoginPage() {
       <div aria-hidden className="absolute -top-28 left-1/2 -z-10 h-80 w-80 -translate-x-1/2 rounded-full bg-gold/20 blur-3xl" />
 
       <div className="safe-top mx-auto flex min-h-dvh w-full max-w-sm flex-col px-6">
-        <div className="flex h-14 shrink-0 items-center">
+        <div className="flex h-14 shrink-0 items-center justify-between gap-3">
           <Link
             to="/"
             className="-ml-3 inline-flex h-11 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-cream/80 transition hover:bg-white/10 hover:text-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
           >
             <ArrowLeft aria-hidden className="h-4 w-4" />
-            Về trang gọi món
+            {t('adminLogin.backToOrdering')}
           </Link>
+          <LanguageSwitch tone="dark" className="shrink-0" disabled={locked} />
         </div>
 
         <main className="flex flex-1 flex-col items-center justify-center py-4">
           <Logo className="h-9 text-cream [@media(min-height:720px)]:h-11" />
           <p className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-white/[0.07] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-gold ring-1 ring-gold/30">
             <LockKeyhole aria-hidden className="h-3.5 w-3.5" />
-            Khu vực nhân viên
+            {t('adminLogin.staffArea')}
           </p>
-          <h1 className="mt-4 font-display text-2xl font-bold tracking-tight">Nhập mã PIN</h1>
-          <p className="mt-1 text-sm text-cream/70">Mở khoá màn hình quản trị quán</p>
+          <h1 className="mt-4 font-display text-2xl font-bold tracking-tight">{t('adminLogin.pin.title')}</h1>
+          <p className="mt-1 text-sm text-cream/70">{t('adminLogin.pin.subtitle')}</p>
 
           {/* Chấm PIN */}
           <div
@@ -194,7 +224,7 @@ export default function AdminLoginPage() {
             })}
           </div>
           <p className="sr-only" aria-live="polite">
-            Đã nhập {value.length} trên {PIN.length} chữ số
+            {t('adminLogin.pin.progress', { count: value.length, total: PIN.length })}
           </p>
           <p
             aria-live="assertive"
@@ -204,7 +234,7 @@ export default function AdminLoginPage() {
           </p>
 
           {/* Bàn phím số 3×4 */}
-          <div role="group" aria-label="Bàn phím số" className="mt-5 grid grid-cols-3 gap-x-6 gap-y-3.5 [@media(min-height:720px)]:gap-y-4">
+          <div role="group" aria-label={t('adminLogin.pin.keypad')} className="mt-5 grid grid-cols-3 gap-x-6 gap-y-3.5 [@media(min-height:720px)]:gap-y-4">
             {KEYS.map((k, i) => {
               if (k === '') return <span key={`empty-${i}`} aria-hidden />;
               const isBack = k === 'back';
@@ -214,7 +244,7 @@ export default function AdminLoginPage() {
                   type="button"
                   onClick={() => (isBack ? backspace() : press(k))}
                   disabled={inputDisabled || (isBack && !value)}
-                  aria-label={isBack ? 'Xoá chữ số vừa nhập' : undefined}
+                  aria-label={isBack ? t('adminLogin.pin.backspace') : undefined}
                   className={cn(
                     'flex h-16 w-16 select-none items-center justify-center rounded-full transition duration-100 active:scale-95',
                     '[@media(min-height:720px)]:h-[72px] [@media(min-height:720px)]:w-[72px]',
@@ -234,10 +264,10 @@ export default function AdminLoginPage() {
         <footer className="safe-bottom shrink-0 pt-2 text-center text-xs text-cream/55">
           {SHOW_DEFAULT_HINT ? (
             <>
-              PIN mặc định: <span className="font-display font-semibold tracking-[0.2em] text-cream/75">{PIN}</span>
+              {t('adminLogin.pin.defaultHint')} <span className="font-display font-semibold tracking-[0.2em] text-cream/75">{PIN}</span>
             </>
           ) : (
-            'Quên mã PIN? Liên hệ quản lý quán.'
+            t('adminLogin.pin.forgot')
           )}
         </footer>
       </div>

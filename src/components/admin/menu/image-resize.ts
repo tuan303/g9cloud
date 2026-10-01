@@ -4,6 +4,8 @@
  * Khi có backend thật, nên tải ảnh lên kho lưu trữ (Storage/CDN) và chỉ lưu URL.
  */
 
+import { getLocale, translate } from '@/i18n';
+
 export const IMAGE_MAX_SIDE = 640;
 export const IMAGE_QUALITY = 0.8;
 /** Ngưỡng cảnh báo dung lượng ảnh sau khi nén */
@@ -25,9 +27,12 @@ export function dataUrlBytes(dataUrl: string): number {
   return Math.max(0, Math.floor((body.length * 3) / 4) - padding);
 }
 
-/** "58 KB" / "1,2 MB" */
+/** "58 KB" / "1,2 MB" (tiếng Anh: "1.2 MB") */
 export function formatBytes(bytes: number): string {
-  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1).replace('.', ',')} MB`;
+  if (bytes >= 1024 * 1024) {
+    const mb = (bytes / 1024 / 1024).toFixed(1);
+    return `${getLocale() === 'vi' ? mb.replace('.', ',') : mb} MB`;
+  }
   return `${Math.max(1, Math.round(bytes / 1024))} KB`;
 }
 
@@ -46,7 +51,7 @@ function makeCanvas(width: number, height: number) {
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Trình duyệt không hỗ trợ xử lý ảnh');
+  if (!ctx) throw new Error(translate('adminMenu.image.unsupported'));
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
   return { canvas, ctx };
@@ -56,18 +61,18 @@ export async function resizeImageFile(
   file: File,
   { maxSide = IMAGE_MAX_SIDE, quality = IMAGE_QUALITY }: { maxSide?: number; quality?: number } = {},
 ): Promise<ProcessedImage> {
-  if (!file.type.startsWith('image/')) throw new Error('Tệp đã chọn không phải là ảnh');
+  if (!file.type.startsWith('image/')) throw new Error(translate('adminMenu.image.notImage'));
   const objectUrl = URL.createObjectURL(file);
   try {
     let img: HTMLImageElement;
     try {
       img = await loadImage(objectUrl);
     } catch {
-      throw new Error('Không đọc được ảnh này — hãy thử ảnh JPG hoặc PNG khác');
+      throw new Error(translate('adminMenu.image.unreadable'));
     }
     const srcW = img.naturalWidth;
     const srcH = img.naturalHeight;
-    if (!srcW || !srcH) throw new Error('Không đọc được kích thước ảnh');
+    if (!srcW || !srcH) throw new Error(translate('adminMenu.image.noSize'));
 
     const scale = Math.min(1, maxSide / Math.max(srcW, srcH));
     const width = Math.max(1, Math.round(srcW * scale));

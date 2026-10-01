@@ -18,12 +18,15 @@ import {
   callName,
   focusFirstInvalid,
   formatPhoneDisplay,
+  guestDisplayName,
   redirectTarget,
   reportSsoError,
   toProfileData,
   useProfileForm,
 } from '@/components/onboarding';
 import { useAction } from '@/hooks/useAction';
+import { useDraftState } from '@/hooks/useDraftState';
+import { useT, type MessageKey } from '@/i18n';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { platform, type PlatformProfile } from '@/platform';
 import {
@@ -42,29 +45,12 @@ type Stage = 'method' | 'profile' | 'fulfillment';
 const { pickup, delivery } = APP_CONFIG.fulfillment;
 /** Bước 2 chỉ cần khi có “Giao tận nơi” (phải hỏi địa chỉ); chỉ nhận tại quầy thì bỏ qua */
 const HAS_FULFILLMENT_STEP = delivery.enabled;
-const STEP_LABELS = HAS_FULFILLMENT_STEP ? ['Đăng nhập', 'Nhận món'] : ['Đăng nhập'];
+const STEP_KEYS: MessageKey[] = HAS_FULFILLMENT_STEP
+  ? ['onboarding.steps.signIn', 'onboarding.steps.fulfillment']
+  : ['onboarding.steps.signIn'];
 const IS_ZALO = platform.name === 'zalo';
 /** Hiện nút Microsoft 365: SSO thật (Firebase) hoặc mô phỏng ở bản demo offline */
 const SHOW_MICROSOFT = MICROSOFT_SSO || BACKEND === 'local';
-
-const PROFILE_COPY: Record<AuthProvider, { title: string; description: string }> = {
-  microsoft: {
-    title: 'Xác nhận thông tin',
-    description: 'Đã đăng nhập bằng tài khoản Microsoft 365 của trường. Thêm số điện thoại để quán liên hệ khi cần.',
-  },
-  school_email: {
-    title: 'Đăng nhập bằng email trường',
-    description: 'Lần sau đăng nhập lại bằng cùng email là xem được các đơn đã đặt.',
-  },
-  zalo: {
-    title: 'Xác nhận thông tin',
-    description: 'Kiểm tra lại tên và thêm số điện thoại để quán liên hệ khi cần.',
-  },
-  guest: {
-    title: 'Tiếp tục với tư cách khách',
-    description: 'Gọi món ngay, không cần tài khoản.',
-  },
-};
 
 function initialFulfillment(saved: FulfillmentType): FulfillmentType {
   if (saved === 'delivery' ? delivery.enabled : pickup.enabled) return saved;
@@ -72,7 +58,9 @@ function initialFulfillment(saved: FulfillmentType): FulfillmentType {
 }
 
 export default function WelcomePage() {
-  usePageTitle('Đăng nhập');
+  const { t } = useT();
+  usePageTitle(t('onboarding.welcome.pageTitle'));
+  const stepLabels = STEP_KEYS.map((k) => t(k));
   const navigate = useNavigate();
   const location = useLocation();
   const from = redirectTarget(location.state);
@@ -83,14 +71,15 @@ export default function WelcomePage() {
   const savedFulfillment = useSession((s) => s.fulfillment);
   const savedAddress = useSession((s) => s.deliveryAddress);
 
-  const [stage, setStage] = useState<Stage>('method');
-  const [method, setMethod] = useState<AuthProvider>('school_email');
-  const [zaloProfile, setZaloProfile] = useState<PlatformProfile | null>(null);
-  const [msProfile, setMsProfile] = useState<MicrosoftProfile | null>(null);
+  // Bước đang làm + nội dung đã nhập được giữ lại khi khách đổi ngôn ngữ giữa chừng
+  const [stage, setStage] = useDraftState<Stage>('welcome.stage', 'method');
+  const [method, setMethod] = useDraftState<AuthProvider>('welcome.method', 'school_email');
+  const [zaloProfile, setZaloProfile] = useDraftState<PlatformProfile | null>('welcome.zalo', null);
+  const [msProfile, setMsProfile] = useDraftState<MicrosoftProfile | null>('welcome.ms', null);
   const [ssoLoading, setSsoLoading] = useState(false);
-  const form = useProfileForm(EMPTY_PROFILE);
-  const [fulfillment, setFulfillment] = useState<FulfillmentType>(() => initialFulfillment(savedFulfillment));
-  const [address, setAddress] = useState(savedAddress);
+  const form = useProfileForm(EMPTY_PROFILE, 'welcome.form');
+  const [fulfillment, setFulfillment] = useDraftState<FulfillmentType>('welcome.fulfillment', () => initialFulfillment(savedFulfillment));
+  const [address, setAddress] = useDraftState('welcome.address', savedAddress);
   const [addressError, setAddressError] = useState<string>();
 
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -132,7 +121,7 @@ export default function WelcomePage() {
 
   const [fetchZaloProfile, zaloLoading] = useAction(async () => {
     const profile = await platform.getProfile();
-    if (!profile) throw new Error('Chưa lấy được thông tin Zalo. Bạn thử lại hoặc chọn cách khác nhé.');
+    if (!profile) throw new Error(t('onboarding.welcome.zaloError'));
     return profile;
   });
 
@@ -183,7 +172,7 @@ export default function WelcomePage() {
   const finish = () => {
     const addr = address.trim();
     if (fulfillment === 'delivery' && !addr) {
-      setAddressError('Vui lòng nhập nơi giao, VD: Lớp 8A1 – Tầng 3');
+      setAddressError(t('onboarding.welcome.addressRequired'));
       focusFirstInvalid(sheetRef.current);
       return;
     }
@@ -238,7 +227,7 @@ export default function WelcomePage() {
         break;
     }
     saveFulfillment(fulfillment, fulfillment === 'delivery' ? addr : undefined);
-    toast(`Chào mừng ${callName(name)} đến với Cloud 9!`, 'success');
+    toast(t('onboarding.welcome.welcomeToast', { name: callName(name) }), 'success');
     navigate(from, { replace: true });
   };
 
@@ -266,7 +255,12 @@ export default function WelcomePage() {
   const whoDetail =
     method === 'school_email' || method === 'microsoft'
       ? draft.email
-      : [method === 'zalo' ? 'Tài khoản Zalo' : 'Khách', draft.phone && formatPhoneDisplay(draft.phone)].filter(Boolean).join(' · ');
+      : [
+          method === 'zalo' ? t('onboarding.welcome.zaloAccount') : t('onboarding.guestName'),
+          draft.phone && formatPhoneDisplay(draft.phone),
+        ]
+          .filter(Boolean)
+          .join(' · ');
 
   return (
     <div className="flex min-h-dvh flex-col bg-cream">
@@ -280,19 +274,19 @@ export default function WelcomePage() {
           {/* ───────── Bước 1a: chọn cách đăng nhập ───────── */}
           {stage === 'method' && (
             <>
-              <StepHeader step={1} labels={STEP_LABELS} />
+              <StepHeader step={1} labels={stepLabels} />
               <h2 ref={headingRef} tabIndex={-1} className={heading}>
-                Chọn cách đăng nhập
+                {t('onboarding.welcome.methodTitle')}
               </h2>
-              <p className={lead}>Chưa đến một phút là xong.</p>
+              <p className={lead}>{t('onboarding.welcome.methodLead')}</p>
 
               <div className="mt-5 space-y-3">
                 {SHOW_MICROSOFT && (
                   <MethodButton
                     tone="microsoft"
                     icon={<MicrosoftLogo className="h-6 w-6" />}
-                    title="Đăng nhập bằng Microsoft 365"
-                    description="Dùng tài khoản email trường · lưu lịch sử đơn trên mọi máy"
+                    title={t('onboarding.welcome.microsoftTitle')}
+                    description={t('onboarding.welcome.microsoftDesc')}
                     loading={ssoLoading}
                     onClick={startMicrosoft}
                   />
@@ -301,8 +295,8 @@ export default function WelcomePage() {
                   <MethodButton
                     tone="zalo"
                     icon={<MessageCircle className="h-5 w-5" />}
-                    title="Đăng nhập bằng Zalo"
-                    description="Dùng tên và ảnh đại diện Zalo của bạn"
+                    title={t('onboarding.welcome.zaloTitle')}
+                    description={t('onboarding.welcome.zaloDesc')}
                     loading={zaloLoading}
                     onClick={chooseZalo}
                   />
@@ -311,14 +305,14 @@ export default function WelcomePage() {
                   <>
                     <div aria-hidden className="flex items-center gap-3 px-2 text-xs font-medium text-stone">
                       <span className="h-px flex-1 bg-bronze-200" />
-                      hoặc
+                      {t('onboarding.welcome.or')}
                       <span className="h-px flex-1 bg-bronze-200" />
                     </div>
                     <MethodButton
                       tone="outline"
                       icon={<UserRound className="h-5 w-5" />}
-                      title="Tiếp tục với tư cách khách"
-                      description="Gọi món ngay, không cần tài khoản"
+                      title={t('onboarding.welcome.guestTitle')}
+                      description={t('onboarding.welcome.guestDesc')}
                       onClick={() => choose('guest')}
                     />
                   </>
@@ -327,7 +321,7 @@ export default function WelcomePage() {
 
               <p className="mt-6 flex gap-2.5 px-1 text-xs leading-relaxed text-stone">
                 <ShieldCheck className="mt-px h-4 w-4 shrink-0 text-leaf" aria-hidden />
-                Cloud 9 chỉ dùng tên và số điện thoại để xử lý đơn và báo bạn khi món sẵn sàng.
+                {t('onboarding.welcome.privacy')}
               </p>
 
               <div className="mt-auto flex justify-center pb-1 pt-6">
@@ -336,7 +330,7 @@ export default function WelcomePage() {
                   className="inline-flex min-h-11 items-center gap-1.5 rounded-full px-4 text-[13px] font-medium text-bronze-700 transition hover:bg-bronze-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
                 >
                   <Store className="h-4 w-4" aria-hidden />
-                  Nhân viên quán? Vào trang quản trị
+                  {t('onboarding.welcome.staffLink')}
                 </Link>
               </div>
             </>
@@ -345,11 +339,11 @@ export default function WelcomePage() {
           {/* ───────── Bước 1b: thông tin cá nhân ───────── */}
           {stage === 'profile' && (
             <>
-              <StepHeader step={1} labels={STEP_LABELS} onBack={backToMethods} />
+              <StepHeader step={1} labels={stepLabels} onBack={backToMethods} />
               <h2 ref={headingRef} tabIndex={-1} className={heading}>
-                {PROFILE_COPY[method].title}
+                {t(`onboarding.welcome.profile.${method}.title`)}
               </h2>
-              <p className={lead}>{PROFILE_COPY[method].description}</p>
+              <p className={lead}>{t(`onboarding.welcome.profile.${method}.description`)}</p>
 
               {method === 'microsoft' && msProfile && (
                 <div className="mt-4 flex items-center gap-3 rounded-2xl bg-white p-3 shadow-card ring-1 ring-bronze-200/50">
@@ -358,7 +352,7 @@ export default function WelcomePage() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-espresso">{msProfile.name}</p>
-                    <p className="truncate text-xs text-leaf-dark">Đã xác thực · {msProfile.email}</p>
+                    <p className="truncate text-xs text-leaf-dark">{t('onboarding.welcome.verified', { email: msProfile.email })}</p>
                   </div>
                   <BadgeCheck className="h-5 w-5 shrink-0 text-leaf" aria-hidden />
                 </div>
@@ -369,7 +363,7 @@ export default function WelcomePage() {
                   <Avatar name={zaloProfile.name} src={zaloProfile.avatar} className="h-10 w-10 text-sm" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-espresso">{zaloProfile.name}</p>
-                    <p className="text-xs text-leaf-dark">Đã kết nối với Zalo</p>
+                    <p className="text-xs text-leaf-dark">{t('onboarding.welcome.zaloConnected')}</p>
                   </div>
                   <BadgeCheck className="h-5 w-5 shrink-0 text-leaf" aria-hidden />
                 </div>
@@ -378,7 +372,7 @@ export default function WelcomePage() {
               {method === 'guest' && (
                 <div className="mt-4 flex gap-2.5 rounded-2xl bg-gold-soft/70 p-3.5 text-[13px] leading-snug text-bronze-800 ring-1 ring-inset ring-gold/40">
                   <Info className="mt-px h-4 w-4 shrink-0 text-rattan" aria-hidden />
-                  <p>Tên và số điện thoại chưa bắt buộc lúc này, nhưng sẽ cần khi thanh toán để quán gọi bạn ra nhận món.</p>
+                  <p>{t('onboarding.welcome.guestNote')}</p>
                 </div>
               )}
 
@@ -386,17 +380,17 @@ export default function WelcomePage() {
                 <ProfileFields
                   form={form}
                   rules={rules}
-                  phoneHint={method === 'guest' ? 'Không bắt buộc · cần khi thanh toán' : undefined}
+                  phoneHint={method === 'guest' ? t('onboarding.welcome.guestPhoneHint') : undefined}
                 />
                 {method === 'school_email' && (
                   <p className="mt-4 flex items-center gap-2 rounded-xl bg-bronze-100/70 px-3 py-2 text-xs text-bronze-700">
                     <FlaskConical className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                    Bản xem thử offline: mô phỏng đăng nhập Microsoft 365 bằng email
+                    {t('onboarding.welcome.demoNote')}
                   </p>
                 )}
                 <div className="mt-auto pb-2 pt-6">
                   <Button type="submit" size="lg" block rightIcon={<ArrowRight className="h-5 w-5" aria-hidden />}>
-                    {HAS_FULFILLMENT_STEP ? 'Tiếp tục' : 'Bắt đầu gọi món'}
+                    {HAS_FULFILLMENT_STEP ? t('onboarding.welcome.continue') : t('onboarding.welcome.start')}
                   </Button>
                 </div>
               </form>
@@ -406,11 +400,11 @@ export default function WelcomePage() {
           {/* ───────── Bước 2: hình thức nhận món ───────── */}
           {stage === 'fulfillment' && (
             <>
-              <StepHeader step={2} labels={STEP_LABELS} onBack={() => setStage('profile')} />
+              <StepHeader step={2} labels={stepLabels} onBack={() => setStage('profile')} />
               <h2 ref={headingRef} tabIndex={-1} className={heading}>
-                Bạn muốn nhận món thế nào?
+                {t('onboarding.welcome.fulfillmentTitle')}
               </h2>
-              <p className={lead}>Chọn cách quen thuộc của bạn — khi đặt từng đơn vẫn đổi được.</p>
+              <p className={lead}>{t('onboarding.welcome.fulfillmentLead')}</p>
 
               <div className="mt-4 flex items-center gap-3 rounded-2xl bg-white p-2.5 pl-3 shadow-card ring-1 ring-bronze-200/50">
                 <Avatar
@@ -419,16 +413,16 @@ export default function WelcomePage() {
                   className="h-10 w-10 text-sm ring-2 ring-gold ring-offset-2 ring-offset-white"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-espresso">{whoName}</p>
+                  <p className="truncate text-sm font-semibold text-espresso">{guestDisplayName(whoName)}</p>
                   {whoDetail && <p className="truncate text-xs text-stone">{whoDetail}</p>}
                 </div>
                 <button
                   type="button"
                   onClick={() => setStage('profile')}
-                  aria-label="Sửa thông tin đăng nhập"
+                  aria-label={t('onboarding.welcome.editAria')}
                   className="min-h-11 shrink-0 rounded-full px-3.5 text-sm font-semibold text-bronze-700 transition hover:bg-bronze-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
                 >
-                  Sửa
+                  {t('common.edit')}
                 </button>
               </div>
 
@@ -448,7 +442,7 @@ export default function WelcomePage() {
                 />
                 <div className="mt-auto pb-2 pt-6">
                   <Button type="submit" size="lg" block rightIcon={<ArrowRight className="h-5 w-5" aria-hidden />}>
-                    Bắt đầu gọi món
+                    {t('onboarding.welcome.start')}
                   </Button>
                 </div>
               </form>

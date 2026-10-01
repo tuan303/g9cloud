@@ -1,4 +1,7 @@
-import type { FulfillmentType, NotificationKind, Order, OrderStatus } from '@/types';
+import { translate, translateIn } from '@/i18n';
+import { isDefaultCancelReason, translateCancelReason } from '@/lib/cancel-reason';
+import { isExpiryCancel } from '@/services/order-logic';
+import type { FulfillmentType, NotificationKind, NotificationMsg, Order, OrderStatus } from '@/types';
 
 export interface StatusMeta {
   label: string;
@@ -10,49 +13,28 @@ export interface StatusMeta {
   dotClass: string;
 }
 
+/** Nhãn + mô tả tự dịch theo ngôn ngữ đang chọn (getter), màu cố định */
+function meta(status: OrderStatus, badgeClass: string, dotClass: string): StatusMeta {
+  return {
+    get label() {
+      return translate(`status.${status}.label`);
+    },
+    get description() {
+      return translate(`status.${status}.description`);
+    },
+    badgeClass,
+    dotClass,
+  };
+}
+
 export const STATUS_META: Record<OrderStatus, StatusMeta> = {
-  pending_payment: {
-    label: 'Chờ thanh toán',
-    description: 'Đưa mã QR cho thu ngân quét tại quầy để thanh toán',
-    badgeClass: 'bg-gold-soft text-bronze-800 ring-1 ring-gold/60',
-    dotClass: 'bg-gold',
-  },
-  received: {
-    label: 'Đã nhận đơn',
-    description: 'Quán đã nhận đơn và thanh toán của bạn',
-    badgeClass: 'bg-bronze-100 text-bronze-800 ring-1 ring-bronze-300',
-    dotClass: 'bg-bronze-500',
-  },
-  preparing: {
-    label: 'Đang chuẩn bị',
-    description: 'Barista đang pha chế món của bạn',
-    badgeClass: 'bg-rattan-soft text-rattan-dark ring-1 ring-rattan-light/50',
-    dotClass: 'bg-rattan',
-  },
-  ready: {
-    label: 'Sẵn sàng',
-    description: 'Món đã xong — mời bạn đến quầy nhận',
-    badgeClass: 'bg-leaf-soft text-leaf-dark ring-1 ring-leaf-light/60',
-    dotClass: 'bg-leaf',
-  },
-  delivering: {
-    label: 'Đang giao',
-    description: 'Nhân viên đang mang món đến cho bạn',
-    badgeClass: 'bg-leaf-soft text-leaf-dark ring-1 ring-leaf-light/60',
-    dotClass: 'bg-leaf',
-  },
-  completed: {
-    label: 'Hoàn thành',
-    description: 'Chúc bạn ngon miệng!',
-    badgeClass: 'bg-espresso text-cream',
-    dotClass: 'bg-gold',
-  },
-  cancelled: {
-    label: 'Đã huỷ',
-    description: 'Đơn hàng đã bị huỷ',
-    badgeClass: 'bg-stone-soft text-stone ring-1 ring-stone-light/40',
-    dotClass: 'bg-stone-light',
-  },
+  pending_payment: meta('pending_payment', 'bg-gold-soft text-bronze-800 ring-1 ring-gold/60', 'bg-gold'),
+  received: meta('received', 'bg-bronze-100 text-bronze-800 ring-1 ring-bronze-300', 'bg-bronze-500'),
+  preparing: meta('preparing', 'bg-rattan-soft text-rattan-dark ring-1 ring-rattan-light/50', 'bg-rattan'),
+  ready: meta('ready', 'bg-leaf-soft text-leaf-dark ring-1 ring-leaf-light/60', 'bg-leaf'),
+  delivering: meta('delivering', 'bg-leaf-soft text-leaf-dark ring-1 ring-leaf-light/60', 'bg-leaf'),
+  completed: meta('completed', 'bg-espresso text-cream', 'bg-gold'),
+  cancelled: meta('cancelled', 'bg-stone-soft text-stone ring-1 ring-stone-light/40', 'bg-stone-light'),
 };
 
 /** Các bước hiển thị trên thanh tiến trình (không gồm pending_payment / cancelled) */
@@ -64,7 +46,7 @@ export function statusSteps(fulfillment: FulfillmentType): OrderStatus[] {
 
 /** Nhãn bước theo hình thức nhận (bước cuối khác nhau) */
 export function stepLabel(status: OrderStatus, fulfillment: FulfillmentType): string {
-  if (status === 'completed') return fulfillment === 'delivery' ? 'Đã giao' : 'Đã nhận món';
+  if (status === 'completed') return translate(fulfillment === 'delivery' ? 'status.stepDelivered' : 'status.stepPickedUp');
   return STATUS_META[status].label;
 }
 
@@ -89,15 +71,15 @@ export function nextStatus(order: Pick<Order, 'status' | 'fulfillment' | 'paymen
 export function nextActionLabel(order: Pick<Order, 'status' | 'fulfillment' | 'paymentStatus'>): string | null {
   switch (order.status) {
     case 'pending_payment':
-      return 'Xác nhận đã thanh toán';
+      return translate('status.action.confirmPayment');
     case 'received':
-      return 'Bắt đầu pha chế';
+      return translate('status.action.startPreparing');
     case 'preparing':
-      return order.fulfillment === 'delivery' ? 'Bắt đầu giao' : 'Báo món sẵn sàng';
+      return translate(order.fulfillment === 'delivery' ? 'status.action.startDelivery' : 'status.action.markReady');
     case 'ready':
-      return 'Khách đã nhận';
+      return translate('status.action.pickedUp');
     case 'delivering':
-      return 'Đã giao xong';
+      return translate('status.action.delivered');
     default:
       return null;
   }
@@ -106,22 +88,47 @@ export function nextActionLabel(order: Pick<Order, 'status' | 'fulfillment' | 'p
 export const ACTIVE_STATUSES: OrderStatus[] = ['pending_payment', 'received', 'preparing', 'ready', 'delivering'];
 export const isActiveOrder = (o: Pick<Order, 'status'>) => ACTIVE_STATUSES.includes(o.status);
 
-/** Nội dung thông báo gửi khách khi trạng thái đơn thay đổi */
-export function notificationFor(order: Order): { kind: NotificationKind; title: string; body: string } | null {
+/** Văn bản thông báo theo ngôn ngữ đang chọn (lý do huỷ / địa chỉ mặc định cũng được dịch lại) */
+export function notificationText(msg: NotificationMsg): { title: string; body: string } {
+  const vars = { ...msg.vars };
+  if (typeof vars.reason === 'string') vars.reason = translateCancelReason(vars.reason);
+  if (msg.body === 'notify.delivering.body' && !vars.address) vars.address = translate('notify.deliveringDefault');
+  return { title: translate(msg.title), body: translate(msg.body, vars) };
+}
+
+/** Nội dung thông báo gửi khách khi trạng thái đơn thay đổi (kèm khoá dịch để đổi ngôn ngữ sau này) */
+export function notificationFor(order: Order): { kind: NotificationKind; title: string; body: string; msg: NotificationMsg } | null {
   const code = order.code;
+  const make = (kind: NotificationKind, msg: NotificationMsg) => ({ kind, msg, ...notificationText(msg) });
   switch (order.status) {
     case 'received':
-      return { kind: 'order_received', title: 'Đơn hàng đã nhận ✅', body: `Đơn ${code} đã được thanh toán. Quán sẽ bắt đầu chuẩn bị ngay!` };
+      return make('order_received', { title: 'notify.received.title', body: 'notify.received.body', vars: { code } });
     case 'preparing':
-      return { kind: 'order_preparing', title: 'Đang chuẩn bị ☕', body: `Barista đang pha chế đơn ${code} của bạn.` };
+      return make('order_preparing', { title: 'notify.preparing.title', body: 'notify.preparing.body', vars: { code } });
     case 'ready':
-      return { kind: 'order_ready', title: 'Đơn hàng sẵn sàng 🛍️', body: `Đơn ${code} đã xong — mời bạn đến quầy nhận món.` };
+      return make('order_ready', { title: 'notify.ready.title', body: 'notify.ready.body', vars: { code } });
     case 'delivering':
-      return { kind: 'order_delivering', title: 'Đang giao hàng 🚚', body: `Đơn ${code} đang được mang đến ${order.deliveryAddress || 'cho bạn'}.` };
+      return make('order_delivering', {
+        title: 'notify.delivering.title',
+        body: 'notify.delivering.body',
+        vars: order.deliveryAddress ? { code, address: order.deliveryAddress } : { code },
+      });
     case 'completed':
-      return { kind: 'order_completed', title: 'Hoàn thành 🎉', body: `Cảm ơn bạn đã chọn Cloud 9! Chúc bạn ngon miệng.` };
-    case 'cancelled':
-      return { kind: 'order_cancelled', title: 'Đơn hàng đã huỷ', body: `Đơn ${code} đã bị huỷ${order.cancelReason ? `: ${order.cancelReason}` : '.'}` };
+      return make('order_completed', { title: 'notify.completed.title', body: 'notify.completed.body' });
+    case 'cancelled': {
+      // Lý do gốc (theo ngôn ngữ người huỷ) — dịch lại khi hiển thị; lý do mặc định "Quán huỷ đơn" thì bỏ
+      const reason = isExpiryCancel(order)
+        ? translateIn('vi', 'errors.reasonExpired')
+        : isDefaultCancelReason(order.cancelReason)
+          ? undefined
+          : order.cancelReason?.trim();
+      return make(
+        'order_cancelled',
+        reason
+          ? { title: 'notify.cancelled.title', body: 'notify.cancelled.bodyReason', vars: { code, reason } }
+          : { title: 'notify.cancelled.title', body: 'notify.cancelled.body', vars: { code } },
+      );
+    }
     default:
       return null;
   }

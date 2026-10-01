@@ -1,15 +1,17 @@
+import { useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 
 /** Chấm "đang cập nhật trực tiếp" — dữ liệu tự làm mới từ store, không cần kéo để tải lại */
 export function LiveIndicator({
   tone = 'light',
-  label = 'Cập nhật trực tiếp',
+  label,
   className,
 }: {
   tone?: 'light' | 'dark';
   label?: string;
   className?: string;
 }) {
+  const { t } = useT();
   const dark = tone === 'dark';
   return (
     <span
@@ -23,7 +25,7 @@ export function LiveIndicator({
         <span className={cn('absolute inline-flex h-full w-full rounded-full opacity-75 motion-safe:animate-ping', dark ? 'bg-leaf-light' : 'bg-leaf')} />
         <span className={cn('relative inline-flex h-2 w-2 rounded-full', dark ? 'bg-leaf-light' : 'bg-leaf')} />
       </span>
-      {label}
+      {label ?? t('orders.live')}
     </span>
   );
 }

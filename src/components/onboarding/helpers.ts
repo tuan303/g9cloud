@@ -1,8 +1,18 @@
 import { APP_CONFIG } from '@/config/app';
+import { translate, type MessageKey } from '@/i18n';
 import { normalizePhone } from '@/lib/format';
 
-/** Tên hiển thị mặc định khi khách không nhập tên */
+/**
+ * Tên lưu trong phiên khi khách không nhập tên — là GIÁ TRỊ DỮ LIỆU (so sánh với phiên đã lưu, CartPage…),
+ * không đổi theo ngôn ngữ. Hiển thị thì dùng guestDisplayName().
+ */
 export const GUEST_NAME = 'Khách';
+
+/** Tên hiển thị: khách chưa có tên → "Khách" / "Guest" theo ngôn ngữ đang chọn */
+export function guestDisplayName(name: string | undefined): string {
+  const n = (name ?? '').trim();
+  return !n || n === GUEST_NAME ? translate('onboarding.guestName') : n;
+}
 
 /** Phiên bản hiển thị ở chân trang Tài khoản (khớp package.json) */
 export const APP_VERSION = APP_CONFIG.version;
@@ -13,19 +23,24 @@ export function formatPhoneDisplay(phone: string): string {
   return /^0\d{9}$/.test(p) ? `${p.slice(0, 4)} ${p.slice(4, 7)} ${p.slice(7)}` : phone;
 }
 
-/** Tên gọi thân mật: "Nguyễn Minh An" → "An"; khách chưa có tên → "bạn" */
+/** Tên gọi thân mật: "Nguyễn Minh An" → "An"; khách chưa có tên → "bạn" / "friend" */
 export function callName(name: string | undefined): string {
   const parts = (name ?? '').trim().split(/\s+/).filter(Boolean);
-  if (!parts.length || name?.trim() === GUEST_NAME) return 'bạn';
+  if (!parts.length || name?.trim() === GUEST_NAME) return translate('onboarding.callNameFallback');
   return parts[parts.length - 1];
 }
 
-/** Lời chào theo giờ trong ngày */
+/** Khoá lời chào theo giờ trong ngày */
+export function greetingKey(hour: number): MessageKey {
+  if (hour < 11) return 'onboarding.hero.morning';
+  if (hour < 13) return 'onboarding.hero.noon';
+  if (hour < 18) return 'onboarding.hero.afternoon';
+  return 'onboarding.hero.evening';
+}
+
+/** Lời chào theo giờ trong ngày (theo ngôn ngữ đang chọn) */
 export function greetingFor(hour: number): string {
-  if (hour < 11) return 'Chào buổi sáng';
-  if (hour < 13) return 'Chào buổi trưa';
-  if (hour < 18) return 'Chào buổi chiều';
-  return 'Chào buổi tối';
+  return translate(greetingKey(hour));
 }
 
 /** Đưa con trỏ tới ô đầu tiên đang báo lỗi (sau khi React vẽ lại) */

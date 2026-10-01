@@ -1,12 +1,13 @@
 import { Search, X } from 'lucide-react';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 
 /** Ô tìm kiếm có nút xoá nhanh (Esc cũng xoá) */
 export function SearchField({
   value,
   onChange,
-  placeholder = 'Tìm món…',
-  label = 'Tìm món',
+  placeholder,
+  label,
   className,
 }: {
   value: string;
@@ -15,6 +16,7 @@ export function SearchField({
   label?: string;
   className?: string;
 }) {
+  const { t } = useT();
   return (
     <div className={cn('relative', className)}>
       <Search className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-bronze-400" aria-hidden />
@@ -28,8 +30,8 @@ export function SearchField({
             onChange('');
           }
         }}
-        placeholder={placeholder}
-        aria-label={label}
+        placeholder={placeholder ?? t('adminMenu.search.defaultPlaceholder')}
+        aria-label={label ?? t('adminMenu.search.label')}
         enterKeyHint="search"
         autoComplete="off"
         autoCorrect="off"
@@ -43,7 +45,7 @@ export function SearchField({
       {value && (
         <button
           type="button"
-          aria-label="Xoá từ khoá"
+          aria-label={t('adminMenu.search.clear')}
           onClick={() => onChange('')}
           className="absolute right-0 top-0 flex h-11 w-11 items-center justify-center rounded-2xl text-stone transition hover:text-espresso focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
         >

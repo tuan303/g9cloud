@@ -1,3 +1,4 @@
+import { translate } from '@/i18n';
 import { isSameDay, normalizePhone } from '@/lib/format';
 import type { Order } from '@/types';
 
@@ -11,44 +12,23 @@ export interface OrderTabMeta {
   emptyDescription: string;
 }
 
-export const ORDER_TABS: OrderTabMeta[] = [
-  {
-    value: 'pending',
-    label: 'Chờ thanh toán',
-    emptyTitle: 'Không có đơn chờ thanh toán',
-    emptyDescription: 'Đơn khách vừa đặt sẽ nằm ở đây cho tới khi thu ngân quét mã QR.',
-  },
-  {
-    value: 'new',
-    label: 'Mới',
-    emptyTitle: 'Chưa có đơn mới',
-    emptyDescription: 'Đơn đã thanh toán sẽ hiện ở đây kèm âm báo. Nghỉ tay một chút nhé!',
-  },
-  {
-    value: 'preparing',
-    label: 'Đang pha',
-    emptyTitle: 'Quầy pha đang rảnh',
-    emptyDescription: 'Bấm “Bắt đầu pha chế” ở đơn mới để chuyển đơn sang đây.',
-  },
-  {
-    value: 'handoff',
-    label: 'Chờ nhận / Đang giao',
-    emptyTitle: 'Không có đơn chờ nhận',
-    emptyDescription: 'Món đã xong sẽ nằm ở đây cho tới khi khách nhận hoặc giao xong.',
-  },
-  {
-    value: 'done',
-    label: 'Hoàn thành',
-    emptyTitle: 'Hôm nay chưa có đơn hoàn thành',
-    emptyDescription: 'Các đơn đã trao cho khách trong ngày sẽ được lưu ở đây.',
-  },
-  {
-    value: 'cancelled',
-    label: 'Đã huỷ',
-    emptyTitle: 'Hôm nay không có đơn bị huỷ',
-    emptyDescription: 'Mọi đơn hôm nay đều suôn sẻ.',
-  },
-];
+/** Nhãn + nội dung trạng thái rỗng tự dịch theo ngôn ngữ đang chọn (getter) */
+function tabMeta(value: OrderTab): OrderTabMeta {
+  return {
+    value,
+    get label() {
+      return translate(`adminOrders.tabs.${value}.label`);
+    },
+    get emptyTitle() {
+      return translate(`adminOrders.tabs.${value}.emptyTitle`);
+    },
+    get emptyDescription() {
+      return translate(`adminOrders.tabs.${value}.emptyDescription`);
+    },
+  };
+}
+
+export const ORDER_TABS: OrderTabMeta[] = (['pending', 'new', 'preparing', 'handoff', 'done', 'cancelled'] as const).map(tabMeta);
 
 /** Tab hàng đợi: đơn chờ lâu nhất xếp trên cùng */
 export const QUEUE_TABS: OrderTab[] = ['new', 'preparing', 'handoff'];
@@ -136,14 +116,18 @@ export function pickDefaultTab(buckets: OrderBuckets): OrderTab {
   return (['pending', 'preparing', 'handoff'] as const).find((t) => buckets[t].length > 0) ?? 'new';
 }
 
-/** 45 giây → "Vừa xong", 12 phút → "12 phút", 65 phút → "1h05" */
+/** 45 giây → "Vừa xong", 12 phút → "12 phút", 65 phút → "1h05" (theo ngôn ngữ đang chọn) */
 export function formatElapsed(ms: number): string {
   const min = Math.floor(Math.max(0, ms) / 60_000);
-  if (min < 1) return 'Vừa xong';
-  if (min < 60) return `${min} phút`;
+  if (min < 1) return translate('adminOrders.elapsed.justNow');
+  if (min < 60) return translate('adminOrders.elapsed.minutes', { count: min });
   const h = Math.floor(min / 60);
   return `${h}h${String(min % 60).padStart(2, '0')}`;
 }
+
+// ───────────── Lý do huỷ (dùng chung với màn hình khách) ─────────────
+
+export { cancelReasonText, QUICK_CANCEL_REASONS } from '@/lib/cancel-reason';
 
 /** "0901234567" → "0901 234 567" (giữ nguyên nếu không đúng 10 số) */
 export function formatPhoneDisplay(phone: string): string {

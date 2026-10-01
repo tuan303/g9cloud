@@ -1,3 +1,4 @@
+import { useT, type MessageKey } from '@/i18n';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import { STATUS_META } from '@/lib/order-status';
@@ -21,13 +22,14 @@ export function StatusBadge({ status, className }: { status: OrderStatus; classN
   );
 }
 
-const TAG_META: Record<MenuTag, { label: string; className: string }> = {
-  bestseller: { label: 'Bán chạy', className: 'bg-gold text-espresso' },
-  new: { label: 'Mới', className: 'bg-leaf text-white' },
-  signature: { label: 'Đặc trưng', className: 'bg-rattan text-white' },
+const TAG_META: Record<MenuTag, { label: MessageKey; className: string }> = {
+  bestseller: { label: 'ui.tagBestseller', className: 'bg-gold text-espresso' },
+  new: { label: 'ui.tagNew', className: 'bg-leaf text-white' },
+  signature: { label: 'ui.tagSignature', className: 'bg-rattan text-white' },
 };
 
 export function TagBadge({ tag, className }: { tag: MenuTag; className?: string }) {
+  const { t } = useT();
   const m = TAG_META[tag];
-  return <Badge className={cn('px-2 py-[1px] text-[10px] uppercase tracking-wide', m.className, className)}>{m.label}</Badge>;
+  return <Badge className={cn('px-2 py-[1px] text-[10px] uppercase tracking-wide', m.className, className)}>{t(m.label)}</Badge>;
 }
