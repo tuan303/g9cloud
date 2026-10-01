@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { repo } from '@/services';
-import type { LoyaltyAccount, MenuItem, Order } from '@/types';
+import type { LoyaltyAccount, MenuItem, NotificationMsg, Order } from '@/types';
 import { APP_CONFIG } from '@/config/app';
 import { translate } from '@/i18n';
 import { platform } from '@/platform';
@@ -116,15 +116,11 @@ function startLoyaltySync() {
       const after = Math.floor(Math.max(0, account?.stamps ?? 0) / per);
       // Không báo trên trang quản trị (bản demo dùng chung phiên với khách trên cùng máy)
       if (!first && after > before && !window.location.hash.startsWith('#/admin')) {
-        const title = translate('notify.reward.title');
-        const body = translate('notify.reward.body', { cups: per });
-        useNotifications.getState().push({
-          kind: 'info',
-          title,
-          body,
-          msg: { title: 'notify.reward.title', body: 'notify.reward.body', vars: { cups: per } },
-        });
-        useUi.getState().showBanner({ title, body, href: '/account', icon: 'completed' });
+        const msg: NotificationMsg = { title: 'notify.reward.title', body: 'notify.reward.body', vars: { cups: per } };
+        const title = translate(msg.title);
+        const body = translate(msg.body, msg.vars);
+        useNotifications.getState().push({ kind: 'info', title, body, msg });
+        useUi.getState().showBanner({ title, body, msg, href: '/account', icon: 'completed' });
         platform.vibrate([60, 40, 60]);
       }
       first = false;

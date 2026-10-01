@@ -1,5 +1,5 @@
 import { pick } from '@/i18n';
-import type { Category, CategoryId, MenuItem, OptionGroup } from '@/types';
+import type { Category, CategoryId, MenuItem, OptionGroup, SelectedOption } from '@/types';
 
 /**
  * THỰC ĐƠN MẪU — tên món & giá là giá trị tạm để demo.
@@ -166,6 +166,82 @@ export const OPTION_PRESETS: { key: string; label: string; group: OptionGroup }[
   { key: 'teaExtras', label: 'Topping: thạch đào, nha đam', group: teaExtras },
   { key: 'warm', label: 'Hâm nóng (bánh)', group: warmUp },
 ];
+
+// ───────────── Bổ sung tiếng Anh cho thực đơn đã lưu trước khi có song ngữ ─────────────
+
+const PRESET_GROUPS = OPTION_PRESETS.map((p) => p.group);
+const SEED_BY_ID = new Map(SEED_MENU.map((m) => [m.id, m]));
+
+/**
+ * Nhóm mẫu tương ứng: cùng mã và có các lựa chọn đang dùng (nhóm "extras" của cà phê và của trà
+ * trùng mã nhưng khác lựa chọn). every = phải có đủ mọi lựa chọn.
+ */
+function refGroup(id: string, choiceIds: string[], seedGroups: OptionGroup[] = [], every = false): OptionGroup | undefined {
+  const has = (x: OptionGroup, c: string) => x.choices.some((rc) => rc.id === c);
+  const fits = (x: OptionGroup) => x.id === id && (every ? choiceIds.every((c) => has(x, c)) : choiceIds.some((c) => has(x, c)));
+  const found = seedGroups.find(fits) ?? PRESET_GROUPS.find(fits);
+  if (found || every) return found;
+  return seedGroups.find((x) => x.id === id) ?? PRESET_GROUPS.find((x) => x.id === id);
+}
+
+/**
+ * Điền giá trị tiếng Anh CHƯA TỪNG CÓ khi chữ tiếng Việt vẫn đúng như bản mẫu (quán đã sửa thì giữ nguyên).
+ * '' = nhân viên cố ý xoá bản tiếng Anh → giữ '' (giao diện tiếng Anh hiện chữ tiếng Việt), không điền lại.
+ */
+const fillEn = (en: string | undefined, vi: string | undefined, seedVi: string | undefined, seedEn: string | undefined) =>
+  en ?? (seedEn && (vi ?? '').trim() === (seedVi ?? '').trim() ? seedEn : undefined);
+
+/** Nhóm tuỳ chọn: lấy bản dịch từ món mẫu cùng mã, nếu không có thì từ nhóm tuỳ chọn mẫu cùng mã */
+export function withSeedEnglishGroup(g: OptionGroup, seedGroups: OptionGroup[] = []): OptionGroup {
+  const ref = refGroup(g.id, g.choices.map((c) => c.id), seedGroups);
+  if (!ref) return g;
+  return {
+    ...g,
+    nameEn: fillEn(g.nameEn, g.name, ref.name, ref.nameEn),
+    choices: g.choices.map((c) => {
+      const rc = ref.choices.find((x) => x.id === c.id);
+      if (!rc) return c;
+      const out = { ...c, nameEn: fillEn(c.nameEn, c.name, rc.name, rc.nameEn) };
+      if (c.summary !== undefined || rc.summaryEn !== undefined) out.summaryEn = fillEn(c.summaryEn, c.summary, rc.summary, rc.summaryEn);
+      return out;
+    }),
+  };
+}
+
+/**
+ * Thực đơn tạo trước khi có song ngữ (Firestore / máy khách) thiếu tên, mô tả, tuỳ chọn tiếng Anh.
+ * Bổ sung ngay lúc đọc từ món mẫu cùng mã — chỉ khi chữ tiếng Việt chưa bị quán sửa.
+ */
+export function withSeedEnglish(item: MenuItem): MenuItem {
+  const seed = SEED_MENU.find((s) => s.id === item.id);
+  const groups = item.optionGroups?.map((g) => withSeedEnglishGroup(g, seed?.optionGroups));
+  if (!seed) return groups ? { ...item, optionGroups: groups } : item;
+  return {
+    ...item,
+    nameEn: fillEn(item.nameEn, item.name, seed.name, seed.nameEn),
+    descriptionEn: fillEn(item.descriptionEn, item.description, seed.description, seed.descriptionEn),
+    ...(groups ? { optionGroups: groups } : {}),
+  };
+}
+
+/**
+ * Dòng đơn đã lưu không có tên tiếng Anh (đơn tạo trước khi có song ngữ / từ thực đơn chưa bổ sung):
+ * lấy tên tiếng Anh của món mẫu cùng mã khi tên tiếng Việt vẫn đúng như bản mẫu.
+ */
+export function seedNameEn(itemId: string | undefined, name: string): string | undefined {
+  const seed = itemId ? SEED_BY_ID.get(itemId) : undefined;
+  return fillEn(undefined, name, seed?.name, seed?.nameEn);
+}
+
+/** Nhãn tuỳ chọn tiếng Anh cho dòng đơn đã lưu, cùng quy tắc với toSelectedOptions (undefined nếu không khớp bản mẫu) */
+export function seedChoiceNamesEn(o: SelectedOption, itemId?: string): string[] | undefined {
+  const seed = itemId ? SEED_BY_ID.get(itemId) : undefined;
+  const ref = refGroup(o.groupId, o.choiceIds, seed?.optionGroups, true);
+  if (!ref) return undefined;
+  const picked = ref.choices.filter((c) => o.choiceIds.includes(c.id));
+  if (picked.map((c) => c.summary ?? c.name).filter(Boolean).join('|') !== o.choiceNames.join('|')) return undefined;
+  return picked.map((c) => c.summaryEn ?? (c.summary === '' ? '' : (c.nameEn ?? c.summary ?? c.name))).filter(Boolean);
+}
 
 /** Danh sách khoá minh hoạ — mỗi khoá tương ứng file src/assets/menu/<key>.svg */
 export const MENU_ILLUSTRATION_KEYS = SEED_MENU.map((m) => m.image.replace('@menu/', ''));

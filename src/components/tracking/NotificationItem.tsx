@@ -2,7 +2,7 @@ import { ChevronRight } from 'lucide-react';
 import { useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 import { formatRelative, formatTime, isSameDay } from '@/lib/format';
-import { notificationText } from '@/lib/order-status';
+import { legacyNotificationMsg, notificationText } from '@/lib/order-status';
 import type { AppNotification } from '@/types';
 import { NOTIFICATION_VISUAL } from './visuals';
 
@@ -12,8 +12,9 @@ export function NotificationItem({ item, now, onOpen }: { item: AppNotification;
   const v = NOTIFICATION_VISUAL[item.kind] ?? NOTIFICATION_VISUAL.info;
   const Icon = v.icon;
   const unread = !item.read;
-  // Thông báo mới lưu khoá dịch → hiện theo ngôn ngữ đang chọn; thông báo cũ dùng văn bản đã lưu
-  const text = item.msg ? notificationText(item.msg) : item;
+  // Thông báo mới lưu khoá dịch → hiện theo ngôn ngữ đang chọn; thông báo cũ thì nhận lại mẫu câu, không được thì giữ chữ đã lưu
+  const msg = item.msg ?? legacyNotificationMsg(item);
+  const text = msg ? notificationText(msg) : item;
   const when = isSameDay(item.createdAt, now)
     ? formatRelative(item.createdAt, now)
     : `${formatRelative(item.createdAt, now)} · ${formatTime(item.createdAt)}`;

@@ -1,5 +1,4 @@
-import { useEffect, useRef, type KeyboardEvent } from 'react';
-import { Languages } from 'lucide-react';
+import { useEffect, useId, useRef, type ComponentType, type KeyboardEvent } from 'react';
 import { cn } from '@/lib/cn';
 import { LOCALES, useLocale, type Locale } from '@/i18n';
 
@@ -10,9 +9,41 @@ import { LOCALES, useLocale, type Locale } from '@/i18n';
  */
 let refocus: Locale | null = null;
 
+/** Cờ Việt Nam (tròn): nền đỏ, sao vàng năm cánh */
+function FlagVN() {
+  return (
+    <svg viewBox="0 0 20 20" aria-hidden className="h-full w-full">
+      <rect width="20" height="20" fill="#DA251D" />
+      <polygon
+        fill="#FFDD00"
+        points="10,4.7 11.26,8.57 15.33,8.57 12.03,10.96 13.29,14.83 10,12.44 6.71,14.83 7.97,10.96 4.67,8.57 8.74,8.57"
+      />
+    </svg>
+  );
+}
+
+/** Cờ Anh (tròn, cắt phần giữa của Union Jack). id clipPath riêng cho mỗi lần vẽ (trang có thể có 2 công tắc) */
+function FlagGB() {
+  const id = useId().replace(/:/g, '');
+  return (
+    <svg viewBox="15 0 30 30" aria-hidden className="h-full w-full">
+      <clipPath id={`${id}t`}>
+        <path d="M30,15 h30 v15 z v15 h-30 z h-30 v-15 z v-15 h30 z" />
+      </clipPath>
+      <rect width="60" height="30" fill="#012169" />
+      <path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" strokeWidth="6" />
+      <path d="M0,0 L60,30 M60,0 L0,30" clipPath={`url(#${id}t)`} stroke="#C8102E" strokeWidth="4" />
+      <path d="M30,0 v30 M0,15 h60" stroke="#fff" strokeWidth="10" />
+      <path d="M30,0 v30 M0,15 h60" stroke="#C8102E" strokeWidth="6" />
+    </svg>
+  );
+}
+
+const FLAGS: Record<Locale, ComponentType> = { vi: FlagVN, en: FlagGB };
+
 /**
- * Chọn ngôn ngữ Tiếng Việt / English. Nhãn luôn song ngữ để người không đọc được ngôn ngữ hiện tại
- * vẫn tìm ra. tone="dark" dùng trên nền ảnh / nền espresso.
+ * Chọn ngôn ngữ bằng cờ: 🇻🇳 Tiếng Việt / 🇬🇧 English. Tên ngôn ngữ nằm trong aria-label + title
+ * (luôn song ngữ để người không đọc được ngôn ngữ hiện tại vẫn tìm ra). tone="dark" dùng trên nền ảnh / espresso.
  */
 export function LanguageSwitch({
   tone = 'light',
@@ -60,15 +91,15 @@ export function LanguageSwitch({
       aria-disabled={disabled || undefined}
       onKeyDown={onKeyDown}
       className={cn(
-        'inline-flex items-center gap-0.5 rounded-full p-1 text-xs font-bold',
-        tone === 'dark' ? 'bg-black/30 text-cream ring-1 ring-white/15 backdrop-blur-md' : 'bg-bronze-100 text-bronze-700',
+        'inline-flex items-center gap-0.5 rounded-full p-1',
+        tone === 'dark' ? 'bg-black/30 ring-1 ring-white/15 backdrop-blur-md' : 'bg-bronze-100',
         disabled && 'opacity-50',
         className,
       )}
     >
-      <Languages aria-hidden className={cn('mx-1.5 h-3.5 w-3.5', tone === 'dark' ? 'text-gold' : 'text-bronze-500')} />
       {LOCALES.map((l) => {
         const active = l.value === locale;
+        const Flag = FLAGS[l.value];
         return (
           <button
             key={l.value}
@@ -82,18 +113,21 @@ export function LanguageSwitch({
             disabled={disabled}
             onClick={(e) => choose(l.value, document.activeElement === e.currentTarget)}
             className={cn(
-              'min-h-8 min-w-9 rounded-full px-2.5 tracking-wide transition disabled:cursor-not-allowed',
+              'group/flag flex min-h-9 min-w-9 items-center justify-center rounded-full transition disabled:cursor-not-allowed',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold',
-              active
-                ? tone === 'dark'
-                  ? 'bg-cream text-espresso'
-                  : 'bg-espresso text-cream'
-                : tone === 'dark'
-                  ? 'text-cream/80 hover:text-cream'
-                  : 'hover:text-espresso',
+              active && (tone === 'dark' ? 'bg-white/20' : 'bg-white shadow-sm'),
             )}
           >
-            {l.short}
+            <span
+              className={cn(
+                'block h-6 w-6 overflow-hidden rounded-full transition',
+                active
+                  ? cn('ring-2', tone === 'dark' ? 'ring-cream' : 'ring-espresso')
+                  : 'opacity-70 ring-1 ring-black/10 group-hover/flag:opacity-100',
+              )}
+            >
+              <Flag />
+            </span>
           </button>
         );
       })}

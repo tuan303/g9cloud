@@ -103,6 +103,7 @@ export const adminMenu = {
     noImageBody: 'Khách sẽ thấy biểu tượng {emoji} mặc định.',
     illustration: 'Minh hoạ có sẵn',
     illustrationBody: 'Nét vẽ nhẹ, sắc nét trên mọi màn hình.',
+    cafePhoto: 'Ảnh chụp tại quán',
     uploaded: 'Ảnh tải lên',
     optimized: '{size} · đã tối ưu',
     fromUrl: 'Ảnh từ đường dẫn',

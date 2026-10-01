@@ -245,7 +245,9 @@ export function topItems(orders: Order[], since: number, limit = 5): TopItem[] {
         cur.quantity += line.quantity;
         cur.revenue += revenue;
         // Giữ tên / ảnh mới nhất (món có thể được đổi tên)
-        if (ts > cur.lastSeen) Object.assign(cur, { name: line.name, nameEn: line.nameEn, image: line.image, lastSeen: ts });
+        // (đơn mới hơn thiếu tên tiếng Anh thì giữ tên tiếng Anh đã biết của cùng tên món)
+        if (ts > cur.lastSeen)
+          Object.assign(cur, { name: line.name, nameEn: line.nameEn ?? (line.name === cur.name ? cur.nameEn : undefined), image: line.image, lastSeen: ts });
       } else {
         map.set(line.itemId, {
           itemId: line.itemId,

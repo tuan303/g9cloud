@@ -258,9 +258,10 @@ export function toMenuItem(form: MenuForm, initial: MenuItem | null, entries: Op
     id: initial?.id ?? '',
     categoryId: form.categoryId,
     name: form.name.trim().replace(/\s+/g, ' '),
-    nameEn: nameEn || undefined,
+    // Xoá bản tiếng Anh đang có → lưu '' (đánh dấu "không dùng tiếng Anh", app không tự điền lại bản mẫu)
+    nameEn: nameEn || (initial?.nameEn ? '' : undefined),
     description: form.description.trim(),
-    descriptionEn: descriptionEn || undefined,
+    descriptionEn: descriptionEn || (initial?.descriptionEn ? '' : undefined),
     price: Number(form.price),
     image: form.image,
     available: form.available,

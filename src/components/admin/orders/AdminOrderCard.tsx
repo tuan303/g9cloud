@@ -40,7 +40,7 @@ function BaristaItems({ items }: { items: OrderLine[] }) {
   return (
     <ul className="space-y-2.5">
       {items.map((l) => {
-        const opts = optionsSummary(l.options);
+        const opts = optionsSummary(l.options, l.itemId);
         return (
           <li key={l.lineId} className="flex items-start gap-2.5">
             <span className="mt-px inline-flex h-6 min-w-[30px] shrink-0 items-center justify-center rounded-lg bg-espresso px-1.5 font-display text-[13px] font-bold tabular-nums text-gold-light">

@@ -17,11 +17,11 @@ import {
   type Query,
 } from 'firebase/firestore';
 import { APP_CONFIG } from '@/config/app';
-import { OPTION_PRESETS, SEED_MENU } from '@/data/menu';
+import { SEED_MENU, withSeedEnglish } from '@/data/menu';
 import { generateDemoOrders } from '@/data/demo-orders';
 import { startOfDay } from '@/lib/format';
 import { parseOrderQrPayload } from '@/lib/qr';
-import type { CreateOrderInput, LoyaltyAccount, MenuItem, OptionGroup, Order, OrderStatus } from '@/types';
+import type { CreateOrderInput, LoyaltyAccount, MenuItem, Order, OrderStatus } from '@/types';
 import {
   currentCustomerUid,
   customerFirebase,
@@ -72,7 +72,8 @@ function toDoc<T extends { id: string }>(value: T): DocumentData {
 }
 
 function toMenuItem(id: string, d: DocumentData): MenuItem {
-  return {
+  // Món tạo trước khi có song ngữ: bổ sung tiếng Anh từ thực đơn mẫu ngay khi đọc
+  return withSeedEnglish({
     id,
     categoryId: d.categoryId ?? 'coffee',
     name: d.name ?? '',
@@ -86,7 +87,7 @@ function toMenuItem(id: string, d: DocumentData): MenuItem {
     optionGroups: d.optionGroups,
     sortOrder: Number(d.sortOrder) || 0,
     updatedAt: d.updatedAt,
-  };
+  });
 }
 
 function toOrder(id: string, d: DocumentData): Order {
@@ -239,58 +240,6 @@ export class FirestoreRepository implements DataRepository {
       });
     } catch (err) {
       console.warn('[Cloud9] Không khởi tạo được thực đơn mẫu', err);
-    }
-    void this.addEnglishToMenu();
-  }
-
-  /**
-   * Thực đơn đã tạo trước khi có song ngữ: bổ sung tên/mô tả/tuỳ chọn tiếng Anh cho các món mẫu
-   * (chỉ điền trường còn thiếu — không đổi tên, giá, ảnh quán đã sửa).
-   */
-  private async addEnglishToMenu() {
-    // Chỉ chạy một lần cho cả hệ thống (cờ meta/menuSeed.i18n) — quán xoá bản dịch thì không tự điền lại
-    try {
-      const marker = await getDoc(doc(this.db('staff'), 'meta', 'menuSeed'));
-      if (marker.exists() && marker.data().i18n) return;
-    } catch {
-      return;
-    }
-    const presets = OPTION_PRESETS.map((p) => p.group);
-    const enrichGroup = (g: OptionGroup): OptionGroup => {
-      const ids = g.choices.map((c) => c.id).join(',');
-      const preset = presets.find((p) => p.id === g.id && p.choices.map((c) => c.id).join(',') === ids) ?? presets.find((p) => p.id === g.id);
-      if (!preset) return g;
-      return {
-        ...g,
-        nameEn: g.nameEn ?? preset.nameEn,
-        choices: g.choices.map((c) => {
-          const pc = preset.choices.find((x) => x.id === c.id);
-          return pc ? { ...c, nameEn: c.nameEn ?? pc.nameEn, ...(pc.summaryEn !== undefined ? { summaryEn: c.summaryEn ?? pc.summaryEn } : {}) } : c;
-        }),
-      };
-    };
-    const updates: { id: string; patch: Partial<MenuItem> }[] = [];
-    for (const item of this.menu) {
-      const seed = SEED_MENU.find((s) => s.id === item.id);
-      const patch: Partial<MenuItem> = {};
-      if (seed && !item.nameEn && seed.nameEn) patch.nameEn = seed.nameEn;
-      if (seed && !item.descriptionEn && seed.descriptionEn) patch.descriptionEn = seed.descriptionEn;
-      if (item.optionGroups?.some((g) => !g.nameEn || g.choices.some((c) => !c.nameEn))) {
-        const groups = item.optionGroups.map(enrichGroup);
-        if (JSON.stringify(groups) !== JSON.stringify(item.optionGroups)) patch.optionGroups = groups;
-      }
-      if (Object.keys(patch).length) updates.push({ id: item.id, patch });
-    }
-    try {
-      const db = this.db('staff');
-      const batch = writeBatch(db);
-      for (const u of updates) batch.update(doc(db, 'menu', u.id), JSON.parse(JSON.stringify(u.patch)));
-      batch.set(doc(db, 'meta', 'menuSeed'), { i18n: true }, { merge: true });
-      await batch.commit();
-      if (!updates.length) return;
-      console.info(`[Cloud9] Đã bổ sung tiếng Anh cho ${updates.length} món`);
-    } catch (err) {
-      console.warn('[Cloud9] Không bổ sung được tiếng Anh cho thực đơn', err);
     }
   }
 

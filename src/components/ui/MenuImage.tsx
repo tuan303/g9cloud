@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { cn } from '@/lib/cn';
-import { resolveMenuImage } from '@/lib/images';
+import { isIllustrationRef, resolveMenuImage } from '@/lib/images';
 import { useDataStore } from '@/store/data';
 import type { CategoryId } from '@/types';
 
@@ -26,7 +26,7 @@ export function MenuImage({
   const itemImage = useDataStore((s) => (itemId ? s.menu.find((m) => m.id === itemId)?.image : undefined));
   const effective = itemId ? itemImage : image;
   const src = resolveMenuImage(effective);
-  const isIllustration = !!effective?.startsWith('@menu/');
+  const isIllustration = isIllustrationRef(effective);
   return (
     <div
       className={cn(

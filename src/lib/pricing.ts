@@ -1,3 +1,4 @@
+import { seedChoiceNamesEn } from '@/data/menu';
 import { getLocale } from '@/i18n';
 import type { CartLine, MenuItem, OptionGroup, SelectedOption } from '@/types';
 
@@ -48,9 +49,16 @@ export function missingRequiredGroup(groups: OptionGroup[] | undefined, selectio
 }
 
 /** "Uống đá · Size L · 70% đường · Thêm shot espresso" (tiếng Anh: "Iced · Size L · 70% sugar · …") */
-export function optionsSummary(options: SelectedOption[]): string {
-  const en = getLocale() === 'en';
-  return options.flatMap((o) => (en && o.choiceNamesEn?.length ? o.choiceNamesEn : o.choiceNames)).join(' · ');
+export function optionsSummary(options: SelectedOption[], itemId?: string): string {
+  if (getLocale() !== 'en') return options.flatMap((o) => o.choiceNames).join(' · ');
+  return options
+    .flatMap((o) => {
+      const stored = o.choiceNamesEn?.length ? o.choiceNamesEn : undefined;
+      // Đơn tạo khi thực đơn chưa có tiếng Anh: choiceNamesEn bị chép y tiếng Việt → tra thực đơn mẫu
+      if (stored && stored.join('|') !== o.choiceNames.join('|')) return stored;
+      return seedChoiceNamesEn(o, itemId) ?? stored ?? o.choiceNames;
+    })
+    .join(' · ');
 }
 
 /** Khoá so sánh 2 dòng giỏ hàng có cùng món + tuỳ chọn + ghi chú để gộp số lượng */

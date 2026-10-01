@@ -37,7 +37,7 @@ export function startOrderWatcher() {
       order_cancelled: 'cancelled',
       info: 'info',
     } as const;
-    useUi.getState().showBanner({ title: n.title, body: n.body, href: `/order/${order.id}`, icon: iconMap[n.kind] });
+    useUi.getState().showBanner({ title: n.title, body: n.body, msg: n.msg, href: `/order/${order.id}`, icon: iconMap[n.kind] });
     platform.vibrate([60, 40, 60]);
     if (n.kind === 'order_ready' || n.kind === 'order_delivering' || n.kind === 'order_received') {
       void platform.systemNotify(n.title, n.body);

@@ -1,7 +1,7 @@
-import { translate, translateIn } from '@/i18n';
+import { translate, translateIn, type MessageKey } from '@/i18n';
 import { isDefaultCancelReason, translateCancelReason } from '@/lib/cancel-reason';
 import { isExpiryCancel } from '@/services/order-logic';
-import type { FulfillmentType, NotificationKind, NotificationMsg, Order, OrderStatus } from '@/types';
+import type { AppNotification, FulfillmentType, NotificationKind, NotificationMsg, Order, OrderStatus } from '@/types';
 
 export interface StatusMeta {
   label: string;
@@ -94,6 +94,53 @@ export function notificationText(msg: NotificationMsg): { title: string; body: s
   if (typeof vars.reason === 'string') vars.reason = translateCancelReason(vars.reason);
   if (msg.body === 'notify.delivering.body' && !vars.address) vars.address = translate('notify.deliveringDefault');
   return { title: translate(msg.title), body: translate(msg.body, vars) };
+}
+
+/** Mẫu câu có thể có của từng loại thông báo (tiêu đề, nội dung) */
+const LEGACY_KEYS: Partial<Record<NotificationKind, [MessageKey, MessageKey][]>> = {
+  order_received: [['notify.received.title', 'notify.received.body']],
+  order_preparing: [['notify.preparing.title', 'notify.preparing.body']],
+  order_ready: [['notify.ready.title', 'notify.ready.body']],
+  order_delivering: [['notify.delivering.title', 'notify.delivering.body']],
+  order_completed: [['notify.completed.title', 'notify.completed.body']],
+  order_cancelled: [
+    ['notify.cancelled.title', 'notify.cancelled.bodyReason'],
+    ['notify.cancelled.title', 'notify.cancelled.body'],
+  ],
+  info: [['notify.reward.title', 'notify.reward.body']],
+};
+
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** Khớp câu đã lưu với mẫu câu tiếng Việt hoặc tiếng Anh → lấy lại tham số ({code}, {reason}…); null nếu không khớp */
+function matchTemplate(text: string, key: MessageKey): Record<string, string> | null {
+  for (const locale of ['vi', 'en'] as const) {
+    const names: string[] = [];
+    const pattern = escapeRe(translateIn(locale, key)).replace(/\\\{(\w+)\\\}/g, (_, name: string) => {
+      names.push(name);
+      return '(.+?)';
+    });
+    const m = text.trim().match(new RegExp(`^${pattern}$`));
+    if (m) return Object.fromEntries(names.map((n, i) => [n, m[i + 1]]));
+  }
+  return null;
+}
+
+/**
+ * Thông báo lưu từ bản trước (chỉ có chữ, chưa có khoá dịch): nhận lại mẫu câu để hiện theo ngôn ngữ
+ * đang chọn. Không nhận ra thì trả undefined (giữ nguyên chữ đã lưu).
+ */
+export function legacyNotificationMsg(n: Pick<AppNotification, 'kind' | 'title' | 'body'>): NotificationMsg | undefined {
+  for (const [title, body] of LEGACY_KEYS[n.kind] ?? []) {
+    if (!matchTemplate(n.title, title)) continue;
+    const vars = matchTemplate(n.body, body);
+    if (!vars) continue;
+    // "đang được mang đến cho bạn" (không có địa chỉ) → để notificationText dịch lại phần mặc định
+    const defaults = [translateIn('vi', 'notify.deliveringDefault'), translateIn('en', 'notify.deliveringDefault')];
+    if (vars.address && defaults.includes(vars.address)) delete vars.address;
+    return { title, body, vars };
+  }
+  return undefined;
 }
 
 /** Nội dung thông báo gửi khách khi trạng thái đơn thay đổi (kèm khoá dịch để đổi ngôn ngữ sau này) */

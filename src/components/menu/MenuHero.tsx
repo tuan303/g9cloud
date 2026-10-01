@@ -85,7 +85,7 @@ export function MenuHero() {
               <span className="sr-only">{t('menu.hero.hoursSr')} </span>
               <span className="truncate">{hours}</span>
             </span>
-            <LanguageSwitch tone="dark" className="shrink-0 max-[389px]:[&>svg]:hidden" />
+            <LanguageSwitch tone="dark" className="shrink-0" />
           </div>
         </div>
 

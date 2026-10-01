@@ -176,7 +176,7 @@ export const onboarding: MessageShape<typeof V> = {
     fulfillmentTitle: 'Default pickup or delivery',
     autoSaved: 'Saved automatically',
     fulfillmentHint: 'Used for new orders — you can still change it in your cart.',
-    languageTitle: 'Language / Ngôn ngữ',
+    languageTitle: 'Language',
     languageLabel: 'Display language',
     languageHint: 'Applies to the whole app',
     notificationsTitle: 'Notifications',

@@ -2,6 +2,7 @@ import { useT } from '@/i18n';
 import { useNavigate } from 'react-router-dom';
 import { Bell, Bike, CheckCircle2, ChefHat, CircleX, PartyPopper, ShoppingBag, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { notificationText } from '@/lib/order-status';
 import { useUi, type Banner } from '@/store/ui';
 
 const BANNER_ICON: Record<NonNullable<Banner['icon']>, { icon: typeof Bell; className: string }> = {
@@ -20,13 +21,15 @@ export function Toaster() {
   const navigate = useNavigate();
   const { t } = useT();
   const b = banner?.icon ? BANNER_ICON[banner.icon] : BANNER_ICON.info;
+  // Banner có khoá dịch → hiện theo ngôn ngữ đang chọn (kể cả khi vừa đổi ngôn ngữ lúc banner đang hiện)
+  const text = banner?.msg ? notificationText(banner.msg) : banner;
   const BIcon = b.icon;
 
   return (
     <>
       {/* Vùng thông báo luôn tồn tại để trình đọc màn hình đọc được nội dung mới */}
       <div role="status" aria-live="assertive" aria-atomic="true" className="sr-only">
-        {banner ? `${banner.title}. ${banner.body}` : ''}
+        {text ? `${text.title}. ${text.body}` : ''}
       </div>
       {banner && (
         <div className="safe-top pointer-events-none fixed inset-x-0 top-0 z-[70] mx-auto max-w-md px-3 pt-2">
@@ -45,8 +48,8 @@ export function Toaster() {
                 <BIcon className="h-5 w-5" />
               </span>
               <span className="min-w-0">
-                <span className="block font-display text-[15px] font-bold">{banner.title}</span>
-                <span className="mt-0.5 block text-[13px] leading-snug text-cream/80">{banner.body}</span>
+                <span className="block font-display text-[15px] font-bold">{text?.title}</span>
+                <span className="mt-0.5 block text-[13px] leading-snug text-cream/80">{text?.body}</span>
               </span>
             </button>
             <button type="button" aria-label={t('ui.closeNotification')} onClick={hideBanner} className="rounded-full p-1.5 text-cream/60 hover:bg-white/10">

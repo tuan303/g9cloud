@@ -77,7 +77,7 @@ src/
   store/                 ← trạng thái: phiên đăng nhập, giỏ hàng, thông báo, dữ liệu
   components/ui/         ← bộ UI theo nhận diện Cloud 9
   pages/customer|admin/  ← các màn hình
-  assets/                ← logo, ảnh quán (WebP), minh hoạ món (SVG)
+  assets/                ← logo, ảnh quán (WebP), minh hoạ món (SVG), ảnh món thật (menu-photos/, tạo bằng npm run photos)
 firestore.rules          ← quy tắc bảo mật Firestore (triển khai sau khi bật Authentication)
 firebase.json            ← cấu hình Firebase Hosting + Rules
 docs/

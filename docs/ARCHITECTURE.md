@@ -44,7 +44,7 @@ Tài liệu cho lập trình viên (và các agent xây dựng giao diện). Đ�
 - `order-status.ts`: `STATUS_META[status]` (label, description, badgeClass, dotClass), `statusSteps(fulfillment)`, `stepLabel`, `nextStatus(order)`, `nextActionLabel(order)`, `ACTIVE_STATUSES`, `isActiveOrder`, `notificationFor(order)`.
 - `qr.ts`: `buildOrderQrPayload(order)` → `"C9ORDER:<id>:<code>"`, `parseOrderQrPayload(raw)`.
 - `vietqr.ts`: `buildVietQrPayload({bankBin, accountNo, amount, memo})` (chỉ dùng khi `APP_CONFIG.payment.vietqr` khác null).
-- `images.ts`: `resolveMenuImage(image)`, `MENU_ILLUSTRATIONS` (danh sách minh hoạ SVG có sẵn).
+- `images.ts`: `resolveMenuImage(image)` (`@menu/key` → ảnh chụp thật trong `assets/menu-photos/` nếu có, không thì minh hoạ SVG), `isIllustrationRef`, `MENU_ILLUSTRATIONS`.
 - `cn.ts`: `cn(...)` = clsx.
 - Hooks: `useNow(ms)`, `useAction(fn, {success})`, `usePageTitle(title)`.
 

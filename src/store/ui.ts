@@ -1,5 +1,7 @@
 import { create } from 'zustand';
+import { useLocale } from '@/i18n';
 import { uid } from '@/lib/id';
+import type { NotificationMsg } from '@/types';
 
 export type ToastTone = 'default' | 'success' | 'error' | 'info';
 
@@ -17,6 +19,8 @@ export interface Banner {
   /** Đường dẫn khi chạm vào banner */
   href?: string;
   icon?: 'received' | 'preparing' | 'ready' | 'delivering' | 'completed' | 'cancelled' | 'info';
+  /** Khoá dịch — banner hiện theo ngôn ngữ đang chọn kể cả khi vừa đổi ngôn ngữ */
+  msg?: NotificationMsg;
 }
 
 interface UiState {
@@ -46,6 +50,11 @@ export const useUi = create<UiState>((set, get) => ({
   },
   hideBanner: () => set({ banner: null }),
 }));
+
+// Toast là chữ đã dịch sẵn (sống 2,6 giây) → đổi ngôn ngữ thì bỏ các toast đang hiện thay vì để lẫn ngôn ngữ cũ
+useLocale.subscribe((s, p) => {
+  if (s.locale !== p.locale && useUi.getState().toasts.length) useUi.setState({ toasts: [] });
+});
 
 /** Gọi nhanh ngoài React: toast('Đã thêm vào giỏ', 'success') */
 export const toast = (message: string, tone?: ToastTone) => useUi.getState().toast(message, tone);

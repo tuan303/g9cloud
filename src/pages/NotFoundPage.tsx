@@ -2,9 +2,11 @@ import { useT } from '@/i18n';
 import { Link } from 'react-router-dom';
 import { Coffee } from 'lucide-react';
 import { Logo } from '@/components/ui';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 export default function NotFoundPage({ error }: { error?: boolean }) {
   const { t } = useT();
+  usePageTitle(error ? t('notFound.errorTitle') : t('notFound.title'));
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center bg-espresso px-8 text-center text-cream">
       <Logo className="mb-10 h-10 text-cream" />

@@ -24,7 +24,7 @@ export const CartLineItem = forwardRef<
 >(function CartLineItem({ line, unavailable, onEdit, onQuantityChange, onRemove }, ref) {
   const { t } = useT();
   const name = lineName(line);
-  const opts = optionsSummary(line.options);
+  const opts = optionsSummary(line.options, line.itemId);
   const editable = !unavailable && !!onEdit;
 
   return (

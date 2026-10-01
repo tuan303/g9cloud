@@ -105,6 +105,7 @@ export const adminMenu: MessageShape<typeof V> = {
     noImageBody: 'Customers will see the default {emoji} icon.',
     illustration: 'Built-in illustration',
     illustrationBody: 'Clean line art that stays sharp on any screen.',
+    cafePhoto: 'Cloud 9 photo',
     uploaded: 'Uploaded photo',
     optimized: '{size} · optimized',
     fromUrl: 'Photo from a link',

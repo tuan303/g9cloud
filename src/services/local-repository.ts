@@ -1,6 +1,6 @@
 import { translate } from '@/i18n';
 import { APP_CONFIG } from '@/config/app';
-import { SEED_MENU } from '@/data/menu';
+import { SEED_MENU, withSeedEnglish } from '@/data/menu';
 import { generateDemoOrders } from '@/data/demo-orders';
 import { isSameDay } from '@/lib/format';
 import { uid } from '@/lib/id';
@@ -93,7 +93,7 @@ export class LocalRepository implements DataRepository {
   // ───────────── nội bộ ─────────────
 
   private loadFromStorage() {
-    this.menu = read<MenuItem[]>(KEYS.menu) ?? [];
+    this.menu = (read<MenuItem[]>(KEYS.menu) ?? []).map(withSeedEnglish);
     this.orders = read<Order[]>(KEYS.orders) ?? [];
     this.loyalty = read<Record<string, LoyaltyAccount>>(KEYS.loyalty) ?? {};
   }

@@ -81,8 +81,8 @@ function DetailSheet({ item, onClose: onCloseProp, editLine }: { item: MenuItem;
 
   const name = itemName(item);
   const description = itemDescription(item);
-  // Tên phụ ở ngôn ngữ còn lại (tiếng Việt: hiện tên tiếng Anh; tiếng Anh: hiện tên tiếng Việt để gọi món tại quầy)
-  const altName = locale === 'en' ? item.name : item.nameEn;
+  // Tên phụ tiếng Anh chỉ hiện ở giao diện tiếng Việt; giao diện tiếng Anh hiển thị hoàn toàn bằng tiếng Anh
+  const altName = locale === 'en' ? undefined : item.nameEn;
   // Món nước được tích điểm (chỉ gợi ý cho khách có thẻ tích điểm)
   const countsForLoyalty = loyalty.member && APP_CONFIG.loyalty.eligibleCategories.includes(item.categoryId);
 
@@ -185,7 +185,7 @@ function DetailSheet({ item, onClose: onCloseProp, editLine }: { item: MenuItem;
               {name}
             </h2>
             {altName && altName !== name && (
-              <p lang={locale === 'en' ? 'vi' : 'en'} className="mt-0.5 text-sm font-medium text-stone">
+              <p lang="en" className="mt-0.5 text-sm font-medium text-stone">
                 {altName}
               </p>
             )}

@@ -177,7 +177,7 @@ export const onboarding = {
     fulfillmentTitle: 'Nhận món mặc định',
     autoSaved: 'Tự động lưu',
     fulfillmentHint: 'Áp dụng sẵn cho đơn mới — bạn vẫn đổi được trong giỏ hàng.',
-    languageTitle: 'Ngôn ngữ / Language',
+    languageTitle: 'Ngôn ngữ',
     languageLabel: 'Ngôn ngữ hiển thị',
     languageHint: 'Áp dụng cho toàn bộ ứng dụng',
     notificationsTitle: 'Thông báo',

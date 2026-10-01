@@ -188,7 +188,7 @@ export default function AccountPage() {
           <p className="mt-2.5 px-1 text-xs leading-relaxed text-stone">{t('onboarding.account.fulfillmentHint')}</p>
         </section>
 
-        {/* Ngôn ngữ — tiêu đề luôn song ngữ để ai cũng tìm ra */}
+        {/* Ngôn ngữ — chọn bằng cờ (tên ngôn ngữ đọc được qua aria-label / title) */}
         <section>
           <SectionTitle title={t('onboarding.account.languageTitle')} />
           <Card className="flex min-h-[68px] items-center gap-3 p-3.5 pl-4">

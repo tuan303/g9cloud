@@ -14,9 +14,10 @@ function mulberry32(seed: number) {
 
 const NAMES = [
   'Minh Anh', 'Gia Huy', 'Bảo Ngọc', 'Khánh Linh', 'Đức Minh', 'Thu Trang', 'Hoàng Nam', 'Phương Thảo',
-  'Quang Vinh', 'Hải Yến', 'Tuấn Kiệt', 'Mai Chi', 'Cô Hương', 'Thầy Long', 'Cô Lan', 'Thầy Dũng',
+  'Quang Vinh', 'Hải Yến', 'Tuấn Kiệt', 'Mai Chi', 'Hương', 'Long', 'Lan', 'Dũng',
 ];
-const ADDRESSES = ['Lớp 6A1', 'Lớp 7A2', 'Lớp 8B1', 'Lớp 9A3', 'Lớp 10A1', 'Lớp 11C2', 'Phòng Giáo vụ', 'Phòng Hành chính', 'Thư viện – Tầng 2', 'Phòng Hội đồng'];
+/** Địa chỉ giao mẫu: mã lớp / mã phòng — đọc được ở cả hai ngôn ngữ */
+const ADDRESSES = ['6A1', '7A2', '8B1', '9A3', '10A1', '11C2', 'A-101', 'A-204', 'B-305', 'C-102'];
 
 /** Khung giờ đông khách trong trường (giờ thập phân, trọng số) */
 const HOUR_WEIGHTS: [number, number][] = [
@@ -80,6 +81,7 @@ export function generateDemoOrders(menu: MenuItem[], now = Date.now()): Order[] 
           itemId: item.id,
           categoryId: item.categoryId,
           name: item.name,
+          nameEn: item.nameEn,
           image: item.image,
           basePrice: item.price,
           unitPrice: price,

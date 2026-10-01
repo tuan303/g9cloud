@@ -8,7 +8,7 @@ import { greetingKey } from './helpers';
  * Ảnh quầy espresso thật (logo 3D trên tường vữa nằm trọn ở nửa trên) + lớp phủ espresso và vệt nắng vàng.
  * Khối chữ đặt ở dưới, trên nền tối, để không chồng lên logo trong ảnh.
  * `compact` thu gọn ảnh khi người dùng đang điền form để chừa chỗ cho bàn phím.
- * Nút chọn ngôn ngữ VI/EN nằm ngay trên thanh thương hiệu — thấy ngay từ màn hình đầu tiên, ở mọi bước.
+ * Nút chọn ngôn ngữ (cờ Việt Nam / cờ Anh) nằm ngay trên thanh thương hiệu — thấy ngay từ màn hình đầu tiên, ở mọi bước.
  */
 export function WelcomeHero({ compact }: { compact: boolean }) {
   const { t } = useT();
@@ -42,8 +42,8 @@ export function WelcomeHero({ compact }: { compact: boolean }) {
         {/* Logo nhỏ như thanh thương hiệu — logo 3D trên tường trong ảnh là “nhân vật chính”; bên phải: chọn ngôn ngữ */}
         <div className="flex h-14 shrink-0 items-center justify-between gap-3">
           <Logo className="h-7 text-cream" />
-          {/* Nút VI/EN cao 44px (vùng chạm đủ lớn) */}
-          <LanguageSwitch tone="dark" className="-mr-1 shrink-0 [&_button]:min-h-9 [&_button]:min-w-10" />
+          {/* Chọn ngôn ngữ bằng cờ (nút tròn 36px trong khung 44px) */}
+          <LanguageSwitch tone="dark" className="-mr-1 shrink-0" />
         </div>
         <div className={cn('mt-auto [text-shadow:0_1px_12px_rgba(28,22,14,0.75)]', compact ? 'pb-12' : 'pb-14')}>
           <p className="font-display text-xs font-bold uppercase tracking-[0.22em] text-gold">{greeting}</p>

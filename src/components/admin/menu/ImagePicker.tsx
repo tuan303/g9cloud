@@ -60,7 +60,7 @@ export function ImagePicker({
   let title = t('adminMenu.image.noImage');
   let detail = t('adminMenu.image.noImageBody', { emoji: category?.emoji ?? '☕' });
   if (isIllustration) {
-    title = t('adminMenu.image.illustration');
+    title = MENU_ILLUSTRATIONS.find((il) => il.ref === value)?.photo ? t('adminMenu.image.cafePhoto') : t('adminMenu.image.illustration');
     const meta = ILLUSTRATION_META.get(value);
     detail = meta ? localizedName(meta) : t('adminMenu.image.illustrationBody');
   } else if (isDataUrl) {
@@ -185,13 +185,20 @@ export function ImagePicker({
                   disabled={busy}
                   onClick={() => onChange(il.ref)}
                   className={cn(
-                    'relative aspect-square rounded-2xl p-1.5 transition active:scale-95 disabled:opacity-50',
+                    'relative aspect-square rounded-2xl transition active:scale-95 disabled:opacity-50',
+                    il.photo ? 'overflow-hidden' : 'p-1.5',
                     'bg-[radial-gradient(circle_at_30%_25%,#FBF6EC_0%,#EFE3CC_55%,#E2CFAE_100%)]',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-cream',
                     selected ? 'shadow-glow ring-2 ring-gold ring-offset-2 ring-offset-cream' : 'ring-1 ring-inset ring-bronze-200/70 hover:ring-bronze-300',
                   )}
                 >
-                  <img src={il.url} alt="" loading="lazy" draggable={false} className="h-full w-full object-contain" />
+                  <img
+                    src={il.url}
+                    alt=""
+                    loading="lazy"
+                    draggable={false}
+                    className={cn('h-full w-full', il.photo ? 'rounded-2xl object-cover' : 'object-contain')}
+                  />
                   {selected && (
                     <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-gold text-espresso ring-2 ring-cream">
                       <Check className="h-3 w-3" strokeWidth={3} aria-hidden />

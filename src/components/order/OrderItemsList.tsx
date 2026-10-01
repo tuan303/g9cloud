@@ -12,14 +12,14 @@ export function OrderItemsList({
   compact,
   className,
 }: {
-  lines: Pick<CartLine, 'lineId' | 'name' | 'nameEn' | 'image' | 'categoryId' | 'quantity' | 'unitPrice' | 'options' | 'note'>[];
+  lines: Pick<CartLine, 'lineId' | 'itemId' | 'name' | 'nameEn' | 'image' | 'categoryId' | 'quantity' | 'unitPrice' | 'options' | 'note'>[];
   compact?: boolean;
   className?: string;
 }) {
   return (
     <ul className={cn('divide-y divide-bronze-100', className)}>
       {lines.map((l) => {
-        const opts = optionsSummary(l.options);
+        const opts = optionsSummary(l.options, l.itemId);
         return (
           <li key={l.lineId} className={cn('flex items-start gap-3', compact ? 'py-2' : 'py-3')}>
             {!compact && <MenuImage image={l.image} alt={lineName(l)} categoryId={l.categoryId} className="h-12 w-12 shrink-0" rounded="rounded-xl" />}
